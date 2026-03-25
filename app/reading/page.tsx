@@ -87,7 +87,7 @@ function WitchyLoader() {
               fontFamily: 'Cormorant Garamond, serif',
               fontSize: 20,
               fontStyle: 'italic',
-              color: '#C4922A',
+              color: '#E8C96A',
               letterSpacing: '0.02em',
             }}
           >
@@ -272,9 +272,23 @@ export default function ReadingPage() {
       : 'sm';
 
   const isSetupStep = SETUP_STEPS.includes(step as (typeof SETUP_STEPS)[number]);
+  const isDark = !isSetupStep;
+
+  // Background styles
+  const lightBg = 'var(--cream)';
+  const darkBg =
+    'radial-gradient(ellipse at 50% 0%, #2A1A0A 0%, #0F0805 60%, #080504 100%)';
+  const candleGlow =
+    'radial-gradient(ellipse at 50% 80%, rgba(196,146,42,0.15) 0%, transparent 60%)';
 
   return (
-    <main className="min-h-screen pt-20 pb-20" style={{ background: 'var(--cream)' }}>
+    <main
+      className="min-h-screen pt-20 pb-20 relative"
+      style={{
+        background: isDark ? `${candleGlow}, ${darkBg}` : lightBg,
+        transition: 'background 0.8s ease',
+      }}
+    >
       <div className="max-w-3xl mx-auto px-6">
         <AnimatePresence mode="wait">
           <motion.div
@@ -284,7 +298,7 @@ export default function ReadingPage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Setup steps */}
+            {/* Setup steps — unchanged */}
             {isSetupStep && (
               <div className="max-w-xl mx-auto space-y-8">
                 {/* Step header */}
@@ -404,7 +418,7 @@ export default function ReadingPage() {
               </div>
             )}
 
-            {/* Generating + Reveal state — cards shown face-down with loading */}
+            {/* Generating + Reveal state — dark atmosphere */}
             {(step === 'generating' || isReadingReady) && (
               <div className="space-y-10">
                 {/* Page title */}
@@ -415,8 +429,9 @@ export default function ReadingPage() {
                         fontFamily: 'Cormorant Garamond, serif',
                         fontSize: 18,
                         fontStyle: 'italic',
-                        color: 'var(--brown-mid)',
+                        color: isDark ? 'var(--gold-muted)' : 'var(--brown-mid)',
                         marginBottom: 8,
+                        transition: 'color 0.6s ease',
                       }}
                     >
                       &ldquo;{question}&rdquo;
@@ -474,15 +489,65 @@ export default function ReadingPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6 }}
                     >
-                      {/* Ornamental divider */}
+                      {/* Ornamental divider — adapts to dark */}
                       <div className="flex items-center gap-4 my-8">
-                        <div className="flex-1 h-px" style={{ background: 'var(--border-gold)' }} />
+                        <div
+                          className="flex-1 h-px"
+                          style={{
+                            background: isDark
+                              ? 'rgba(196,146,42,0.35)'
+                              : 'var(--border-gold)',
+                          }}
+                        />
                         <span style={{ color: 'var(--gold)', fontSize: 16 }}>✦ ✦ ✦</span>
-                        <div className="flex-1 h-px" style={{ background: 'var(--border-gold)' }} />
+                        <div
+                          className="flex-1 h-px"
+                          style={{
+                            background: isDark
+                              ? 'rgba(196,146,42,0.35)'
+                              : 'var(--border-gold)',
+                          }}
+                        />
                       </div>
-                      <ReadingDisplay reading={reading} />
+
+                      {/* ReadingDisplay — wrapped in dark panel when isDark */}
+                      <div
+                        style={
+                          isDark
+                            ? {
+                                background: 'rgba(255,255,255,0.02)',
+                                border: '1px solid rgba(255,255,255,0.04)',
+                                borderRadius: 4,
+                                padding: '8px',
+                              }
+                            : {}
+                        }
+                      >
+                        <ReadingDisplay reading={reading} />
+                      </div>
+
                       <div className="text-center mt-12">
-                        <button onClick={reset} className="btn-secondary">
+                        <button
+                          onClick={reset}
+                          style={
+                            isDark
+                              ? {
+                                  background: 'transparent',
+                                  color: 'var(--gold-light)',
+                                  fontFamily: 'Cinzel, serif',
+                                  fontSize: 12,
+                                  letterSpacing: '0.1em',
+                                  padding: '12px 28px',
+                                  borderRadius: 2,
+                                  border: '1px solid rgba(196,146,42,0.45)',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.25s ease',
+                                  textTransform: 'uppercase' as const,
+                                }
+                              : undefined
+                          }
+                          className={isDark ? '' : 'btn-secondary'}
+                        >
                           Begin a New Reading
                         </button>
                       </div>
@@ -500,8 +565,9 @@ export default function ReadingPage() {
                     style={{
                       fontFamily: 'Cormorant Garamond, serif',
                       fontSize: 15,
-                      color: 'var(--brown-light)',
+                      color: isDark ? 'rgba(248,244,239,0.45)' : 'var(--brown-light)',
                       fontStyle: 'italic',
+                      transition: 'color 0.6s ease',
                     }}
                   >
                     {flippedCards.size === 0
