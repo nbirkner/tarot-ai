@@ -7,8 +7,7 @@ export function Navigation() {
   const path = usePathname();
 
   const links = [
-    { href: '/', label: 'Oracle' },
-    { href: '/reading', label: 'Reading' },
+    { href: '/reading', label: 'Oracle' },
     { href: '/collection', label: 'Collection' },
     { href: '/history', label: 'History' },
   ];

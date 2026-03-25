@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { CollectionEntry, getCollection } from '../../lib/storage';
 
 export default function CollectionPage() {
@@ -19,38 +20,129 @@ export default function CollectionPage() {
   });
 
   return (
-    <main className="min-h-screen bg-slate-950 pt-20 pb-10">
+    <main
+      className="min-h-screen pt-20 pb-16"
+      style={{ background: 'var(--cream)' }}
+    >
       <div className="max-w-2xl mx-auto px-4">
-        <h1 className="text-purple-200 text-2xl font-semibold mb-2">Your Collection</h1>
-        <p className="text-purple-500 text-sm mb-6">{entries.length} card{entries.length !== 1 ? 's' : ''} pulled</p>
+        {/* Header */}
+        <div className="mb-6">
+          <h1
+            style={{
+              fontFamily: 'Cinzel, serif',
+              fontSize: 28,
+              letterSpacing: '0.08em',
+              color: 'var(--brown-dark)',
+              fontWeight: 400,
+              marginBottom: 6,
+            }}
+          >
+            Your Collection
+          </h1>
+          <p
+            style={{
+              fontFamily: 'Cormorant Garamond, serif',
+              fontSize: 16,
+              fontStyle: 'italic',
+              color: 'var(--brown-light)',
+            }}
+          >
+            {entries.length} card{entries.length !== 1 ? 's' : ''} pulled
+          </p>
+        </div>
 
-        <div className="flex flex-wrap gap-2 mb-6">
+        {/* Ornamental divider */}
+        <div
+          className="flex items-center gap-3 mb-6"
+          style={{ color: 'var(--gold)', opacity: 0.5 }}
+        >
+          <div style={{ flex: 1, height: 1, background: 'var(--border-gold)' }} />
+          <span style={{ fontSize: 10 }}>✦</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--border-gold)' }} />
+        </div>
+
+        {/* Filter pills */}
+        <div className="flex flex-wrap gap-2 mb-8">
           {(['all', 'major', 'wands', 'cups', 'swords', 'pentacles'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-all capitalize ${
-                filter === f
-                  ? 'border-purple-500 bg-purple-950 text-purple-200'
-                  : 'border-purple-900/50 text-purple-500 hover:text-purple-300'
-              }`}
+              style={{
+                fontFamily: 'Cormorant Garamond, serif',
+                fontSize: 13,
+                padding: '4px 14px',
+                borderRadius: 20,
+                border: filter === f ? '1px solid var(--gold)' : '1px solid var(--border-gold)',
+                background: filter === f ? 'var(--gold-pale)' : 'transparent',
+                color: filter === f ? 'var(--brown-dark)' : 'var(--brown-light)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                textTransform: 'capitalize',
+              }}
             >
               {f}
             </button>
           ))}
         </div>
 
-        {filtered.length === 0 ? (
-          <div className="text-center py-20 text-purple-600">
-            <p className="text-4xl mb-4">✦</p>
-            <p>No cards yet. Start a reading.</p>
+        {/* Empty state */}
+        {entries.length === 0 ? (
+          <div className="text-center py-20">
+            <p
+              style={{
+                fontSize: 36,
+                color: 'var(--gold)',
+                opacity: 0.6,
+                marginBottom: 16,
+              }}
+            >
+              ✦
+            </p>
+            <p
+              style={{
+                fontFamily: 'Cormorant Garamond, serif',
+                fontSize: 18,
+                fontStyle: 'italic',
+                color: 'var(--brown-light)',
+                marginBottom: 16,
+              }}
+            >
+              No cards yet. Your readings will gather here.
+            </p>
+            <Link
+              href="/reading"
+              style={{
+                fontFamily: 'Cormorant Garamond, serif',
+                fontSize: 16,
+                color: 'var(--gold)',
+                textDecoration: 'none',
+              }}
+            >
+              Begin a reading →
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
             {filtered.map((entry, i) => (
               <div key={i} className="space-y-1">
                 {entry.imageUrl ? (
-                  <div className="rounded-lg overflow-hidden border border-purple-900/40 aspect-[2/3]">
+                  <div
+                    className="aspect-[2/3] overflow-hidden"
+                    style={{
+                      borderRadius: 4,
+                      border: '1px solid var(--border-gold)',
+                      background: 'var(--cream-card)',
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)';
+                      (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px rgba(196, 146, 42, 0.18)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)';
+                      (e.currentTarget as HTMLDivElement).style.boxShadow = 'none';
+                    }}
+                  >
                     <Image
                       src={entry.imageUrl}
                       alt={entry.card.name}
@@ -60,12 +152,58 @@ export default function CollectionPage() {
                     />
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-purple-900/40 aspect-[2/3] bg-purple-950/50 flex items-center justify-center">
-                    <span className="text-purple-500 text-xs text-center px-2">{entry.card.name}</span>
+                  <div
+                    className="aspect-[2/3] flex items-center justify-center"
+                    style={{
+                      borderRadius: 4,
+                      border: '1px solid var(--border-gold)',
+                      background: 'var(--parchment)',
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)';
+                      (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px rgba(196, 146, 42, 0.18)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)';
+                      (e.currentTarget as HTMLDivElement).style.boxShadow = 'none';
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: 'Cinzel, serif',
+                        fontSize: 10,
+                        color: 'var(--brown-mid)',
+                        textAlign: 'center',
+                        padding: '0 8px',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      {entry.card.name}
+                    </span>
                   </div>
                 )}
-                <p className="text-purple-400 text-xs truncate">{entry.card.name}</p>
-                <p className="text-purple-600 text-xs">{new Date(entry.readingDate).toLocaleDateString()}</p>
+                <p
+                  className="truncate"
+                  style={{
+                    fontFamily: 'Cinzel, serif',
+                    fontSize: 10,
+                    color: 'var(--brown-dark)',
+                    letterSpacing: '0.08em',
+                  }}
+                >
+                  {entry.card.name}
+                </p>
+                <p
+                  style={{
+                    fontFamily: 'Cormorant Garamond, serif',
+                    fontSize: 12,
+                    fontStyle: 'italic',
+                    color: 'var(--brown-light)',
+                  }}
+                >
+                  {new Date(entry.readingDate).toLocaleDateString()}
+                </p>
               </div>
             ))}
           </div>
