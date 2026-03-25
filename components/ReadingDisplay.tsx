@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import { ReadingResult } from '../lib/types';
-import { TarotCard } from './TarotCard';
 
 interface ReadingDisplayProps {
   reading: ReadingResult;
@@ -10,23 +9,42 @@ interface ReadingDisplayProps {
 
 export function ReadingDisplay({ reading }: ReadingDisplayProps) {
   return (
-    <div className="space-y-8">
-      {/* Cards row */}
-      <div className="flex flex-wrap gap-4 justify-center">
-        {reading.cards.map((drawn, i) => (
-          <TarotCard key={i} drawn={drawn} isRevealed={true} isLoading={false} size="md" />
-        ))}
-      </div>
-
+    <div className="space-y-8 max-w-2xl mx-auto">
       {/* Overall energy */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-purple-950/40 border border-purple-800/30 rounded-xl p-5"
+        transition={{ duration: 0.5 }}
+        style={{
+          background: 'var(--cream-card)',
+          border: '1px solid var(--border-gold)',
+          borderRadius: 4,
+          padding: '28px 32px',
+        }}
       >
-        <h3 className="text-purple-400 text-xs font-semibold uppercase tracking-widest mb-2">Overall Energy</h3>
-        <p className="text-purple-100 leading-relaxed">{reading.overallEnergy}</p>
+        <p
+          style={{
+            fontFamily: 'Cinzel, serif',
+            fontSize: 10,
+            letterSpacing: '0.2em',
+            color: 'var(--gold)',
+            textTransform: 'uppercase' as const,
+            marginBottom: 12,
+          }}
+        >
+          The Energy of This Reading
+        </p>
+        <p
+          style={{
+            fontFamily: 'Cormorant Garamond, serif',
+            fontSize: 20,
+            lineHeight: 1.6,
+            color: 'var(--brown-dark)',
+            fontStyle: 'italic',
+          }}
+        >
+          {reading.overallEnergy}
+        </p>
       </motion.div>
 
       {/* Per-card readings */}
@@ -36,23 +54,68 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
             key={i}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 + i * 0.1 }}
-            className="border border-purple-900/40 rounded-xl p-5 space-y-3"
+            transition={{ delay: 0.15 + i * 0.1, duration: 0.4 }}
+            style={{
+              background: 'var(--cream-card)',
+              border: '1px solid var(--border-brown)',
+              borderRadius: 4,
+              padding: '22px 28px',
+            }}
           >
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-4 mb-3">
               <div>
-                <h4 className="text-purple-200 font-semibold">{cr.card}</h4>
-                <p className="text-purple-500 text-xs">{cr.position}</p>
+                <h4
+                  style={{
+                    fontFamily: 'Cinzel, serif',
+                    fontSize: 13,
+                    letterSpacing: '0.07em',
+                    color: 'var(--brown-dark)',
+                    marginBottom: 2,
+                  }}
+                >
+                  {cr.card}
+                </h4>
+                <p
+                  style={{
+                    fontFamily: 'Cormorant Garamond, serif',
+                    fontSize: 14,
+                    fontStyle: 'italic',
+                    color: 'var(--brown-light)',
+                  }}
+                >
+                  {cr.position}
+                </p>
               </div>
-              <div className="flex flex-wrap gap-1 justify-end max-w-[50%]">
+              <div className="flex flex-wrap gap-1 justify-end max-w-[55%]">
                 {cr.keywords.map((kw) => (
-                  <span key={kw} className="text-xs px-2 py-0.5 rounded-full bg-purple-900/50 text-purple-300 border border-purple-800/40">
+                  <span
+                    key={kw}
+                    style={{
+                      fontFamily: 'Cormorant Garamond, serif',
+                      fontSize: 12,
+                      color: 'var(--sage)',
+                      border: '1px solid rgba(74,122,101,0.25)',
+                      borderRadius: 2,
+                      padding: '2px 8px',
+                      background: 'var(--sage-pale)',
+                      fontStyle: 'italic',
+                    }}
+                  >
                     {kw}
                   </span>
                 ))}
               </div>
             </div>
-            <p className="text-purple-200/80 text-sm leading-relaxed">{cr.interpretation}</p>
+            <p
+              style={{
+                fontFamily: 'Cormorant Garamond, serif',
+                fontSize: 18,
+                lineHeight: 1.65,
+                color: 'var(--brown-mid)',
+              }}
+            >
+              {cr.interpretation}
+            </p>
           </motion.div>
         ))}
       </div>
@@ -61,25 +124,81 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="bg-gradient-to-br from-purple-900/30 to-indigo-950/30 border border-purple-700/40 rounded-xl p-6 space-y-4"
+        transition={{ delay: 0.5, duration: 0.5 }}
+        style={{
+          background: 'linear-gradient(135deg, var(--gold-pale) 0%, var(--cream-card) 100%)',
+          border: '1px solid rgba(196,146,42,0.3)',
+          borderRadius: 4,
+          padding: '28px 32px',
+          position: 'relative' as const,
+        }}
       >
-        <h3 className="text-purple-300 text-xs font-semibold uppercase tracking-widest">The Reading</h3>
-        <p className="text-purple-100 leading-relaxed">{reading.synthesis}</p>
-        <div className="border-t border-purple-800/30 pt-4">
-          <p className="text-purple-300 text-sm italic">"{reading.affirmation}"</p>
+        <p
+          style={{
+            fontFamily: 'Cinzel, serif',
+            fontSize: 10,
+            letterSpacing: '0.2em',
+            color: 'var(--gold)',
+            textTransform: 'uppercase' as const,
+            marginBottom: 16,
+          }}
+        >
+          The Full Reading
+        </p>
+        <p
+          style={{
+            fontFamily: 'Cormorant Garamond, serif',
+            fontSize: 20,
+            lineHeight: 1.7,
+            color: 'var(--brown-dark)',
+          }}
+        >
+          {reading.synthesis}
+        </p>
+
+        {/* Affirmation */}
+        <div
+          style={{
+            borderTop: '1px solid rgba(196,146,42,0.2)',
+            marginTop: 20,
+            paddingTop: 20,
+          }}
+        >
+          <p
+            style={{
+              fontFamily: 'Cormorant Garamond, serif',
+              fontSize: 22,
+              fontStyle: 'italic',
+              color: 'var(--gold)',
+              textAlign: 'center' as const,
+              lineHeight: 1.4,
+            }}
+          >
+            &ldquo;{reading.affirmation}&rdquo;
+          </p>
         </div>
       </motion.div>
 
       {/* Timing */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        className="text-center"
-      >
-        <p className="text-purple-500 text-xs">{reading.notableTiming}</p>
-      </motion.div>
+      {reading.notableTiming && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7 }}
+          className="text-center"
+        >
+          <p
+            style={{
+              fontFamily: 'Cormorant Garamond, serif',
+              fontSize: 15,
+              fontStyle: 'italic',
+              color: 'var(--brown-light)',
+            }}
+          >
+            {reading.notableTiming}
+          </p>
+        </motion.div>
+      )}
     </div>
   );
 }

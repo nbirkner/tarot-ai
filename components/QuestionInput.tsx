@@ -7,39 +7,86 @@ interface QuestionInputProps {
 }
 
 const SUGGESTIONS = [
-  'What do I need to focus on right now?',
-  'What energy surrounds me this week?',
-  'What is blocking my growth?',
+  'What does this moment want from me?',
+  'Where should I direct my energy?',
+  'What am I not seeing clearly?',
   'What should I release?',
   'What is the path forward?',
+  'What do I need to hear today?',
 ];
 
 export function QuestionInput({ value, onChange, onSkip }: QuestionInputProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Ask your question, or leave blank for a general reading..."
-        rows={3}
-        className="w-full bg-slate-900 border border-purple-800/60 rounded-lg px-4 py-3 text-purple-100 placeholder-purple-600 text-sm resize-none focus:outline-none focus:border-purple-500"
+        placeholder="What weighs on your heart? Or leave blank for an open reading..."
+        rows={4}
+        className="input-field"
+        style={{ resize: 'none', lineHeight: 1.6 }}
       />
-      <div className="flex flex-wrap gap-2">
-        {SUGGESTIONS.map((s) => (
-          <button
-            key={s}
-            onClick={() => onChange(s)}
-            className="text-xs px-3 py-1.5 rounded-full border border-purple-900/50 text-purple-500 hover:text-purple-300 hover:border-purple-700 transition-all"
-          >
-            {s}
-          </button>
-        ))}
+
+      <div>
+        <p
+          style={{
+            fontFamily: 'Cormorant Garamond, serif',
+            fontSize: 13,
+            color: 'var(--brown-light)',
+            fontStyle: 'italic',
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            marginBottom: 10,
+          }}
+        >
+          Suggested questions
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {SUGGESTIONS.map((s) => (
+            <button
+              key={s}
+              onClick={() => onChange(s)}
+              style={{
+                fontFamily: 'Cormorant Garamond, serif',
+                fontSize: 14,
+                fontStyle: 'italic',
+                color: 'var(--brown-mid)',
+                border: '1px solid var(--border-gold)',
+                borderRadius: 2,
+                padding: '5px 12px',
+                background: 'transparent',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--gold)';
+                e.currentTarget.style.color = 'var(--gold)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-gold)';
+                e.currentTarget.style.color = 'var(--brown-mid)';
+              }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
       </div>
+
       <button
         onClick={onSkip}
-        className="text-sm text-purple-600 hover:text-purple-400 transition-colors"
+        style={{
+          fontFamily: 'Cormorant Garamond, serif',
+          fontSize: 15,
+          color: 'var(--brown-light)',
+          fontStyle: 'italic',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: 0,
+        }}
       >
-        Skip — just pull a card →
+        Skip — let the cards speak freely →
       </button>
     </div>
   );

@@ -21,67 +21,121 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
     if (t === 'birth-data') onChange({ type: 'birth-data', date: '', time: '', location: '' });
   }
 
+  const tabs: { id: Tab; label: string; desc: string }[] = [
+    { id: 'none', label: 'Skip', desc: 'General reading' },
+    { id: 'sun-sign', label: 'Sun Sign', desc: 'Quick & easy' },
+    { id: 'birth-data', label: 'Full Chart', desc: 'Deepest reading' },
+  ];
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Tab switcher */}
       <div className="flex gap-2">
-        {(['none', 'sun-sign', 'birth-data'] as Tab[]).map((t) => (
+        {tabs.map((t) => (
           <button
-            key={t}
-            onClick={() => switchTab(t)}
-            className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
-              tab === t
-                ? 'border-purple-500 bg-purple-950 text-purple-200'
-                : 'border-purple-900/50 text-purple-500 hover:text-purple-300'
-            }`}
+            key={t.id}
+            onClick={() => switchTab(t.id)}
+            style={{
+              flex: 1,
+              padding: '10px 8px',
+              border: '1px solid',
+              borderColor: tab === t.id ? 'var(--gold)' : 'var(--border-gold)',
+              borderRadius: 2,
+              background: tab === t.id ? 'var(--gold-pale)' : 'var(--cream-card)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              textAlign: 'center' as const,
+            }}
           >
-            {t === 'none' ? 'Skip' : t === 'sun-sign' ? 'Sun Sign' : 'Full Birth Data'}
+            <p
+              style={{
+                fontFamily: 'Cinzel, serif',
+                fontSize: 11,
+                letterSpacing: '0.1em',
+                color: tab === t.id ? 'var(--brown-dark)' : 'var(--brown-light)',
+                marginBottom: 2,
+              }}
+            >
+              {t.label}
+            </p>
+            <p
+              style={{
+                fontFamily: 'Cormorant Garamond, serif',
+                fontSize: 13,
+                fontStyle: 'italic',
+                color: 'var(--brown-light)',
+              }}
+            >
+              {t.desc}
+            </p>
           </button>
         ))}
       </div>
 
       {tab === 'sun-sign' && (
-        <select
-          className="w-full bg-slate-900 border border-purple-800/60 rounded-lg px-3 py-2 text-purple-200 text-sm"
-          value={value.type === 'sun-sign' ? value.sign : ''}
-          onChange={(e) => onChange({ type: 'sun-sign', sign: e.target.value })}
-        >
-          <option value="">Select your sun sign...</option>
-          {SUN_SIGN_LIST.map((sign: string) => (
-            <option key={sign} value={sign}>{sign}</option>
-          ))}
-        </select>
+        <div>
+          <p
+            style={{
+              fontFamily: 'Cormorant Garamond, serif',
+              fontSize: 14,
+              fontStyle: 'italic',
+              color: 'var(--brown-light)',
+              marginBottom: 8,
+            }}
+          >
+            Your sun sign shapes the reading&apos;s lens.
+          </p>
+          <select
+            className="input-field"
+            value={value.type === 'sun-sign' ? value.sign : ''}
+            onChange={(e) => onChange({ type: 'sun-sign', sign: e.target.value })}
+          >
+            <option value="">Select your sun sign...</option>
+            {SUN_SIGN_LIST.map((sign) => (
+              <option key={sign} value={sign}>
+                {sign}
+              </option>
+            ))}
+          </select>
+        </div>
       )}
 
       {tab === 'birth-data' && (
         <div className="space-y-3">
+          <p
+            style={{
+              fontFamily: 'Cormorant Garamond, serif',
+              fontSize: 14,
+              fontStyle: 'italic',
+              color: 'var(--brown-light)',
+            }}
+          >
+            Your natal chart allows a deeply personal reading.
+          </p>
           <input
             type="date"
-            placeholder="Birth date"
-            className="w-full bg-slate-900 border border-purple-800/60 rounded-lg px-3 py-2 text-purple-200 text-sm"
+            className="input-field"
             value={value.type === 'birth-data' ? value.date : ''}
             onChange={(e) =>
-              value.type === 'birth-data' &&
-              onChange({ ...value, date: e.target.value })
+              value.type === 'birth-data' && onChange({ ...value, date: e.target.value })
             }
           />
           <input
             type="time"
             placeholder="Birth time (optional)"
-            className="w-full bg-slate-900 border border-purple-800/60 rounded-lg px-3 py-2 text-purple-200 text-sm"
+            className="input-field"
             value={value.type === 'birth-data' ? value.time : ''}
             onChange={(e) =>
-              value.type === 'birth-data' &&
-              onChange({ ...value, time: e.target.value })
+              value.type === 'birth-data' && onChange({ ...value, time: e.target.value })
             }
           />
           <input
             type="text"
-            placeholder="Birth location (city, country)"
-            className="w-full bg-slate-900 border border-purple-800/60 rounded-lg px-3 py-2 text-purple-200 text-sm"
+            placeholder="Birth location, e.g. Paris, France"
+            className="input-field"
             value={value.type === 'birth-data' ? value.location : ''}
             onChange={(e) =>
-              value.type === 'birth-data' &&
-              onChange({ ...value, location: e.target.value })
+              value.type === 'birth-data' && onChange({ ...value, location: e.target.value })
             }
           />
         </div>
