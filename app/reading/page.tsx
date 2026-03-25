@@ -6,6 +6,7 @@ import { SpreadSelector } from '../../components/SpreadSelector';
 import { DeckSelector } from '../../components/DeckSelector';
 import { AstrologyInput } from '../../components/AstrologyInput';
 import { QuestionInput } from '../../components/QuestionInput';
+import { PhotoUpload } from '../../components/PhotoUpload';
 import { TarotCard } from '../../components/TarotCard';
 import { ReadingDisplay } from '../../components/ReadingDisplay';
 import {
@@ -19,7 +20,7 @@ import { drawCards, isReversed, getSpread } from '../../lib/tarot';
 import { buildReadingContext, formatAstrologyContext } from '../../lib/astronomy';
 import { getUserId, saveReading } from '../../lib/storage';
 
-type Step = 'question' | 'spread' | 'deck' | 'astrology' | 'generating' | 'reveal' | 'reading';
+type Step = 'question' | 'spread' | 'deck' | 'photo' | 'astrology' | 'generating' | 'reveal' | 'reading';
 
 const WITCHY_PHRASES = [
   'manifesting your destiny...',
@@ -114,6 +115,10 @@ const STEP_CONFIG: Record<
     title: 'Choose your deck',
     subtitle: 'Each style conjures a different energy.',
   },
+  photo: {
+    title: 'Add your photo',
+    subtitle: 'Optional — lets the cards mirror your likeness.',
+  },
   astrology: {
     title: 'Your astrological self',
     subtitle: 'Optional — deepens the reading. Nothing is saved.',
@@ -124,6 +129,7 @@ const SETUP_STEPS: Array<Exclude<Step, 'generating' | 'reveal' | 'reading'>> = [
   'question',
   'spread',
   'deck',
+  'photo',
   'astrology',
 ];
 
@@ -132,6 +138,7 @@ export default function ReadingPage() {
   const [question, setQuestion] = useState('');
   const [spreadType, setSpreadType] = useState<SpreadType>('three');
   const [deckStyle, setDeckStyle] = useState<DeckStyle>('dark-gothic');
+  const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [astrology, setAstrology] = useState<AstrologyInputType>({ type: 'none' });
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
@@ -183,6 +190,7 @@ export default function ReadingPage() {
             deckStyle,
             userId,
             date: dateStr,
+            ...(userPhoto ? { userPhotoBase64: userPhoto } : {}),
           }),
         });
         const data = await res.json();
@@ -245,6 +253,7 @@ export default function ReadingPage() {
   function reset() {
     setStep('question');
     setQuestion('');
+    setUserPhoto(null);
     setDrawnCards([]);
     setFlippedCards(new Set());
     setIsReadingReady(false);
@@ -323,6 +332,9 @@ export default function ReadingPage() {
                 )}
                 {step === 'deck' && (
                   <DeckSelector value={deckStyle} onChange={setDeckStyle} />
+                )}
+                {step === 'photo' && (
+                  <PhotoUpload value={userPhoto} onChange={setUserPhoto} />
                 )}
                 {step === 'astrology' && (
                   <AstrologyInput value={astrology} onChange={setAstrology} />

@@ -47,6 +47,7 @@ export interface GenerateCardRequest {
   deckStyle: DeckStyle;
   userId: string;
   date: string; // YYYY-MM-DD for seed
+  userPhotoBase64?: string; // optional base64 data URI for personalized card faces
 }
 
 export interface GenerateCardResponse {

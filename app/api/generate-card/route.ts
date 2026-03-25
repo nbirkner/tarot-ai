@@ -4,7 +4,8 @@ import { STYLE_MODIFIERS } from '../../../data/style-modifiers';
 import { GenerateCardRequest } from '../../../lib/types';
 
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
-const IMAGE_MODEL = 'black-forest-labs/FLUX.1-schnell';
+const IMAGE_MODEL_SCHNELL = 'black-forest-labs/FLUX.1-schnell';
+const IMAGE_MODEL_KONTEXT = 'black-forest-labs/FLUX.1-kontext-pro';
 // Cost: ~$0.001 per 512x768 card at FLUX schnell pricing
 
 function buildSeed(cardName: string, userId: string, date: string): number {
@@ -21,7 +22,7 @@ function buildSeed(cardName: string, userId: string, date: string): number {
 export async function POST(req: NextRequest) {
   try {
     const body: GenerateCardRequest = await req.json();
-    const { cardName, deckStyle, userId, date } = body;
+    const { cardName, deckStyle, userId, date, userPhotoBase64 } = body;
 
     const basePrompt = CARD_PROMPTS[cardName];
     if (!basePrompt) {
@@ -29,8 +30,48 @@ export async function POST(req: NextRequest) {
     }
 
     const styleModifier = STYLE_MODIFIERS[deckStyle];
-    const fullPrompt = `${basePrompt} ${styleModifier}. Ornate decorative tarot card border with corner flourishes. Card title "${cardName.toUpperCase()}" at the bottom in gothic serif lettering. High detail illustration.`;
+    let fullPrompt = `${basePrompt} ${styleModifier}. Ornate decorative tarot card border with corner flourishes. Card title "${cardName.toUpperCase()}" at the bottom in gothic serif lettering. High detail illustration.`;
 
+    if (userPhotoBase64) {
+      // Try FLUX.1-kontext-pro with the reference photo
+      fullPrompt += ' The human figures in this card should have the facial features and appearance of the person in the reference image.';
+
+      try {
+        const kontextResponse = await fetch('https://api.together.xyz/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${TOGETHER_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: IMAGE_MODEL_KONTEXT,
+            prompt: fullPrompt,
+            image_url: userPhotoBase64,
+            width: 512,
+            height: 768,
+            steps: 28,
+            n: 1,
+          }),
+        });
+
+        if (kontextResponse.ok) {
+          const kontextData = await kontextResponse.json();
+          const imageUrl = kontextData.data?.[0]?.url;
+          if (imageUrl) {
+            return NextResponse.json({ imageUrl, estimatedCost: 0.004 });
+          }
+        } else {
+          const errText = await kontextResponse.text();
+          console.error('Kontext API error, falling back to schnell:', errText);
+        }
+      } catch (kontextErr) {
+        console.error('Kontext request failed, falling back to schnell:', kontextErr);
+      }
+
+      // Fall through to schnell below if kontext failed
+    }
+
+    // Default: FLUX.1-schnell (no photo, or kontext fallback)
     const seed = buildSeed(cardName, userId, date);
 
     const response = await fetch('https://api.together.xyz/v1/images/generations', {
@@ -40,7 +81,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: IMAGE_MODEL,
+        model: IMAGE_MODEL_SCHNELL,
         prompt: fullPrompt,
         width: 512,
         height: 768,
