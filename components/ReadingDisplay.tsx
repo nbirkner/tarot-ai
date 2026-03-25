@@ -19,7 +19,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
           background: 'var(--cream-card)',
           border: '1px solid var(--border-gold)',
           borderRadius: 4,
-          padding: '28px 32px',
+          padding: 'clamp(16px, 4vw, 28px) clamp(16px, 5vw, 32px)',
         }}
       >
         <p
@@ -59,10 +59,10 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
               background: 'var(--cream-card)',
               border: '1px solid var(--border-brown)',
               borderRadius: 4,
-              padding: '22px 28px',
+              padding: 'clamp(14px, 3.5vw, 22px) clamp(14px, 4.5vw, 28px)',
             }}
           >
-            <div className="flex items-start justify-between gap-4 mb-3">
+            <div className="flex flex-wrap items-start justify-between gap-4 mb-3">
               <div>
                 <h4
                   style={{
@@ -129,7 +129,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
           background: 'linear-gradient(135deg, var(--gold-pale) 0%, var(--cream-card) 100%)',
           border: '1px solid rgba(196,146,42,0.3)',
           borderRadius: 4,
-          padding: '28px 32px',
+          padding: 'clamp(16px, 4vw, 28px) clamp(16px, 5vw, 32px)',
           position: 'relative' as const,
         }}
       >

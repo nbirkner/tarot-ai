@@ -134,7 +134,7 @@ export default function Home() {
 
       {/* Large ornate tarot card silhouette — right side, slightly rotated, bleeds off edge */}
       <div
-        className="absolute pointer-events-none float-slow"
+        className="hidden sm:block absolute pointer-events-none float-slow"
         style={{
           right: '-60px',
           top: '50%',
@@ -223,8 +223,8 @@ export default function Home() {
       </div>
 
       {/* ─── ASYMMETRIC LAYOUT ─── */}
-      <div className="relative z-10 min-h-screen flex flex-col justify-center px-8 md:px-16 lg:px-24">
-        <div className="max-w-5xl w-full">
+      <div className="relative z-10 min-h-screen flex flex-col justify-center px-6 sm:px-8 md:px-16 lg:px-24">
+        <div className="max-w-5xl w-full mx-auto sm:mx-0">
 
           {/* Top ornament line */}
           <div
@@ -248,7 +248,7 @@ export default function Home() {
             <p
               style={{
                 fontFamily: 'Pinyon Script, cursive',
-                fontSize: 'clamp(52px, 9vw, 110px)',
+                fontSize: 'clamp(36px, 9vw, 110px)',
                 color: 'var(--brown-dark)',
                 lineHeight: 1.05,
                 letterSpacing: '0.01em',
@@ -364,14 +364,16 @@ export default function Home() {
               opacity: 0,
             }}
           >
-            <Link href="/reading" className="inline-block">
-              <button
-                className="btn-primary"
-                style={{ fontSize: 13, letterSpacing: '0.2em', padding: '16px 52px' }}
-              >
-                BEGIN YOUR READING
-              </button>
-            </Link>
+            <div className="w-full sm:w-auto">
+              <Link href="/reading" className="block sm:inline-block">
+                <button
+                  className="btn-primary w-full sm:w-auto"
+                  style={{ fontSize: 13, letterSpacing: '0.2em', padding: '16px 52px' }}
+                >
+                  BEGIN YOUR READING
+                </button>
+              </Link>
+            </div>
           </div>
 
           {/* Credit */}

@@ -234,3 +234,13 @@ body::before {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--parchment); }
 ::-webkit-scrollbar-thumb { background: var(--gold-muted); border-radius: 3px; }
+
+/* Mobile: prevent iOS zoom on inputs */
+input, textarea, select {
+  font-size: max(16px, 1em);
+}
+
+/* Touch targets */
+.btn-primary, .btn-secondary {
+  min-height: 44px;
+}

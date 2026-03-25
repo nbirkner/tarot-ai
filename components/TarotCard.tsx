@@ -142,7 +142,11 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
   return (
     <div className="flex flex-col items-center gap-3">
       <div
-        style={{ width, height, perspective: 1200 }}
+        style={{
+          width: `min(${width}px, 42vw)`,
+          height: `min(${height}px, 63vw)`,
+          perspective: 1200,
+        }}
         onClick={isFlippable && !isFlipped ? onClick : undefined}
         className={isFlippable && !isFlipped ? 'cursor-pointer' : ''}
       >
