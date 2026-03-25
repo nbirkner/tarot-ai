@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SpreadSelector } from '../../components/SpreadSelector';
 import { DeckSelector } from '../../components/DeckSelector';
@@ -19,7 +19,113 @@ import { drawCards, isReversed, getSpread } from '../../lib/tarot';
 import { buildReadingContext, formatAstrologyContext } from '../../lib/astronomy';
 import { getUserId, saveReading } from '../../lib/storage';
 
-type Step = 'question' | 'spread' | 'deck' | 'astrology' | 'generating' | 'reading';
+type Step = 'question' | 'spread' | 'deck' | 'astrology' | 'generating' | 'reveal' | 'reading';
+
+const WITCHY_PHRASES = [
+  'manifesting your destiny...',
+  'ascending through the veil...',
+  'turbochakraing your intentions...',
+  'consulting the ancient ones...',
+  'weaving the threads of fate...',
+  'aligning the celestial frequencies...',
+  'communing with the cosmos...',
+  'reading the akashic records...',
+  'decoding the lunar signals...',
+  'channeling the oracle within...',
+  'dissolving karmic blockages...',
+  'attuning to your higher self...',
+];
+
+function WitchyLoader() {
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setPhraseIndex((i) => (i + 1) % WITCHY_PHRASES.length);
+        setVisible(true);
+      }, 400);
+    }, 2800);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="text-center py-8">
+      {/* Orbiting stars */}
+      <div className="relative w-16 h-16 mx-auto mb-6">
+        <div
+          className="absolute inset-0 rounded-full border border-[rgba(196,146,42,0.3)]"
+          style={{ animation: 'rotate-slow 8s linear infinite' }}
+        >
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[#C4922A] text-xs">
+            ✦
+          </div>
+        </div>
+        <div
+          className="absolute inset-2 rounded-full border border-[rgba(196,146,42,0.2)]"
+          style={{ animation: 'rotate-slow 5s linear infinite reverse' }}
+        >
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[#C4922A] text-xs opacity-60">✦</div>
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-[#C4922A] text-lg">☽</span>
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {visible && (
+          <motion.p
+            key={phraseIndex}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.35 }}
+            style={{
+              fontFamily: 'Cormorant Garamond, serif',
+              fontSize: 20,
+              fontStyle: 'italic',
+              color: '#C4922A',
+              letterSpacing: '0.02em',
+            }}
+          >
+            {WITCHY_PHRASES[phraseIndex]}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+const STEP_CONFIG: Record<
+  Exclude<Step, 'generating' | 'reveal' | 'reading'>,
+  { title: string; subtitle?: string }
+> = {
+  question: {
+    title: 'What calls for clarity?',
+    subtitle: 'Ask a question, or let the cards speak freely.',
+  },
+  spread: {
+    title: 'Choose your spread',
+    subtitle: 'How many cards shall the oracle draw?',
+  },
+  deck: {
+    title: 'Choose your deck',
+    subtitle: 'Each style conjures a different energy.',
+  },
+  astrology: {
+    title: 'Your astrological self',
+    subtitle: 'Optional — deepens the reading. Nothing is saved.',
+  },
+};
+
+const SETUP_STEPS: Array<Exclude<Step, 'generating' | 'reveal' | 'reading'>> = [
+  'question',
+  'spread',
+  'deck',
+  'astrology',
+];
 
 export default function ReadingPage() {
   const [step, setStep] = useState<Step>('question');
@@ -28,21 +134,28 @@ export default function ReadingPage() {
   const [deckStyle, setDeckStyle] = useState<DeckStyle>('dark-gothic');
   const [astrology, setAstrology] = useState<AstrologyInputType>({ type: 'none' });
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
-  const [revealedCount, setRevealedCount] = useState(0);
+  const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
+  const [isReadingReady, setIsReadingReady] = useState(false);
   const [reading, setReading] = useState<ReadingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [totalSpend, setTotalSpend] = useState(0);
+  const resolvedImagesRef = useRef<(string | undefined)[]>([]);
 
-  const BUDGET_LIMIT = 100;
+  const allFlipped = drawnCards.length > 0 && flippedCards.size === drawnCards.length;
+
+  function flipCard(index: number) {
+    if (!isReadingReady) return;
+    setFlippedCards((prev) => {
+      const next = new Set(prev);
+      next.add(index);
+      return next;
+    });
+  }
 
   async function startReading() {
-    if (totalSpend >= BUDGET_LIMIT) {
-      setError('Budget limit reached. Reading disabled.');
-      return;
-    }
-
     setStep('generating');
     setError(null);
+    setIsReadingReady(false);
+    setFlippedCards(new Set());
 
     const spread = getSpread(spreadType);
     const cards = drawCards(spread.cardCount);
@@ -50,31 +163,16 @@ export default function ReadingPage() {
     const userId = getUserId();
     const dateStr = now.toISOString().split('T')[0];
 
-    // Initialize drawn cards without images
+    // All cards appear face-down immediately
     const initialDrawn: DrawnCard[] = cards.map((card, i) => ({
       card,
       position: spread.positions[i],
       reversed: isReversed(),
     }));
     setDrawnCards(initialDrawn);
+    resolvedImagesRef.current = new Array(initialDrawn.length).fill(undefined);
 
-    // Track resolved images in a local array (avoids stale closure when building final result)
-    const resolvedImages: (string | undefined)[] = new Array(initialDrawn.length).fill(undefined);
-    // Track which cards have their image ready (for ordered reveal)
-    const imageReady: boolean[] = new Array(initialDrawn.length).fill(false);
-
-    // Reveal cards in positional order: card i reveals only after its image is ready
-    // AND all previous cards have already been revealed
-    function attemptReveal(upToIndex: number) {
-      let next = upToIndex;
-      while (next < initialDrawn.length && imageReady[next]) {
-        next++;
-      }
-      setRevealedCount(next);
-      setDrawnCards(initialDrawn.map((d, i) => ({ ...d, imageUrl: resolvedImages[i] })));
-    }
-
-    // Generate all card images in parallel
+    // Generate images in parallel (background)
     const imagePromises = initialDrawn.map(async (drawn, i) => {
       try {
         const res = await fetch('/api/generate-card', {
@@ -88,24 +186,20 @@ export default function ReadingPage() {
           }),
         });
         const data = await res.json();
-        resolvedImages[i] = data.imageUrl;
-        setTotalSpend((prev) => prev + (data.estimatedCost || 0));
+        if (data.imageUrl) {
+          resolvedImagesRef.current[i] = data.imageUrl;
+        }
       } catch {
-        console.error(`Failed to generate image for ${drawn.card.name}`);
-      } finally {
-        imageReady[i] = true;
-        attemptReveal(0);
+        console.error(`Image gen failed for ${drawn.card.name}`);
       }
     });
 
-    await Promise.all(imagePromises);
-
-    // Generate the reading interpretation
+    // Generate reading in parallel with images
     const context = buildReadingContext(now);
     const astrologyContext = formatAstrologyContext(astrology, now);
     void astrologyContext;
 
-    const readingRes = await fetch('/api/generate-reading', {
+    const readingPromise = fetch('/api/generate-reading', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -119,19 +213,23 @@ export default function ReadingPage() {
         astrology,
         ...context,
       }),
-    });
+    }).then((r) => r.json());
 
-    const readingData = await readingRes.json();
-    setTotalSpend((prev) => prev + (readingData.estimatedCost || 0));
+    // Wait for both images and reading
+    const [, readingData] = await Promise.all([Promise.all(imagePromises), readingPromise]);
 
-    // Use resolvedImages (local array) not drawnCards state — avoids stale closure
+    // Update drawn cards with resolved images
+    setDrawnCards(
+      initialDrawn.map((d, i) => ({ ...d, imageUrl: resolvedImagesRef.current[i] }))
+    );
+
     const result: ReadingResult = {
       id: crypto.randomUUID(),
       date: now.toISOString(),
       question,
       spreadType,
       deckStyle,
-      cards: initialDrawn.map((d, i) => ({ ...d, imageUrl: resolvedImages[i] })),
+      cards: initialDrawn.map((d, i) => ({ ...d, imageUrl: resolvedImagesRef.current[i] })),
       overallEnergy: readingData.overallEnergy || '',
       cardReadings: readingData.cardReadings || [],
       synthesis: readingData.synthesis || '',
@@ -141,137 +239,266 @@ export default function ReadingPage() {
 
     saveReading(result);
     setReading(result);
-    setStep('reading');
+    setIsReadingReady(true); // Cards now glow and are clickable
   }
 
   function reset() {
     setStep('question');
     setQuestion('');
     setDrawnCards([]);
-    setRevealedCount(0);
+    setFlippedCards(new Set());
+    setIsReadingReady(false);
     setReading(null);
     setError(null);
   }
 
-  const STEP_TITLES: Record<Step, string> = {
-    question: 'What would you like to ask?',
-    spread: 'Choose your spread',
-    deck: 'Choose your deck',
-    astrology: 'Add your astrological context',
-    generating: 'Drawing your cards...',
-    reading: 'Your reading',
-  };
+  // Determine card size based on count
+  const cardSize =
+    drawnCards.length === 1
+      ? 'hero'
+      : drawnCards.length <= 3
+      ? 'lg'
+      : drawnCards.length <= 5
+      ? 'md'
+      : 'sm';
+
+  const isSetupStep = SETUP_STEPS.includes(step as (typeof SETUP_STEPS)[number]);
 
   return (
-    <main className="min-h-screen bg-slate-950 pt-20 pb-16">
-      <div className="max-w-2xl mx-auto px-4">
+    <main className="min-h-screen pt-20 pb-20" style={{ background: 'var(--cream)' }}>
+      <div className="max-w-3xl mx-auto px-6">
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25 }}
-            className="space-y-6"
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
           >
-            {step !== 'generating' && step !== 'reading' && (
-              <h2 className="text-purple-200 text-xl font-semibold">{STEP_TITLES[step]}</h2>
-            )}
-
-            {error && (
-              <div className="bg-red-950/40 border border-red-800/40 rounded-lg p-4 text-red-300 text-sm">
-                {error}
-              </div>
-            )}
-
-            {step === 'question' && (
-              <div className="space-y-6">
-                <QuestionInput
-                  value={question}
-                  onChange={setQuestion}
-                  onSkip={() => setStep('spread')}
-                />
-                <button
-                  onClick={() => setStep('spread')}
-                  className="w-full py-3 bg-purple-800 hover:bg-purple-700 text-purple-100 rounded-full font-medium transition-colors text-sm"
-                >
-                  Continue →
-                </button>
-              </div>
-            )}
-
-            {step === 'spread' && (
-              <div className="space-y-6">
-                <SpreadSelector value={spreadType} onChange={setSpreadType} />
-                <button
-                  onClick={() => setStep('deck')}
-                  className="w-full py-3 bg-purple-800 hover:bg-purple-700 text-purple-100 rounded-full font-medium transition-colors text-sm"
-                >
-                  Continue →
-                </button>
-              </div>
-            )}
-
-            {step === 'deck' && (
-              <div className="space-y-6">
-                <DeckSelector value={deckStyle} onChange={setDeckStyle} />
-                <button
-                  onClick={() => setStep('astrology')}
-                  className="w-full py-3 bg-purple-800 hover:bg-purple-700 text-purple-100 rounded-full font-medium transition-colors text-sm"
-                >
-                  Continue →
-                </button>
-              </div>
-            )}
-
-            {step === 'astrology' && (
-              <div className="space-y-6">
-                <p className="text-purple-400 text-sm">
-                  Optional — helps personalize your reading. Nothing is saved.
-                </p>
-                <AstrologyInput value={astrology} onChange={setAstrology} />
-                <button
-                  onClick={startReading}
-                  className="w-full py-3 bg-purple-800 hover:bg-purple-700 text-purple-100 rounded-full font-medium transition-colors text-sm"
-                >
-                  Draw my cards →
-                </button>
-              </div>
-            )}
-
-            {step === 'generating' && (
-              <div className="space-y-8">
-                <div className="text-center">
-                  <p className="text-purple-300 text-lg">Drawing your cards...</p>
-                  <p className="text-purple-500 text-sm mt-1">Each card is being uniquely generated for you</p>
+            {/* Setup steps */}
+            {isSetupStep && (
+              <div className="max-w-xl mx-auto space-y-8">
+                {/* Step header */}
+                <div className="text-center space-y-2 pt-6">
+                  <h2
+                    style={{
+                      fontFamily: 'Cinzel, serif',
+                      fontSize: 22,
+                      color: 'var(--brown-dark)',
+                      letterSpacing: '0.06em',
+                    }}
+                  >
+                    {STEP_CONFIG[step as keyof typeof STEP_CONFIG]?.title}
+                  </h2>
+                  {STEP_CONFIG[step as keyof typeof STEP_CONFIG]?.subtitle && (
+                    <p
+                      style={{
+                        fontFamily: 'Cormorant Garamond, serif',
+                        fontSize: 17,
+                        color: 'var(--brown-mid)',
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      {STEP_CONFIG[step as keyof typeof STEP_CONFIG]?.subtitle}
+                    </p>
+                  )}
                 </div>
-                <div className="flex flex-wrap gap-4 justify-center">
-                  {drawnCards.map((drawn, i) => (
-                    <TarotCard
-                      key={i}
-                      drawn={drawn}
-                      isRevealed={i < revealedCount}
-                      isLoading={!drawn.imageUrl && i >= revealedCount}
-                      size="md"
+
+                {/* Divider */}
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 h-px" style={{ background: 'var(--border-gold)' }} />
+                  <span style={{ color: 'var(--gold)', fontSize: 12 }}>✦</span>
+                  <div className="flex-1 h-px" style={{ background: 'var(--border-gold)' }} />
+                </div>
+
+                {step === 'question' && (
+                  <QuestionInput
+                    value={question}
+                    onChange={setQuestion}
+                    onSkip={() => setStep('spread')}
+                  />
+                )}
+                {step === 'spread' && (
+                  <SpreadSelector value={spreadType} onChange={setSpreadType} />
+                )}
+                {step === 'deck' && (
+                  <DeckSelector value={deckStyle} onChange={setDeckStyle} />
+                )}
+                {step === 'astrology' && (
+                  <AstrologyInput value={astrology} onChange={setAstrology} />
+                )}
+
+                {error && (
+                  <p
+                    style={{
+                      color: 'var(--rose)',
+                      fontFamily: 'Cormorant Garamond, serif',
+                      fontStyle: 'italic',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {error}
+                  </p>
+                )}
+
+                {/* Navigation */}
+                <div className="flex items-center justify-between pt-2">
+                  {step !== 'question' ? (
+                    <button
+                      onClick={() => {
+                        const i = SETUP_STEPS.indexOf(step as (typeof SETUP_STEPS)[number]);
+                        if (i > 0) setStep(SETUP_STEPS[i - 1]);
+                      }}
+                      className="btn-secondary"
+                    >
+                      ← Back
+                    </button>
+                  ) : (
+                    <div />
+                  )}
+
+                  {step === 'astrology' ? (
+                    <button onClick={startReading} className="btn-primary">
+                      Draw the Cards
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        const i = SETUP_STEPS.indexOf(step as (typeof SETUP_STEPS)[number]);
+                        setStep(SETUP_STEPS[i + 1]);
+                      }}
+                      className="btn-primary"
+                    >
+                      Continue →
+                    </button>
+                  )}
+                </div>
+
+                {/* Step indicator */}
+                <div className="flex justify-center gap-2 pt-2">
+                  {SETUP_STEPS.map((s) => (
+                    <div
+                      key={s}
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        background: s === step ? 'var(--gold)' : 'var(--border-gold)',
+                        border: '1px solid var(--gold-muted)',
+                      }}
                     />
                   ))}
                 </div>
               </div>
             )}
 
-            {step === 'reading' && reading && (
-              <div className="space-y-8">
-                <div className="text-center">
-                  <h2 className="text-purple-200 text-xl font-semibold">{STEP_TITLES.reading}</h2>
-                  {question && <p className="text-purple-500 text-sm mt-1">"{question}"</p>}
+            {/* Generating + Reveal state — cards shown face-down with loading */}
+            {(step === 'generating' || isReadingReady) && (
+              <div className="space-y-10">
+                {/* Page title */}
+                <div className="text-center pt-4">
+                  {question && (
+                    <p
+                      style={{
+                        fontFamily: 'Cormorant Garamond, serif',
+                        fontSize: 18,
+                        fontStyle: 'italic',
+                        color: 'var(--brown-mid)',
+                        marginBottom: 8,
+                      }}
+                    >
+                      &ldquo;{question}&rdquo;
+                    </p>
+                  )}
+                  {isReadingReady && (
+                    <motion.p
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      style={{
+                        fontFamily: 'Cinzel, serif',
+                        fontSize: 14,
+                        letterSpacing: '0.12em',
+                        color: 'var(--gold)',
+                      }}
+                    >
+                      YOUR CARDS AWAIT — CLICK EACH TO REVEAL
+                    </motion.p>
+                  )}
                 </div>
-                <ReadingDisplay reading={reading} />
-                <button
-                  onClick={reset}
-                  className="w-full py-3 border border-purple-800 hover:border-purple-600 text-purple-400 hover:text-purple-200 rounded-full font-medium transition-colors text-sm"
+
+                {/* Cards spread */}
+                <div
+                  className={`flex flex-wrap gap-6 justify-center items-end ${
+                    drawnCards.length === 1 ? 'py-4' : ''
+                  }`}
                 >
-                  New reading
-                </button>
+                  {drawnCards.map((drawn, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ delay: i * 0.1, duration: 0.5, ease: 'easeOut' }}
+                    >
+                      <TarotCard
+                        drawn={drawn}
+                        isFlipped={flippedCards.has(i)}
+                        isFlippable={isReadingReady && !flippedCards.has(i)}
+                        onClick={() => flipCard(i)}
+                        size={cardSize}
+                        showPosition={true}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Loading state */}
+                {!isReadingReady && <WitchyLoader />}
+
+                {/* Reading — appears after all cards flipped */}
+                <AnimatePresence>
+                  {allFlipped && reading && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6 }}
+                    >
+                      {/* Ornamental divider */}
+                      <div className="flex items-center gap-4 my-8">
+                        <div className="flex-1 h-px" style={{ background: 'var(--border-gold)' }} />
+                        <span style={{ color: 'var(--gold)', fontSize: 16 }}>✦ ✦ ✦</span>
+                        <div className="flex-1 h-px" style={{ background: 'var(--border-gold)' }} />
+                      </div>
+                      <ReadingDisplay reading={reading} />
+                      <div className="text-center mt-12">
+                        <button onClick={reset} className="btn-secondary">
+                          Begin a New Reading
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Hint to flip remaining cards */}
+                {isReadingReady && !allFlipped && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className="text-center"
+                    style={{
+                      fontFamily: 'Cormorant Garamond, serif',
+                      fontSize: 15,
+                      color: 'var(--brown-light)',
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    {flippedCards.size === 0
+                      ? 'Tap each card above to unveil your reading'
+                      : `${drawnCards.length - flippedCards.size} card${
+                          drawnCards.length - flippedCards.size > 1 ? 's' : ''
+                        } remaining`}
+                  </motion.p>
+                )}
               </div>
             )}
           </motion.div>
