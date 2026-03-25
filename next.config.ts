@@ -1,7 +1,22 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.together.ai",
+      },
+      {
+        protocol: "https",
+        hostname: "api.together.xyz",
+      },
+      {
+        protocol: "https",
+        hostname: "**.togetherai.com",
+      },
+    ],
+  },
 };
 
 export default nextConfig;
