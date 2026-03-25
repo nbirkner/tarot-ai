@@ -6,23 +6,11 @@ import { GenerateCardRequest } from '../../../lib/types';
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
 const IMAGE_MODEL_SCHNELL = 'black-forest-labs/FLUX.1-schnell';
 const IMAGE_MODEL_KONTEXT = 'black-forest-labs/FLUX.1-kontext-pro';
-// Cost: ~$0.001 per 512x768 card at FLUX schnell pricing
-
-function buildSeed(cardName: string, userId: string, date: string): number {
-  // Deterministic seed: same card + user + date = same image
-  const str = `${cardName}:${userId}:${date}`;
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash) % 2147483647;
-}
 
 export async function POST(req: NextRequest) {
   try {
     const body: GenerateCardRequest = await req.json();
-    const { cardName, deckStyle, userId, date, userPhotoBase64 } = body;
+    const { cardName, deckStyle, userPhotoBase64 } = body;
 
     const basePrompt = CARD_PROMPTS[cardName];
     if (!basePrompt) {
@@ -72,8 +60,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Default: FLUX.1-schnell (no photo, or kontext fallback)
-    const seed = buildSeed(cardName, userId, date);
-
     const response = await fetch('https://api.together.xyz/v1/images/generations', {
       method: 'POST',
       headers: {
@@ -86,7 +72,6 @@ export async function POST(req: NextRequest) {
         width: 512,
         height: 768,
         steps: 4,
-        seed,
         n: 1,
       }),
     });
