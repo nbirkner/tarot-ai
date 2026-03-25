@@ -60,6 +60,7 @@ export interface GenerateReadingRequest {
   spreadType: SpreadType;
   cards: Array<{ name: string; position: string; reversed: boolean }>;
   astrology: AstrologyInput;
+  formattedAstrology: string;
   moonPhase: string;
   dayOfWeek: string;
   season: string;

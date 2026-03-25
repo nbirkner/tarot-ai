@@ -25,7 +25,7 @@ Spread: ${body.spreadType}
 Cards drawn:
 ${body.cards.map((c) => `- ${c.name}${c.reversed ? ' (reversed)' : ''} in position: ${c.position}`).join('\n')}
 
-Astrology context: ${body.astrology.type !== 'none' ? JSON.stringify(body.astrology) : 'Not provided'}
+Astrology context: ${body.formattedAstrology || 'Not provided'}
 Moon phase: ${body.moonPhase}
 Day: ${body.dayOfWeek}
 Season: ${body.season}

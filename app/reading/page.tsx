@@ -204,8 +204,7 @@ export default function ReadingPage() {
 
     // Generate reading in parallel with images
     const context = buildReadingContext(now);
-    const astrologyContext = formatAstrologyContext(astrology, now);
-    void astrologyContext;
+    const formattedAstrology = formatAstrologyContext(astrology, now);
 
     const readingPromise = fetch('/api/generate-reading', {
       method: 'POST',
@@ -219,6 +218,7 @@ export default function ReadingPage() {
           reversed: d.reversed,
         })),
         astrology,
+        formattedAstrology,
         ...context,
       }),
     }).then((r) => r.json());
