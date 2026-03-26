@@ -7,8 +7,9 @@ const GRAY: [number, number, number]       = [100, 85, 70];
 const LIGHT_GRAY: [number, number, number] = [200, 190, 180];
 
 // jsPDF v4 TTF custom fonts have broken unicode cmap handling.
-// Use built-in fonts only: helvetica (heading) and times (body).
-const H = 'helvetica';
+// Use built-in fonts only. Times for both: bold for headings, italic for body.
+// This reads far more editorial than helvetica for a tarot PDF.
+const H = 'times';
 const B = 'times';
 
 // ── Unicode sanitizer ─────────────────────────────────────────────────────────
@@ -119,7 +120,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   // ── Header ─────────────────────────────────────────────────────────────────
   let y = M;
 
-  doc.setFont(H, 'normal');
+  doc.setFont(H, 'bold');
   doc.setFontSize(20);
   doc.setTextColor(...DARK);
   doc.text('Tarot Reading', col, y);
@@ -186,7 +187,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
 
     // Right column: card name
     let ry = y + 2;
-    doc.setFont(H, 'normal');
+    doc.setFont(H, 'bold');
     doc.setFontSize(12);
     doc.setTextColor(...DARK);
     const nameLabel = sanitize(cr.card + (dc?.reversed ? '  (Reversed)' : ''));
@@ -203,7 +204,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
 
     // Keywords
     if (cr.keywords?.length) {
-      doc.setFont(H, 'normal');
+      doc.setFont(H, 'bold');
       doc.setFontSize(8);
       doc.setTextColor(...GOLD);
       doc.text(sanitize(cr.keywords.join('  -  ')), textX, ry);
@@ -257,7 +258,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   doc.line(col, y, col + maxW, y);
   y += 18;
 
-  doc.setFont(H, 'normal');
+  doc.setFont(H, 'bold');
   doc.setFontSize(13);
   doc.setTextColor(...DARK);
   doc.text('The Reading as a Whole', col, y);
@@ -284,17 +285,15 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   }
 
   if (reading.affirmation) {
-    y = maybeBreak(y, 50);
     const affText  = sanitize(`"${reading.affirmation}"`);
-    const affLines = doc.splitTextToSize(affText, maxW - 40);
-    const affH     = affLines.length * 19 + 20;
-    doc.setFillColor(248, 243, 232);
-    doc.roundedRect(col + 10, y - 6, maxW - 20, affH, 4, 4, 'F');
+    const affLines = doc.splitTextToSize(affText, maxW);
+    y = maybeBreak(y, affLines.length * 22 + 16);
+    y += 8;
     doc.setFont(B, 'italic');
-    doc.setFontSize(12);
+    doc.setFontSize(15);
     doc.setTextColor(...GOLD);
-    doc.text(affLines, col + 30, y + 6);
-    y += affH + 10;
+    doc.text(affLines, col, y);
+    y += affLines.length * 22 + 12;
   }
 
   if (reading.notableTiming) {
@@ -310,7 +309,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   const total = doc.getNumberOfPages();
   for (let p = 1; p <= total; p++) {
     doc.setPage(p);
-    doc.setFont(H, 'normal');
+    doc.setFont(H, 'bold');
     doc.setFontSize(8);
     doc.setTextColor(...LIGHT_GRAY);
     doc.text('Tarot AI', col, pageH - 24);
@@ -388,7 +387,7 @@ export async function downloadCardsPDF(reading: ReadingResult): Promise<void> {
     doc.setLineWidth(0.5);
     doc.rect(x, y, cardW, cardH, 'S');
 
-    doc.setFont(H, 'normal');
+    doc.setFont(H, 'bold');
     doc.setFontSize(8);
     doc.setTextColor(...DARK);
     doc.text(sanitize(reading.cards[i].card.name), x + cardW / 2, y + cardH + 13, { align: 'center' });
