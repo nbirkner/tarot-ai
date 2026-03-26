@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Pinyon+Script&display=swap');
+/* Fonts loaded via next/font/google in layout.tsx */
 
 @import "tailwindcss";
 
@@ -33,7 +33,7 @@
 body {
   background-color: var(--cream);
   color: var(--brown-dark);
-  font-family: 'Spectral', Georgia, serif;
+  font-family: var(--font-spectral), Georgia, serif;
   font-size: 18px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -67,20 +67,20 @@ body::before {
 
 /* Typography */
 .font-display {
-  font-family: 'Cinzel', Georgia, serif;
+  font-family: var(--font-cinzel), Georgia, serif;
   letter-spacing: 0.05em;
 }
 
 .font-script {
-  font-family: 'Pinyon Script', cursive;
+  font-family: var(--font-pinyon), cursive;
 }
 
 .font-body {
-  font-family: 'Spectral', Georgia, serif;
+  font-family: var(--font-spectral), Georgia, serif;
 }
 
 .font-playfair {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: var(--font-playfair), Georgia, serif;
 }
 
 /* Skeleton shimmer */
@@ -163,7 +163,7 @@ body::before {
 .btn-primary {
   background: var(--gold);
   color: var(--cream-card);
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-cinzel), serif;
   font-size: 13px;
   letter-spacing: 0.12em;
   padding: 14px 36px;
@@ -202,7 +202,7 @@ body::before {
 .btn-secondary {
   background: transparent;
   color: var(--brown-mid);
-  font-family: 'Cinzel', serif;
+  font-family: var(--font-cinzel), serif;
   font-size: 12px;
   letter-spacing: 0.1em;
   padding: 12px 28px;
@@ -226,7 +226,7 @@ body::before {
   border: 1px solid var(--border-gold);
   border-radius: 2px;
   padding: 12px 16px;
-  font-family: 'Spectral', serif;
+  font-family: var(--font-spectral), serif;
   font-size: 17px;
   color: var(--brown-dark);
   width: 100%;
