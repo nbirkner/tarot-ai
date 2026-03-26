@@ -22,7 +22,8 @@ async function arrayBufToBase64(buf: ArrayBuffer): Promise<string> {
 
 type jsPDFType = import('jspdf').jsPDF;
 
-async function loadFonts(doc: jsPDFType): Promise<void> {
+// Returns font names to use: custom fonts if they loaded, built-ins otherwise.
+async function loadFonts(doc: jsPDFType): Promise<{ heading: string; body: string }> {
   const fonts = [
     { path: '/fonts/Cinzel-Regular.ttf',    name: 'Cinzel',   style: 'normal' },
     { path: '/fonts/Cinzel-Bold.ttf',       name: 'Cinzel',   style: 'bold'   },
@@ -41,10 +42,20 @@ async function loadFonts(doc: jsPDFType): Promise<void> {
         doc.addFileToVFS(filename, b64);
         doc.addFont(filename, name, style);
       } catch {
-        // font load failed — fall back to built-in helvetica/times
+        // silently skip — we'll fall back to built-ins
       }
     }),
   );
+
+  // Verify fonts actually registered — jsPDF can silently fail
+  const registered = doc.getFontList();
+  const cinzelLoaded = 'Cinzel' in registered;
+  const spectralLoaded = 'Spectral' in registered;
+
+  return {
+    heading: cinzelLoaded  ? 'Cinzel'   : 'helvetica',
+    body:    spectralLoaded ? 'Spectral' : 'times',
+  };
 }
 
 // ── Unicode sanitizer ─────────────────────────────────────────────────────────
@@ -140,10 +151,12 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
 
   // Fonts and images in parallel, but images themselves max 3 concurrent
-  const [cardImages] = await Promise.all([
+  const [cardImages, fonts] = await Promise.all([
     fetchImagesPooled(reading.cards, 3),
     loadFonts(doc),
   ]);
+  const H = fonts.heading;  // 'Cinzel' or 'helvetica'
+  const B = fonts.body;     // 'Spectral' or 'times'
 
   const pageW  = 612;
   const pageH  = 792;
@@ -159,7 +172,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   // ── Header ─────────────────────────────────────────────────────────────────
   let y = M;
 
-  doc.setFont('Cinzel', 'normal');
+  doc.setFont(H, 'normal');
   doc.setFontSize(20);
   doc.setTextColor(...DARK);
   doc.text('Tarot Reading', col, y);
@@ -170,14 +183,14 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     }),
   );
-  doc.setFont('Spectral', 'normal');
+  doc.setFont(B, 'normal');
   doc.setFontSize(10);
   doc.setTextColor(...GRAY);
   doc.text(dateStr, col, y);
   y += 18;
 
   if (reading.question) {
-    doc.setFont('Spectral', 'italic');
+    doc.setFont(B, 'italic');
     doc.setFontSize(13);
     doc.setTextColor(...DARK);
     const qLines = doc.splitTextToSize(sanitize(`"${reading.question}"`), maxW);
@@ -213,7 +226,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
     } else {
       doc.setFillColor(240, 235, 225);
       doc.roundedRect(col, y, imgW, imgH, 3, 3, 'F');
-      doc.setFont('Spectral', 'italic');
+      doc.setFont(B, 'italic');
       doc.setFontSize(7.5);
       doc.setTextColor(...GRAY);
       const nameLines = doc.splitTextToSize(sanitize(cr.card), imgW - 8);
@@ -226,7 +239,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
 
     // Right column: card name
     let ry = y + 2;
-    doc.setFont('Cinzel', 'normal');
+    doc.setFont(H, 'normal');
     doc.setFontSize(12);
     doc.setTextColor(...DARK);
     const nameLabel = sanitize(cr.card + (dc?.reversed ? '  (Reversed)' : ''));
@@ -235,7 +248,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
     ry += nameLines2.length * 16 + 2;
 
     // Position
-    doc.setFont('Spectral', 'italic');
+    doc.setFont(B, 'italic');
     doc.setFontSize(10);
     doc.setTextColor(...GRAY);
     doc.text(sanitize(cr.position), textX, ry);
@@ -243,7 +256,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
 
     // Keywords
     if (cr.keywords?.length) {
-      doc.setFont('Cinzel', 'normal');
+      doc.setFont(H, 'normal');
       doc.setFontSize(8);
       doc.setTextColor(...GOLD);
       doc.text(sanitize(cr.keywords.join('  -  ')), textX, ry);
@@ -258,7 +271,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
     ry += 10;
 
     // Interpretation — flows in right column while image is there, then full width
-    doc.setFont('Spectral', 'normal');
+    doc.setFont(B, 'normal');
     doc.setFontSize(10.5);
     doc.setTextColor(...DARK);
     const interp = doc.splitTextToSize(sanitize(cr.interpretation), textW);
@@ -268,7 +281,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
       const isBelow = ry > blockTop + imgH + 4;
       const lineX   = isBelow ? col : textX;
       ry = maybeBreak(ry, 14);
-      doc.setFont('Spectral', 'normal');
+      doc.setFont(B, 'normal');
       doc.setFontSize(10.5);
       doc.setTextColor(...DARK);
       doc.text(line, lineX, ry);
@@ -297,14 +310,14 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   doc.line(col, y, col + maxW, y);
   y += 18;
 
-  doc.setFont('Cinzel', 'normal');
+  doc.setFont(H, 'normal');
   doc.setFontSize(13);
   doc.setTextColor(...DARK);
   doc.text('The Reading as a Whole', col, y);
   y += 18;
 
   if (reading.overallEnergy) {
-    doc.setFont('Spectral', 'italic');
+    doc.setFont(B, 'italic');
     doc.setFontSize(11.5);
     doc.setTextColor(...DARK);
     const oeLines = doc.splitTextToSize(sanitize(reading.overallEnergy), maxW);
@@ -314,7 +327,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   }
 
   if (reading.synthesis) {
-    doc.setFont('Spectral', 'normal');
+    doc.setFont(B, 'normal');
     doc.setFontSize(10.5);
     doc.setTextColor(...DARK);
     const synLines = doc.splitTextToSize(sanitize(reading.synthesis), maxW);
@@ -330,7 +343,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
     const affH     = affLines.length * 19 + 20;
     doc.setFillColor(248, 243, 232);
     doc.roundedRect(col + 10, y - 6, maxW - 20, affH, 4, 4, 'F');
-    doc.setFont('Spectral', 'italic');
+    doc.setFont(B, 'italic');
     doc.setFontSize(12);
     doc.setTextColor(...GOLD);
     doc.text(affLines, col + 30, y + 6);
@@ -339,7 +352,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
 
   if (reading.notableTiming) {
     y = maybeBreak(y, 30);
-    doc.setFont('Spectral', 'italic');
+    doc.setFont(B, 'italic');
     doc.setFontSize(9);
     doc.setTextColor(...GRAY);
     const tLines = doc.splitTextToSize(sanitize(reading.notableTiming), maxW);
@@ -350,7 +363,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   const total = doc.getNumberOfPages();
   for (let p = 1; p <= total; p++) {
     doc.setPage(p);
-    doc.setFont('Cinzel', 'normal');
+    doc.setFont(H, 'normal');
     doc.setFontSize(8);
     doc.setTextColor(...LIGHT_GRAY);
     doc.text('Tarot AI', col, pageH - 24);
@@ -381,10 +394,12 @@ export async function downloadCardsPDF(reading: ReadingResult): Promise<void> {
   const { jsPDF } = await import('jspdf');
 
   const doc   = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
-  const [cardImages] = await Promise.all([
+  const [cardImages, fonts2] = await Promise.all([
     fetchImagesPooled(reading.cards, 3),
     loadFonts(doc),
   ]);
+  const H2 = fonts2.heading;
+  const B2 = fonts2.body;
 
   const pageW = 612;
   const pageH = 792;
@@ -420,7 +435,7 @@ export async function downloadCardsPDF(reading: ReadingResult): Promise<void> {
     } else {
       doc.setFillColor(240, 235, 225);
       doc.rect(x, y, cardW, cardH, 'F');
-      doc.setFont('Spectral', 'italic');
+      doc.setFont(B2, 'italic');
       doc.setFontSize(9);
       doc.setTextColor(120, 100, 80);
       const nl = doc.splitTextToSize(sanitize(reading.cards[i].card.name), cardW - 10);
@@ -431,11 +446,11 @@ export async function downloadCardsPDF(reading: ReadingResult): Promise<void> {
     doc.setLineWidth(0.5);
     doc.rect(x, y, cardW, cardH, 'S');
 
-    doc.setFont('Cinzel', 'normal');
+    doc.setFont(H2, 'normal');
     doc.setFontSize(8);
     doc.setTextColor(...DARK);
     doc.text(sanitize(reading.cards[i].card.name), x + cardW / 2, y + cardH + 13, { align: 'center' });
-    doc.setFont('Spectral', 'normal');
+    doc.setFont(B2, 'normal');
     doc.setFontSize(7);
     doc.setTextColor(...GRAY);
     const posLabel = sanitize(reading.cards[i].position + (reading.cards[i].reversed ? ' (Rev.)' : ''));
