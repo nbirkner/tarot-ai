@@ -179,6 +179,16 @@ async function pooledAllSettled<T, R>(
   return results;
 }
 
+// Retry a function up to maxAttempts times with a fixed delay between attempts.
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts: number, delayMs = 1500): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, delayMs));
+    try { return await fn(); } catch (e) { lastError = e; }
+  }
+  throw lastError;
+}
+
 // Wrap a promise with a timeout. Rejects with a TimeoutError after ms milliseconds.
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return Promise.race([
@@ -336,41 +346,42 @@ export default function ReadingPage() {
       notableTiming: '',
     });
 
-    // Fire image generation with a concurrency cap of 3 and a 30s timeout per card.
-    // On failure/timeout, mark imageUrl as 'failed' so the card shows a fallback
-    // instead of hanging in "MANIFESTING" forever.
-    const IMAGE_TIMEOUT_MS = 30000;
+    // Fire image generation with a concurrency cap of 3.
+    // Retries up to 5 times (1.5s between attempts, 15s timeout per attempt).
+    // On final failure, marks imageUrl as 'failed' so card shows a fallback.
+    const IMAGE_TIMEOUT_MS = 15000;
     void pooledAllSettled(initialDrawn, 3, async (drawn, i) => {
       try {
-        const res = await withTimeout(
-          fetch('/api/generate-card', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              cardName: drawn.card.name,
-              deckStyle,
-              userId,
-              date: dateStr,
-              ...(userPhoto ? { userPhotoBase64: userPhoto } : {}),
+        const body = JSON.stringify({
+          cardName: drawn.card.name,
+          deckStyle,
+          userId,
+          date: dateStr,
+          ...(userPhoto ? { userPhotoBase64: userPhoto } : {}),
+        });
+
+        const data = await withRetry(async () => {
+          const res = await withTimeout(
+            fetch('/api/generate-card', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body,
             }),
-          }),
-          IMAGE_TIMEOUT_MS,
-          `image gen ${i}`,
+            IMAGE_TIMEOUT_MS,
+            `image gen ${i}`,
+          );
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const json = await res.json();
+          if (!json.imageUrl) throw new Error('No imageUrl in response');
+          return json;
+        }, 5, 1500);
+
+        resolvedImagesRef.current[i] = data.imageUrl;
+        setDrawnCards((prev) =>
+          prev.map((d, j) => (j === i ? { ...d, imageUrl: data.imageUrl } : d))
         );
-        const data = await res.json();
-        if (data.imageUrl) {
-          resolvedImagesRef.current[i] = data.imageUrl;
-          setDrawnCards((prev) =>
-            prev.map((d, j) => (j === i ? { ...d, imageUrl: data.imageUrl } : d))
-          );
-        } else {
-          // API responded but no image — mark failed so card shows fallback
-          setDrawnCards((prev) =>
-            prev.map((d, j) => (j === i ? { ...d, imageUrl: 'failed' } : d))
-          );
-        }
-      } catch {
-        console.error(`Image gen timed out or failed for ${drawn.card.name}`);
+      } catch (err) {
+        console.error(`Image gen failed after retries for ${drawn.card.name}:`, err);
         setDrawnCards((prev) =>
           prev.map((d, j) => (j === i ? { ...d, imageUrl: 'failed' } : d))
         );
@@ -985,7 +996,7 @@ export default function ReadingPage() {
                                   await downloadReadingPDF(readingWithImages);
                                 } catch (e) {
                                   console.error('PDF generation failed:', e);
-                                  alert('PDF generation failed. Please try again.');
+                                  alert(`PDF failed: ${e instanceof Error ? e.message : String(e)}`);
                                 } finally {
                                   setIsPdfGenerating(false);
                                 }
@@ -1005,7 +1016,7 @@ export default function ReadingPage() {
                                   await downloadCardsPDF(readingWithImages);
                                 } catch (e) {
                                   console.error('PDF generation failed:', e);
-                                  alert('PDF generation failed. Please try again.');
+                                  alert(`PDF failed: ${e instanceof Error ? e.message : String(e)}`);
                                 } finally {
                                   setIsPdfGenerating(false);
                                 }
