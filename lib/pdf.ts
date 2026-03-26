@@ -113,17 +113,35 @@ async function fetchImageAsJpeg(imageUrl: string): Promise<string | null> {
   }
 }
 
+// ── Pooled image loader (max N concurrent) ────────────────────────────────────
+async function fetchImagesPooled(
+  cards: ReadingResult['cards'],
+  concurrency = 3,
+): Promise<(string | null)[]> {
+  const results: (string | null)[] = new Array(cards.length).fill(null);
+  let next = 0;
+  async function worker() {
+    while (next < cards.length) {
+      const i = next++;
+      const url = cards[i].imageUrl;
+      // Skip missing or explicitly-failed URLs
+      if (!url || url === 'failed') { results[i] = null; continue; }
+      results[i] = await fetchImageAsJpeg(url);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, cards.length) }, worker));
+  return results;
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 export async function downloadReadingPDF(reading: ReadingResult): Promise<void> {
   const { jsPDF } = await import('jspdf');
 
-  // Fetch fonts and card images in parallel
   const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
 
+  // Fonts and images in parallel, but images themselves max 3 concurrent
   const [cardImages] = await Promise.all([
-    Promise.all(
-      reading.cards.map(c => c.imageUrl ? fetchImageAsJpeg(c.imageUrl) : Promise.resolve(null)),
-    ),
+    fetchImagesPooled(reading.cards, 3),
     loadFonts(doc),
   ]);
 
@@ -354,12 +372,11 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
 export async function downloadCardsPDF(reading: ReadingResult): Promise<void> {
   const { jsPDF } = await import('jspdf');
 
-  const cardImages = await Promise.all(
-    reading.cards.map(c => c.imageUrl ? fetchImageAsJpeg(c.imageUrl) : Promise.resolve(null)),
-  );
-
   const doc   = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
-  await loadFonts(doc);
+  const [cardImages] = await Promise.all([
+    fetchImagesPooled(reading.cards, 3),
+    loadFonts(doc),
+  ]);
 
   const pageW = 612;
   const pageH = 792;

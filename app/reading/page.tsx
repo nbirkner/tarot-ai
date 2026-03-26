@@ -269,6 +269,7 @@ export default function ReadingPage() {
   const [reading, setReading] = useState<ReadingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [streamingState, setStreamingState] = useState<StreamingState | null>(null);
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const resolvedImagesRef = useRef<(string | undefined)[]>([]);
 
   const allFlipped = drawnCards.length > 0 && flippedCards.size === drawnCards.length;
@@ -911,64 +912,59 @@ export default function ReadingPage() {
                       const allImagesLoaded = drawnCards.length > 0 && drawnCards.every(d => d.imageUrl);
                       const readingWithImages = { ...reading, cards: drawnCards };
                       const disabledTip = 'Available once all card images have rendered';
+                      const canDownload = allImagesLoaded && !isPdfGenerating;
+                      const btnStyle = (active: boolean): React.CSSProperties => ({
+                        background: 'transparent',
+                        color: active ? 'var(--gold-light)' : 'rgba(196,146,42,0.3)',
+                        fontFamily: 'Cinzel, serif',
+                        fontSize: 11,
+                        letterSpacing: '0.12em',
+                        padding: '11px 24px',
+                        borderRadius: 2,
+                        border: `1px solid ${active ? 'rgba(196,146,42,0.5)' : 'rgba(196,146,42,0.18)'}`,
+                        cursor: active ? 'pointer' : 'not-allowed',
+                        transition: 'all 0.25s ease',
+                        textTransform: 'uppercase',
+                        minWidth: 200,
+                      });
                       return (
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10">
-                          <div title={allImagesLoaded ? undefined : disabledTip} style={{ display: 'inline-flex' }}>
+                          <div title={canDownload ? undefined : disabledTip} style={{ display: 'inline-flex' }}>
                             <button
-                              disabled={!allImagesLoaded}
+                              disabled={!canDownload}
                               onClick={async () => {
-                                const { downloadReadingPDF } = await import('../../lib/pdf');
-                                await downloadReadingPDF(readingWithImages);
+                                setIsPdfGenerating(true);
+                                try {
+                                  const { downloadReadingPDF } = await import('../../lib/pdf');
+                                  await downloadReadingPDF(readingWithImages);
+                                } finally {
+                                  setIsPdfGenerating(false);
+                                }
                               }}
-                              style={{
-                                background: 'transparent',
-                                color: allImagesLoaded ? 'var(--gold-light)' : 'rgba(196,146,42,0.3)',
-                                fontFamily: 'Cinzel, serif',
-                                fontSize: 11,
-                                letterSpacing: '0.12em',
-                                padding: '11px 24px',
-                                borderRadius: 2,
-                                border: `1px solid ${allImagesLoaded ? 'rgba(196,146,42,0.5)' : 'rgba(196,146,42,0.18)'}`,
-                                cursor: allImagesLoaded ? 'pointer' : 'not-allowed',
-                                transition: 'all 0.25s ease',
-                                textTransform: 'uppercase' as const,
-                                minWidth: 200,
-                              }}
-                              onMouseEnter={e => { if (allImagesLoaded) (e.target as HTMLElement).style.background = 'rgba(196,146,42,0.1)'; }}
-                              onMouseLeave={e => { if (allImagesLoaded) (e.target as HTMLElement).style.background = 'transparent'; }}
+                              style={btnStyle(canDownload)}
                             >
-                              {allImagesLoaded ? '↓ Download Reading' : '⋯ Rendering cards…'}
+                              {isPdfGenerating ? '⋯ Preparing PDF…' : allImagesLoaded ? '↓ Download Reading' : '⋯ Rendering cards…'}
                             </button>
                           </div>
-                          <div title={allImagesLoaded ? undefined : disabledTip} style={{ display: 'inline-flex' }}>
+                          <div title={canDownload ? undefined : disabledTip} style={{ display: 'inline-flex' }}>
                             <button
-                              disabled={!allImagesLoaded}
+                              disabled={!canDownload}
                               onClick={async () => {
-                                const { downloadCardsPDF } = await import('../../lib/pdf');
-                                await downloadCardsPDF(readingWithImages);
+                                setIsPdfGenerating(true);
+                                try {
+                                  const { downloadCardsPDF } = await import('../../lib/pdf');
+                                  await downloadCardsPDF(readingWithImages);
+                                } finally {
+                                  setIsPdfGenerating(false);
+                                }
                               }}
                               style={{
-                                background: 'transparent',
-                                color: allImagesLoaded
-                                  ? (isDark ? 'rgba(248,244,239,0.55)' : 'var(--brown-light)')
-                                  : (isDark ? 'rgba(248,244,239,0.18)' : 'rgba(122,92,69,0.3)'),
-                                fontFamily: 'Cinzel, serif',
-                                fontSize: 11,
-                                letterSpacing: '0.12em',
-                                padding: '11px 24px',
-                                borderRadius: 2,
-                                border: `1px solid ${allImagesLoaded
-                                  ? (isDark ? 'rgba(255,255,255,0.12)' : 'var(--border-brown)')
-                                  : 'rgba(255,255,255,0.06)'}`,
-                                cursor: allImagesLoaded ? 'pointer' : 'not-allowed',
-                                transition: 'all 0.25s ease',
-                                textTransform: 'uppercase' as const,
-                                minWidth: 200,
+                                ...btnStyle(canDownload),
+                                color: canDownload ? 'var(--brown-light)' : 'rgba(122,92,69,0.3)',
+                                border: `1px solid ${canDownload ? 'var(--border-brown)' : 'rgba(122,92,69,0.15)'}`,
                               }}
-                              onMouseEnter={e => { if (allImagesLoaded) { (e.target as HTMLElement).style.borderColor = 'rgba(196,146,42,0.35)'; (e.target as HTMLElement).style.color = 'var(--gold-muted)'; } }}
-                              onMouseLeave={e => { if (allImagesLoaded) { (e.target as HTMLElement).style.borderColor = isDark ? 'rgba(255,255,255,0.12)' : 'var(--border-brown)'; (e.target as HTMLElement).style.color = isDark ? 'rgba(248,244,239,0.55)' : 'var(--brown-light)'; } }}
                             >
-                              {allImagesLoaded ? '↓ Print Cards' : '⋯ Rendering cards…'}
+                              {isPdfGenerating ? '⋯ Preparing PDF…' : allImagesLoaded ? '↓ Print Cards' : '⋯ Rendering cards…'}
                             </button>
                           </div>
                         </div>
