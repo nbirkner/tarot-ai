@@ -7,6 +7,7 @@ import { DeckSelector } from '../../components/DeckSelector';
 import { AstrologyInput } from '../../components/AstrologyInput';
 import { QuestionInput } from '../../components/QuestionInput';
 import { PhotoUpload } from '../../components/PhotoUpload';
+import { ContextInput } from '../../components/ContextInput';
 import { TarotCard } from '../../components/TarotCard';
 import { ReadingDisplay } from '../../components/ReadingDisplay';
 import {
@@ -20,7 +21,7 @@ import { drawCards, isReversed, getSpread } from '../../lib/tarot';
 import { buildReadingContext, formatAstrologyContext } from '../../lib/astronomy';
 import { getUserId, saveReading } from '../../lib/storage';
 
-type Step = 'question' | 'spread' | 'deck' | 'photo' | 'astrology' | 'generating' | 'reveal' | 'reading';
+type Step = 'question' | 'context' | 'spread' | 'deck' | 'photo' | 'astrology' | 'generating' | 'reveal' | 'reading';
 
 const WITCHY_PHRASES = [
   'manifesting your destiny...',
@@ -107,6 +108,10 @@ const STEP_CONFIG: Record<
     title: 'What calls for clarity?',
     subtitle: 'Ask a question, or let the cards speak freely.',
   },
+  context: {
+    title: 'Add context',
+    subtitle: 'Optional — helps the cards speak to your specific situation.',
+  },
   spread: {
     title: 'Choose your spread',
     subtitle: 'How many cards shall the oracle draw?',
@@ -127,6 +132,7 @@ const STEP_CONFIG: Record<
 
 const SETUP_STEPS: Array<Exclude<Step, 'generating' | 'reveal' | 'reading'>> = [
   'question',
+  'context',
   'spread',
   'deck',
   'photo',
@@ -140,6 +146,7 @@ export default function ReadingPage() {
   const [deckStyle, setDeckStyle] = useState<DeckStyle>('dark-gothic');
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [astrology, setAstrology] = useState<AstrologyInputType>({ type: 'none' });
+  const [userContext, setUserContext] = useState('');
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
   const [isReadingReady, setIsReadingReady] = useState(false);
@@ -219,6 +226,7 @@ export default function ReadingPage() {
         })),
         astrology,
         formattedAstrology,
+        userContext: userContext || undefined,
         ...context,
       }),
     }).then((r) => r.json());
@@ -253,6 +261,7 @@ export default function ReadingPage() {
   function reset() {
     setStep('question');
     setQuestion('');
+    setUserContext('');
     setUserPhoto(null);
     setDrawnCards([]);
     setFlippedCards(new Set());
@@ -338,7 +347,14 @@ export default function ReadingPage() {
                   <QuestionInput
                     value={question}
                     onChange={setQuestion}
-                    onSkip={() => setStep('spread')}
+                    onSkip={() => setStep('context')}
+                  />
+                )}
+                {step === 'context' && (
+                  <ContextInput
+                    question={question}
+                    value={userContext}
+                    onChange={setUserContext}
                   />
                 )}
                 {step === 'spread' && (
