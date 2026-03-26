@@ -303,26 +303,57 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
                 />
               </div>
             ) : (
-              // Image still generating — shimmer skeleton
-              <div className="w-full h-full bg-[#1A1008] flex flex-col items-center justify-center gap-3" style={{ position: 'relative', overflow: 'hidden' }}>
-                {/* Shimmer sweep */}
+              // Image still generating — mystical loading state
+              <div className="w-full h-full flex flex-col items-center justify-center gap-4" style={{
+                position: 'relative', overflow: 'hidden',
+                background: 'radial-gradient(ellipse at 50% 40%, #1E1430 0%, #0E0A1A 60%, #060410 100%)',
+              }}>
+                {/* Slow shimmer sweep */}
                 <div style={{
                   position: 'absolute', inset: 0,
-                  backgroundImage: 'linear-gradient(105deg, transparent 40%, rgba(196,146,42,0.08) 50%, transparent 60%)',
+                  backgroundImage: 'linear-gradient(110deg, transparent 35%, rgba(196,146,42,0.06) 50%, transparent 65%)',
                   backgroundSize: '200% 100%',
-                  animation: 'shimmer 2s ease-in-out infinite',
+                  animation: 'shimmer 3s ease-in-out infinite',
                 }} />
-                {/* Orbiting ring */}
-                <div style={{
-                  width: 28, height: 28, borderRadius: '50%',
-                  border: '1px solid rgba(196,146,42,0.35)',
-                  animation: 'rotate-slow 4s linear infinite',
-                  position: 'relative', flexShrink: 0,
-                }}>
-                  <div style={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', color: '#C4922A', fontSize: 7 }}>✦</div>
+                {/* Star field on card face */}
+                {[[20,15],[70,25],[45,70],[80,55],[15,60],[60,12],[35,85]].map(([x,y],i) => (
+                  <div key={i} style={{
+                    position: 'absolute',
+                    left: `${x}%`, top: `${y}%`,
+                    width: 1.5, height: 1.5,
+                    borderRadius: '50%',
+                    background: '#C4922A',
+                    animation: `star-twinkle ${2.5 + i * 0.4}s ease-in-out ${i * 0.3}s infinite`,
+                  }} />
+                ))}
+                {/* Concentric rings */}
+                <div style={{ position: 'relative', width: 38, height: 38, flexShrink: 0 }}>
+                  <div style={{
+                    position: 'absolute', inset: 0, borderRadius: '50%',
+                    border: '1px solid rgba(196,146,42,0.3)',
+                    animation: 'rotate-slow 6s linear infinite',
+                  }}>
+                    <div style={{ position: 'absolute', top: -3, left: '50%', transform: 'translateX(-50%)', color: '#C4922A', fontSize: 6 }}>✦</div>
+                  </div>
+                  <div style={{
+                    position: 'absolute', inset: 7, borderRadius: '50%',
+                    border: '1px solid rgba(196,146,42,0.18)',
+                    animation: 'rotate-slow 4s linear infinite reverse',
+                  }} />
+                  <div style={{
+                    position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'rgba(196,146,42,0.5)', fontSize: 11,
+                  }}>☽</div>
                 </div>
-                <span style={{ fontFamily: 'Cinzel, serif', fontSize: 7, letterSpacing: '0.15em', color: 'rgba(196,146,42,0.6)', textAlign: 'center', padding: '0 8px' }}>
-                  RENDERING
+                <span style={{
+                  fontFamily: 'var(--font-cinzel), Cinzel, serif',
+                  fontSize: 6,
+                  letterSpacing: '0.2em',
+                  color: 'rgba(196,146,42,0.45)',
+                  textAlign: 'center',
+                  textTransform: 'uppercase',
+                }}>
+                  Manifesting
                 </span>
               </div>
             )}
@@ -334,29 +365,42 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
       <AnimatePresence>
         {isFlipped && showPosition && (
           <motion.div
-            initial={{ opacity: 0, y: 4 }}
+            initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.4 }}
+            transition={{ delay: 0.55, duration: 0.45 }}
             className="text-center"
           >
             <p
               style={{
-                fontFamily: 'Cinzel, serif',
-                fontSize: 11,
-                letterSpacing: '0.1em',
-                color: '#2A1F14',
+                fontFamily: 'var(--font-cinzel), Cinzel, serif',
+                fontSize: 10,
+                letterSpacing: '0.14em',
+                color: 'rgba(196,146,42,0.9)',
+                textTransform: 'uppercase',
+                marginBottom: 2,
               }}
             >
               {drawn.card.name}
             </p>
             {drawn.position && (
-              <p style={{ fontFamily: 'Spectral, serif', fontSize: 13, color: '#A88C78', fontStyle: 'italic' }}>
+              <p style={{
+                fontFamily: 'var(--font-spectral), Spectral, serif',
+                fontSize: 12,
+                color: 'rgba(248,244,239,0.5)',
+                fontStyle: 'italic',
+              }}>
                 {drawn.position}
               </p>
             )}
             {drawn.reversed && (
-              <p style={{ fontFamily: 'Spectral, serif', fontSize: 11, color: '#C4922A', fontStyle: 'italic' }}>
-                ↻ Rev.
+              <p style={{
+                fontFamily: 'var(--font-spectral), Spectral, serif',
+                fontSize: 11,
+                color: 'var(--gold)',
+                fontStyle: 'italic',
+                opacity: 0.7,
+              }}>
+                ↻ Reversed
               </p>
             )}
           </motion.div>
@@ -366,20 +410,26 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
       {/* "tap to reveal" hint on flippable unflipped cards */}
       <AnimatePresence>
         {isFlippable && !isFlipped && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              fontFamily: 'Spectral, serif',
-              fontSize: 13,
-              color: '#C4922A',
-              fontStyle: 'italic',
-              textAlign: 'center',
-            }}
+          <motion.div
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -2 }}
+            transition={{ duration: 0.4 }}
+            style={{ textAlign: 'center' }}
           >
-            tap to reveal
-          </motion.p>
+            <p
+              style={{
+                fontFamily: 'var(--font-spectral), Spectral, serif',
+                fontSize: 12,
+                color: 'var(--gold)',
+                fontStyle: 'italic',
+                letterSpacing: '0.06em',
+                opacity: 0.8,
+              }}
+            >
+              tap to reveal
+            </p>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

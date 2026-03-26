@@ -85,8 +85,8 @@ body::before {
 
 /* Skeleton shimmer */
 @keyframes shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* Streaming cursor blink */
@@ -319,3 +319,30 @@ input, textarea, select {
   border-color: var(--gold) !important;
   color: var(--brown-dark) !important;
 }
+
+/* Fade-up entrance */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fade-up 0.55s ease-out forwards; }
+
+/* Ornamental horizontal rule */
+.rule-ornament {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.rule-ornament::before,
+.rule-ornament::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-gold);
+}
+
+/* Reading dark mode scrollbar */
+.dark-scroll::-webkit-scrollbar-track { background: #0a0f20; }
+.dark-scroll::-webkit-scrollbar-thumb { background: rgba(196,146,42,0.2); }
+.dark-scroll::-webkit-scrollbar-thumb:hover { background: rgba(196,146,42,0.4); }
+

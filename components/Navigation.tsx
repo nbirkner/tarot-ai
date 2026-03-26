@@ -8,59 +8,87 @@ export function Navigation() {
   const path = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
+  const isDarkPage = path === '/reading';
+
   const links = [
     { href: '/reading', label: 'Oracle' },
     { href: '/history', label: 'History' },
     { href: '/about', label: 'Built with' },
   ];
 
+  const navBg = isDarkPage
+    ? 'rgba(6, 12, 34, 0.82)'
+    : 'rgba(248, 244, 239, 0.88)';
+  const navBorder = isDarkPage
+    ? 'rgba(196, 146, 42, 0.12)'
+    : 'rgba(196, 146, 42, 0.14)';
+  const logoColor = isDarkPage ? 'rgba(248,244,239,0.75)' : 'var(--brown-dark)';
+  const linkColor = isDarkPage ? 'rgba(248,244,239,0.5)' : 'var(--brown-mid)';
+  const linkActive = 'var(--gold)';
+
   return (
     <>
       <nav
         className="fixed top-0 left-0 right-0 z-50"
         style={{
-          background: 'rgba(248, 244, 239, 0.9)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(196, 146, 42, 0.15)',
+          background: navBg,
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderBottom: `1px solid ${navBorder}`,
+          transition: 'background 0.6s ease, border-color 0.6s ease',
         }}
       >
         <div className="w-full px-6 sm:px-10 flex items-center justify-between h-14">
+
+          {/* Wordmark */}
           <Link href="/" onClick={() => setIsOpen(false)}>
             <span
               style={{
-                fontFamily: 'Cinzel, serif',
-                fontSize: 13,
-                letterSpacing: '0.2em',
-                color: 'var(--brown-dark)',
+                fontFamily: 'var(--font-cinzel), serif',
+                fontSize: 12,
+                letterSpacing: '0.26em',
+                color: logoColor,
+                transition: 'color 0.4s ease',
+                textTransform: 'uppercase',
               }}
             >
               ✦ TAROT · AI
             </span>
           </Link>
 
-          {/* Desktop nav links */}
-          <div className="hidden sm:flex items-center gap-7">
-            {links.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                style={{
-                  fontFamily: 'Spectral, serif',
-                  fontSize: 16,
-                  letterSpacing: '0.05em',
-                  color: path === l.href ? 'var(--gold)' : 'var(--brown-mid)',
-                  borderBottom: path === l.href ? '1px solid var(--gold)' : '1px solid transparent',
-                  paddingBottom: 2,
-                  transition: 'all 0.2s ease',
-                  fontStyle: path === l.href ? 'italic' : 'normal',
-                }}
-              >
-                {l.label}
-              </Link>
-            ))}
+          {/* Desktop nav */}
+          <div className="hidden sm:flex items-center gap-8">
+            {links.map((l) => {
+              const isActive = path === l.href;
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  style={{
+                    fontFamily: 'var(--font-spectral), serif',
+                    fontSize: 15,
+                    letterSpacing: '0.06em',
+                    color: isActive ? linkActive : linkColor,
+                    borderBottom: isActive ? '1px solid var(--gold)' : '1px solid transparent',
+                    paddingBottom: 2,
+                    transition: 'color 0.2s ease, border-color 0.2s ease',
+                    fontStyle: isActive ? 'italic' : 'normal',
+                    textDecoration: 'none',
+                  }}
+                  onMouseEnter={e => {
+                    if (!isActive) (e.currentTarget as HTMLElement).style.color = isDarkPage ? 'rgba(248,244,239,0.85)' : 'var(--brown-dark)';
+                  }}
+                  onMouseLeave={e => {
+                    if (!isActive) (e.currentTarget as HTMLElement).style.color = linkColor;
+                  }}
+                >
+                  {l.label}
+                </Link>
+              );
+            })}
           </div>
 
-          {/* Mobile hamburger button */}
+          {/* Mobile hamburger */}
           <button
             className="flex sm:hidden items-center justify-center"
             onClick={() => setIsOpen((prev) => !prev)}
@@ -69,12 +97,13 @@ export function Navigation() {
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              color: 'var(--brown-dark)',
-              fontSize: 20,
+              color: isDarkPage ? 'rgba(248,244,239,0.65)' : 'var(--brown-dark)',
+              fontSize: 18,
               lineHeight: 1,
               padding: '8px',
               minHeight: 44,
               minWidth: 44,
+              transition: 'color 0.4s ease',
             }}
           >
             {isOpen ? '✕' : '☰'}
@@ -82,16 +111,16 @@ export function Navigation() {
         </div>
       </nav>
 
-      {/* Mobile dropdown menu */}
+      {/* Mobile dropdown */}
       {isOpen && (
         <div
-          className="sm:hidden fixed left-0 right-0 z-49"
+          className="sm:hidden fixed left-0 right-0"
           style={{
             top: 56,
             zIndex: 49,
-            background: 'rgba(248,244,239,0.97)',
-            backdropFilter: 'blur(12px)',
-            borderBottom: '1px solid var(--border-gold)',
+            background: isDarkPage ? 'rgba(6,12,34,0.96)' : 'rgba(248,244,239,0.97)',
+            backdropFilter: 'blur(16px)',
+            borderBottom: `1px solid ${navBorder}`,
           }}
         >
           {links.map((l) => (
@@ -102,12 +131,12 @@ export function Navigation() {
               style={{
                 display: 'block',
                 padding: '16px 24px',
-                fontFamily: 'Spectral, serif',
+                fontFamily: 'var(--font-spectral), serif',
                 fontSize: 18,
                 letterSpacing: '0.05em',
-                color: path === l.href ? 'var(--gold)' : 'var(--brown-mid)',
+                color: path === l.href ? 'var(--gold)' : (isDarkPage ? 'rgba(248,244,239,0.65)' : 'var(--brown-mid)'),
                 fontStyle: path === l.href ? 'italic' : 'normal',
-                borderBottom: '1px solid var(--border-gold)',
+                borderBottom: `1px solid ${isDarkPage ? 'rgba(196,146,42,0.1)' : 'var(--border-gold)'}`,
                 textDecoration: 'none',
               }}
             >

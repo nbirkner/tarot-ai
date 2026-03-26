@@ -571,13 +571,26 @@ export default function ReadingPage() {
             {isSetupStep && (
               <div className="max-w-xl mx-auto space-y-8">
                 {/* Step header */}
-                <div className="text-center space-y-2 pt-6">
+                <div className="text-center pt-6" style={{ paddingBottom: 4 }}>
+                  <p style={{
+                    fontFamily: 'Spectral, serif',
+                    fontSize: 11,
+                    letterSpacing: '0.28em',
+                    color: 'var(--gold)',
+                    textTransform: 'uppercase',
+                    marginBottom: 10,
+                    opacity: 0.7,
+                  }}>
+                    ✦ {SETUP_STEPS.indexOf(step as (typeof SETUP_STEPS)[number]) + 1} of {SETUP_STEPS.length}
+                  </p>
                   <h2
                     style={{
                       fontFamily: 'Cinzel, serif',
-                      fontSize: 22,
+                      fontSize: 'clamp(18px, 3vw, 24px)',
                       color: 'var(--brown-dark)',
-                      letterSpacing: '0.06em',
+                      letterSpacing: '0.07em',
+                      fontWeight: 400,
+                      marginBottom: 8,
                     }}
                   >
                     {STEP_CONFIG[step as keyof typeof STEP_CONFIG]?.title}
@@ -586,9 +599,10 @@ export default function ReadingPage() {
                     <p
                       style={{
                         fontFamily: 'Spectral, serif',
-                        fontSize: 17,
-                        color: 'var(--brown-mid)',
+                        fontSize: 16,
+                        color: 'var(--brown-light)',
                         fontStyle: 'italic',
+                        lineHeight: 1.4,
                       }}
                     >
                       {STEP_CONFIG[step as keyof typeof STEP_CONFIG]?.subtitle}
@@ -652,6 +666,7 @@ export default function ReadingPage() {
                         if (i > 0) setStep(SETUP_STEPS[i - 1]);
                       }}
                       className="btn-secondary"
+                      style={{ fontSize: 12, letterSpacing: '0.14em' }}
                     >
                       ← Back
                     </button>
@@ -660,7 +675,7 @@ export default function ReadingPage() {
                   )}
 
                   {step === 'astrology' ? (
-                    <button onClick={startReading} className="btn-primary">
+                    <button onClick={startReading} className="btn-primary" style={{ fontSize: 11, letterSpacing: '0.22em' }}>
                       Draw the Cards
                     </button>
                   ) : (
@@ -670,26 +685,33 @@ export default function ReadingPage() {
                         setStep(SETUP_STEPS[i + 1]);
                       }}
                       className="btn-primary"
+                      style={{ fontSize: 11, letterSpacing: '0.22em' }}
                     >
                       Continue →
                     </button>
                   )}
                 </div>
 
-                {/* Step indicator */}
-                <div className="flex justify-center gap-2 pt-2">
-                  {SETUP_STEPS.map((s) => (
-                    <div
-                      key={s}
-                      style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        background: s === step ? 'var(--gold)' : 'var(--border-gold)',
-                        border: '1px solid var(--gold-muted)',
-                      }}
-                    />
-                  ))}
+                {/* Step indicator — refined dots */}
+                <div className="flex justify-center items-center gap-3 pt-2">
+                  {SETUP_STEPS.map((s, idx) => {
+                    const currentIdx = SETUP_STEPS.indexOf(step as (typeof SETUP_STEPS)[number]);
+                    const isPast = idx < currentIdx;
+                    const isActive = s === step;
+                    return (
+                      <div
+                        key={s}
+                        style={{
+                          width: isActive ? 18 : 5,
+                          height: 5,
+                          borderRadius: isActive ? 2 : '50%',
+                          background: isActive ? 'var(--gold)' : isPast ? 'var(--gold-muted)' : 'var(--border-gold)',
+                          transition: 'all 0.3s ease',
+                          opacity: isPast ? 0.55 : 1,
+                        }}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             )}
