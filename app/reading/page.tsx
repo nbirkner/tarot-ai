@@ -318,25 +318,43 @@ export default function ReadingPage() {
       notableTiming: '',
     });
 
-    // Fire image generation with a concurrency cap of 3 — avoids rate-limiting
-    // on larger spreads. Each resolves independently and patches drawnCards.
+    // Fire image generation with a concurrency cap of 3 and a 30s timeout per card.
+    // On failure/timeout, mark imageUrl as 'failed' so the card shows a fallback
+    // instead of hanging in "MANIFESTING" forever.
+    const IMAGE_TIMEOUT_MS = 30000;
     void pooledAllSettled(initialDrawn, 3, async (drawn, i) => {
-      const res = await fetch('/api/generate-card', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cardName: drawn.card.name,
-          deckStyle,
-          userId,
-          date: dateStr,
-          ...(userPhoto ? { userPhotoBase64: userPhoto } : {}),
-        }),
-      });
-      const data = await res.json();
-      if (data.imageUrl) {
-        resolvedImagesRef.current[i] = data.imageUrl;
+      try {
+        const res = await withTimeout(
+          fetch('/api/generate-card', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              cardName: drawn.card.name,
+              deckStyle,
+              userId,
+              date: dateStr,
+              ...(userPhoto ? { userPhotoBase64: userPhoto } : {}),
+            }),
+          }),
+          IMAGE_TIMEOUT_MS,
+          `image gen ${i}`,
+        );
+        const data = await res.json();
+        if (data.imageUrl) {
+          resolvedImagesRef.current[i] = data.imageUrl;
+          setDrawnCards((prev) =>
+            prev.map((d, j) => (j === i ? { ...d, imageUrl: data.imageUrl } : d))
+          );
+        } else {
+          // API responded but no image — mark failed so card shows fallback
+          setDrawnCards((prev) =>
+            prev.map((d, j) => (j === i ? { ...d, imageUrl: 'failed' } : d))
+          );
+        }
+      } catch {
+        console.error(`Image gen timed out or failed for ${drawn.card.name}`);
         setDrawnCards((prev) =>
-          prev.map((d, j) => (j === i ? { ...d, imageUrl: data.imageUrl } : d))
+          prev.map((d, j) => (j === i ? { ...d, imageUrl: 'failed' } : d))
         );
       }
     });
@@ -889,6 +907,7 @@ export default function ReadingPage() {
 
                     {/* Download buttons — enabled only when all card images have loaded */}
                     {(() => {
+                      // 'failed' counts as resolved — don't block download for one failed image
                       const allImagesLoaded = drawnCards.length > 0 && drawnCards.every(d => d.imageUrl);
                       const readingWithImages = { ...reading, cards: drawnCards };
                       const disabledTip = 'Available once all card images have rendered';

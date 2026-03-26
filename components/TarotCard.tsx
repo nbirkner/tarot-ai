@@ -292,7 +292,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
             className="absolute inset-0 rounded-lg overflow-hidden shadow-lg border border-[rgba(196,146,42,0.3)]"
             style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
           >
-            {drawn.imageUrl ? (
+            {drawn.imageUrl && drawn.imageUrl !== 'failed' ? (
               <div className={`w-full h-full ${drawn.reversed ? 'rotate-180' : ''}`}>
                 <Image
                   src={drawn.imageUrl}
@@ -301,6 +301,24 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
                   height={height * 2}
                   className="w-full h-full object-cover"
                 />
+              </div>
+            ) : drawn.imageUrl === 'failed' ? (
+              // Image generation failed — show a styled placeholder
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3" style={{
+                background: 'radial-gradient(ellipse at 50% 30%, #1A1020 0%, #080510 100%)',
+              }}>
+                <div style={{ color: 'rgba(196,146,42,0.3)', fontSize: 24 }}>✦</div>
+                <span style={{
+                  fontFamily: 'var(--font-cinzel), Cinzel, serif',
+                  fontSize: 6,
+                  letterSpacing: '0.18em',
+                  color: 'rgba(196,146,42,0.3)',
+                  textAlign: 'center',
+                  textTransform: 'uppercase',
+                  padding: '0 12px',
+                }}>
+                  {drawn.card.name}
+                </span>
               </div>
             ) : (
               // Image still generating — mystical loading state
