@@ -144,81 +144,6 @@ function unescapeJson(s: string): string {
   return s.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
 }
 
-function extractStringField(partial: string, key: string): { text: string; done: boolean } | null {
-  // Check for complete field first
-  const completeRe = new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 's');
-  const completeMatch = partial.match(completeRe);
-  if (completeMatch) return { text: unescapeJson(completeMatch[1]), done: true };
-
-  // Check for in-progress field
-  const partialRe = new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)$`, 's');
-  const partialMatch = partial.match(partialRe);
-  if (partialMatch && partialMatch[1].length > 3) return { text: unescapeJson(partialMatch[1]), done: false };
-
-  return null;
-}
-
-function extractCardInterpretations(partial: string, count: number): StreamingState['cards'] {
-  const cards: StreamingState['cards'] = Array.from({ length: count }, () => ({
-    keywords: [],
-    interpretation: '',
-    interpretationDone: false,
-  }));
-
-  // Keywords: find each "keywords": [...] array
-  const kwRe = /"keywords"\s*:\s*\[([^\]]*)\]/g;
-  let kwMatch;
-  let kwIdx = 0;
-  while ((kwMatch = kwRe.exec(partial)) !== null && kwIdx < count) {
-    try { cards[kwIdx].keywords = JSON.parse(`[${kwMatch[1]}]`); } catch {}
-    kwIdx++;
-  }
-
-  // Interpretations: find each "interpretation": "..." (complete or in-progress)
-  const interpRe = /"interpretation"\s*:\s*"/g;
-  let interpMatch;
-  let interpIdx = 0;
-  while ((interpMatch = interpRe.exec(partial)) !== null && interpIdx < count) {
-    const afterOpen = partial.slice(interpMatch.index + interpMatch[0].length);
-    // Walk characters to find unescaped closing quote
-    let closeIdx = -1;
-    let j = 0;
-    while (j < afterOpen.length) {
-      if (afterOpen[j] === '\\') { j += 2; continue; }
-      if (afterOpen[j] === '"') { closeIdx = j; break; }
-      j++;
-    }
-    if (closeIdx !== -1) {
-      cards[interpIdx].interpretation = unescapeJson(afterOpen.slice(0, closeIdx));
-      cards[interpIdx].interpretationDone = true;
-    } else {
-      cards[interpIdx].interpretation = unescapeJson(afterOpen);
-      cards[interpIdx].interpretationDone = false;
-    }
-    interpIdx++;
-  }
-
-  return cards;
-}
-
-function extractStreamingState(partial: string, cardCount: number): StreamingState | null {
-  const energy = extractStringField(partial, 'overallEnergy');
-  if (!energy) return null; // nothing meaningful yet
-
-  const synthesis = extractStringField(partial, 'synthesis');
-  const affirmation = extractStringField(partial, 'affirmation');
-  const timing = extractStringField(partial, 'notableTiming');
-
-  return {
-    overallEnergy: energy.text,
-    overallEnergyDone: energy.done,
-    cards: extractCardInterpretations(partial, cardCount),
-    synthesis: synthesis?.text ?? '',
-    synthesisDone: synthesis?.done ?? false,
-    affirmation: affirmation?.text ?? '',
-    notableTiming: timing?.text ?? '',
-  };
-}
 
 export default function ReadingPage() {
   const [step, setStep] = useState<Step>('question');
@@ -309,7 +234,6 @@ export default function ReadingPage() {
       }
     });
 
-    // Option 2: Stream the reading — cards become ready as soon as text is done
     const context = buildReadingContext(now);
     const formattedAstrology = formatAstrologyContext(astrology, now);
 
@@ -332,47 +256,12 @@ export default function ReadingPage() {
         }),
       });
 
-      if (!readingRes.ok || !readingRes.body) {
-        setError('The oracle is silent. Please try again.');
-        setStep('question');
+      if (!readingRes.ok) {
+        setError('The oracle fell silent. Please try again.');
         return;
       }
 
-      // Consume SSE stream
-      const reader = readingRes.body.getReader();
-      const decoder = new TextDecoder();
-      let sseBuffer = '';
-      let jsonText = '';
-
-      outer: while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        sseBuffer += decoder.decode(value, { stream: true });
-        const lines = sseBuffer.split('\n');
-        sseBuffer = lines.pop() ?? '';
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const payload = line.slice(6).trim();
-          if (payload === '[DONE]') break outer;
-          try {
-            const chunk = JSON.parse(payload);
-            const token: string = chunk.choices?.[0]?.delta?.content ?? '';
-            if (token) {
-              jsonText += token;
-              const state = extractStreamingState(jsonText, initialDrawn.length);
-              if (state) setStreamingState(state);
-            }
-          } catch {
-            // malformed chunk — skip
-          }
-        }
-      }
-
-      // Strip markdown fences if model wrapped the JSON
-      const cleanJson = jsonText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-      const readingData = JSON.parse(cleanJson);
+      const readingData = await readingRes.json();
 
       const result: ReadingResult = {
         id: crypto.randomUUID(),

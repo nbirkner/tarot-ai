@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GenerateReadingRequest } from '../../../lib/types';
 
-export const runtime = 'edge';
 
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
 const READING_MODEL = 'meta-llama/Llama-3.3-70B-Instruct-Turbo';
@@ -119,7 +118,6 @@ Respond with JSON:
         ],
         temperature: 0.85,
         max_tokens: Math.min(500 + body.cards.length * 300, 3000),
-        stream: true,
       }),
     });
 
@@ -129,14 +127,15 @@ Respond with JSON:
       return NextResponse.json({ error: 'Reading generation failed' }, { status: 500 });
     }
 
-    // Pass the SSE stream directly to the client
-    return new Response(response.body, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'X-Accel-Buffering': 'no',
-      },
-    });
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) {
+      return NextResponse.json({ error: 'No reading returned' }, { status: 500 });
+    }
+
+    const cleanContent = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    const reading = JSON.parse(cleanContent);
+    return NextResponse.json(reading);
   } catch (err) {
     console.error('generate-reading error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
