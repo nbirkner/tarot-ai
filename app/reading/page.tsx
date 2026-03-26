@@ -302,6 +302,11 @@ export default function ReadingPage() {
     });
   }
 
+  function flipAll() {
+    if (!isReadingReady) return;
+    setFlippedCards(new Set(drawnCards.map((_, i) => i)));
+  }
+
   async function startReading() {
     setStep('generating');
     setError(null);
@@ -814,8 +819,8 @@ export default function ReadingPage() {
             {/* Generating + Reveal state — dark atmosphere */}
             {(step === 'generating' || isReadingReady) && (
               <div className="space-y-10">
-                {/* Back to setup */}
-                <div>
+                {/* Top bar: Back on left, downloads on right */}
+                <div className="flex items-center justify-between">
                   <button
                     onClick={() => {
                       setStep('astrology');
@@ -840,6 +845,71 @@ export default function ReadingPage() {
                   >
                     ← Back
                   </button>
+
+                  {/* Download buttons — top right, only when reading is ready */}
+                  {isReadingReady && reading && (() => {
+                    const allImagesLoaded = drawnCards.length > 0 && drawnCards.every(d => d.imageUrl);
+                    const readingWithImages = { ...reading, cards: drawnCards };
+                    const canDownload = allImagesLoaded && !isPdfGenerating;
+                    const topBtnStyle = (active: boolean): React.CSSProperties => ({
+                      background: 'transparent',
+                      color: active ? 'var(--gold)' : 'rgba(196,146,42,0.3)',
+                      fontFamily: 'Cinzel, serif',
+                      fontSize: 10,
+                      letterSpacing: '0.12em',
+                      padding: '6px 14px',
+                      borderRadius: 2,
+                      border: `1px solid ${active ? 'rgba(196,146,42,0.4)' : 'rgba(196,146,42,0.15)'}`,
+                      cursor: active ? 'pointer' : 'not-allowed',
+                      transition: 'all 0.2s ease',
+                      textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                    });
+                    return (
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={!canDownload}
+                          onClick={async () => {
+                            setIsPdfGenerating(true);
+                            try {
+                              const { downloadReadingPDF } = await import('../../lib/pdf');
+                              await downloadReadingPDF(readingWithImages);
+                            } catch (e) {
+                              console.error('PDF generation failed:', e);
+                              alert(`PDF failed: ${e instanceof Error ? e.message : String(e)}`);
+                            } finally {
+                              setIsPdfGenerating(false);
+                            }
+                          }}
+                          style={topBtnStyle(canDownload)}
+                        >
+                          {isPdfGenerating ? '⋯' : '↓ Reading'}
+                        </button>
+                        <button
+                          disabled={!canDownload}
+                          onClick={async () => {
+                            setIsPdfGenerating(true);
+                            try {
+                              const { downloadCardsPDF } = await import('../../lib/pdf');
+                              await downloadCardsPDF(readingWithImages);
+                            } catch (e) {
+                              console.error('PDF generation failed:', e);
+                              alert(`PDF failed: ${e instanceof Error ? e.message : String(e)}`);
+                            } finally {
+                              setIsPdfGenerating(false);
+                            }
+                          }}
+                          style={{
+                            ...topBtnStyle(canDownload),
+                            color: canDownload ? 'var(--brown-mid)' : 'rgba(122,92,69,0.3)',
+                            border: `1px solid ${canDownload ? 'var(--border-brown)' : 'rgba(122,92,69,0.15)'}`,
+                          }}
+                        >
+                          {isPdfGenerating ? '⋯' : '↓ Cards'}
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Page title */}
@@ -859,18 +929,48 @@ export default function ReadingPage() {
                     </p>
                   )}
                   {isReadingReady && (
-                    <motion.p
+                    <motion.div
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      style={{
+                      className="flex flex-col items-center gap-3"
+                    >
+                      <p style={{
                         fontFamily: 'Cinzel, serif',
                         fontSize: 14,
                         letterSpacing: '0.12em',
                         color: 'var(--gold)',
-                      }}
-                    >
-                      YOUR FATE IS SEALED — CLICK EACH TO UNSEAL IT
-                    </motion.p>
+                      }}>
+                        YOUR FATE IS SEALED — CLICK EACH TO UNSEAL IT
+                      </p>
+                      {!allFlipped && (
+                        <button
+                          onClick={flipAll}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid rgba(196,146,42,0.35)',
+                            color: 'var(--gold)',
+                            fontFamily: 'Cinzel, serif',
+                            fontSize: 10,
+                            letterSpacing: '0.18em',
+                            padding: '7px 20px',
+                            borderRadius: 2,
+                            cursor: 'pointer',
+                            textTransform: 'uppercase',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={e => {
+                            (e.currentTarget as HTMLElement).style.background = 'rgba(196,146,42,0.08)';
+                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)';
+                          }}
+                          onMouseLeave={e => {
+                            (e.currentTarget as HTMLElement).style.background = 'transparent';
+                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,146,42,0.35)';
+                          }}
+                        >
+                          Reveal All
+                        </button>
+                      )}
+                    </motion.div>
                   )}
                 </div>
 
@@ -965,76 +1065,6 @@ export default function ReadingPage() {
                   >
                     <ReadingDisplay reading={reading} />
 
-                    {/* Download buttons — enabled only when all card images have loaded */}
-                    {(() => {
-                      // 'failed' counts as resolved — don't block download for one failed image
-                      const allImagesLoaded = drawnCards.length > 0 && drawnCards.every(d => d.imageUrl);
-                      const readingWithImages = { ...reading, cards: drawnCards };
-                      const disabledTip = 'Available once all card images have rendered';
-                      const canDownload = allImagesLoaded && !isPdfGenerating;
-                      const btnStyle = (active: boolean): React.CSSProperties => ({
-                        background: 'transparent',
-                        color: active ? 'var(--gold-light)' : 'rgba(196,146,42,0.3)',
-                        fontFamily: 'Cinzel, serif',
-                        fontSize: 11,
-                        letterSpacing: '0.12em',
-                        padding: '11px 24px',
-                        borderRadius: 2,
-                        border: `1px solid ${active ? 'rgba(196,146,42,0.5)' : 'rgba(196,146,42,0.18)'}`,
-                        cursor: active ? 'pointer' : 'not-allowed',
-                        transition: 'all 0.25s ease',
-                        textTransform: 'uppercase',
-                        minWidth: 200,
-                      });
-                      return (
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10">
-                          <div title={canDownload ? undefined : disabledTip} style={{ display: 'inline-flex' }}>
-                            <button
-                              disabled={!canDownload}
-                              onClick={async () => {
-                                setIsPdfGenerating(true);
-                                try {
-                                  const { downloadReadingPDF } = await import('../../lib/pdf');
-                                  await downloadReadingPDF(readingWithImages);
-                                } catch (e) {
-                                  console.error('PDF generation failed:', e);
-                                  alert(`PDF failed: ${e instanceof Error ? e.message : String(e)}`);
-                                } finally {
-                                  setIsPdfGenerating(false);
-                                }
-                              }}
-                              style={btnStyle(canDownload)}
-                            >
-                              {isPdfGenerating ? '⋯ Preparing PDF…' : allImagesLoaded ? '↓ Download Reading' : '⋯ Rendering cards…'}
-                            </button>
-                          </div>
-                          <div title={canDownload ? undefined : disabledTip} style={{ display: 'inline-flex' }}>
-                            <button
-                              disabled={!canDownload}
-                              onClick={async () => {
-                                setIsPdfGenerating(true);
-                                try {
-                                  const { downloadCardsPDF } = await import('../../lib/pdf');
-                                  await downloadCardsPDF(readingWithImages);
-                                } catch (e) {
-                                  console.error('PDF generation failed:', e);
-                                  alert(`PDF failed: ${e instanceof Error ? e.message : String(e)}`);
-                                } finally {
-                                  setIsPdfGenerating(false);
-                                }
-                              }}
-                              style={{
-                                ...btnStyle(canDownload),
-                                color: canDownload ? 'var(--brown-light)' : 'rgba(122,92,69,0.3)',
-                                border: `1px solid ${canDownload ? 'var(--border-brown)' : 'rgba(122,92,69,0.15)'}`,
-                              }}
-                            >
-                              {isPdfGenerating ? '⋯ Preparing PDF…' : allImagesLoaded ? '↓ Print Cards' : '⋯ Rendering cards…'}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })()}
 
 
                     <div className="text-center mt-12">
