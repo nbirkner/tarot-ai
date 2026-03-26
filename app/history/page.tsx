@@ -55,6 +55,33 @@ export default function HistoryPage() {
           <div style={{ flex: 1, height: 1, background: 'var(--border-gold)' }} />
         </div>
 
+        {/* localStorage notice */}
+        <div
+          style={{
+            background: 'var(--gold-pale)',
+            border: '1px solid var(--border-gold)',
+            borderRadius: 4,
+            padding: '12px 16px',
+            marginBottom: 24,
+            display: 'flex',
+            gap: 10,
+            alignItems: 'flex-start',
+          }}
+        >
+          <span style={{ color: 'var(--gold)', fontSize: 14, flexShrink: 0, marginTop: 1 }}>☽</span>
+          <p
+            style={{
+              fontFamily: 'Cormorant Garamond, serif',
+              fontSize: 15,
+              fontStyle: 'italic',
+              color: 'var(--brown-mid)',
+              lineHeight: 1.5,
+            }}
+          >
+            Your readings are saved locally in this browser. They may be lost if you clear your browser data, open a private window, or switch devices.
+          </p>
+        </div>
+
         {/* Empty state */}
         {readings.length === 0 ? (
           <div className="text-center py-20">

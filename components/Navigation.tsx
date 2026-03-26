@@ -10,7 +10,6 @@ export function Navigation() {
 
   const links = [
     { href: '/reading', label: 'Oracle' },
-    { href: '/collection', label: 'Collection' },
     { href: '/history', label: 'History' },
   ];
 
