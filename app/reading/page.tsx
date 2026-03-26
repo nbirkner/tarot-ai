@@ -44,7 +44,7 @@ const WITCHY_PHRASES = [
   'checking if Mercury is up to something again...',
   'filing a cosmic ticket on your behalf...',
   'waiting for the universe to load...',
-  'consulting the oracle (she's with another client)...',
+  "consulting the oracle (she's with another client)...",
 ];
 
 function WitchyLoader() {
