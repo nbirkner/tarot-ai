@@ -247,7 +247,7 @@ export default function Home() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                Your Personal Oracle · No Notes
+                Your Personal Oracle
               </p>
             </div>
           </div>
@@ -353,7 +353,7 @@ export default function Home() {
                   letterSpacing: '0.04em',
                 }}
               >
-                Powered by Together AI · Centuries of symbolism. Generated in seconds. · The oracle is not liable for epiphanies
+                Powered by Together AI · Centuries of symbolism, generated in seconds · The oracle is not liable for epiphanies
               </p>
             </div>
           </div>
