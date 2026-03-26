@@ -746,6 +746,34 @@ export default function ReadingPage() {
             {/* Generating + Reveal state — dark atmosphere */}
             {(step === 'generating' || isReadingReady) && (
               <div className="space-y-10">
+                {/* Back to setup */}
+                <div>
+                  <button
+                    onClick={() => {
+                      setStep('astrology');
+                      setDrawnCards([]);
+                      setFlippedCards(new Set());
+                      setStreamingState(null);
+                      setReading(null);
+                      setError(null);
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'rgba(196,146,42,0.5)',
+                      fontFamily: 'Cinzel, serif',
+                      fontSize: 11,
+                      letterSpacing: '0.12em',
+                      cursor: 'pointer',
+                      padding: '4px 0',
+                    }}
+                    onMouseEnter={e => { (e.target as HTMLElement).style.color = 'var(--gold)'; }}
+                    onMouseLeave={e => { (e.target as HTMLElement).style.color = 'rgba(196,146,42,0.5)'; }}
+                  >
+                    ← Back
+                  </button>
+                </div>
+
                 {/* Page title */}
                 <div className="text-center pt-4">
                   {question && (
