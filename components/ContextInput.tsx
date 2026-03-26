@@ -74,7 +74,7 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
         />
         <p
           style={{
-            fontFamily: 'Cormorant Garamond, serif',
+            fontFamily: 'EB Garamond, serif',
             fontSize: 13,
             fontStyle: 'italic',
             color: 'var(--brown-light)',
@@ -92,7 +92,7 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
             <div style={{ flex: 1, height: 1, background: 'var(--border-gold)' }} />
             <span
               style={{
-                fontFamily: 'Cormorant Garamond, serif',
+                fontFamily: 'EB Garamond, serif',
                 fontSize: 13,
                 color: 'var(--brown-light)',
                 fontStyle: 'italic',
@@ -118,7 +118,7 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
                 <div key={i}>
                   <label
                     style={{
-                      fontFamily: 'Cormorant Garamond, serif',
+                      fontFamily: 'EB Garamond, serif',
                       fontSize: 16,
                       fontStyle: 'italic',
                       color: 'var(--brown-dark)',

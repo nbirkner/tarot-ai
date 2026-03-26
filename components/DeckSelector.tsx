@@ -78,7 +78,7 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
               </p>
               <p
                 style={{
-                  fontFamily: 'Cormorant Garamond, serif',
+                  fontFamily: 'EB Garamond, serif',
                   fontSize: 15,
                   fontStyle: 'italic',
                   color: 'var(--brown-light)',
@@ -89,7 +89,7 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
               </p>
               <p
                 style={{
-                  fontFamily: 'Cormorant Garamond, serif',
+                  fontFamily: 'EB Garamond, serif',
                   fontSize: 13,
                   color: 'var(--gold)',
                 }}

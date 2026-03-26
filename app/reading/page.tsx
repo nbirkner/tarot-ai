@@ -86,7 +86,7 @@ function WitchyLoader() {
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.35 }}
             style={{
-              fontFamily: 'Cormorant Garamond, serif',
+              fontFamily: 'EB Garamond, serif',
               fontSize: 20,
               fontStyle: 'italic',
               color: '#E8C96A',
@@ -456,7 +456,7 @@ export default function ReadingPage() {
                   {STEP_CONFIG[step as keyof typeof STEP_CONFIG]?.subtitle && (
                     <p
                       style={{
-                        fontFamily: 'Cormorant Garamond, serif',
+                        fontFamily: 'EB Garamond, serif',
                         fontSize: 17,
                         color: 'var(--brown-mid)',
                         fontStyle: 'italic',
@@ -505,7 +505,7 @@ export default function ReadingPage() {
                   <p
                     style={{
                       color: 'var(--rose)',
-                      fontFamily: 'Cormorant Garamond, serif',
+                      fontFamily: 'EB Garamond, serif',
                       fontStyle: 'italic',
                       textAlign: 'center',
                     }}
@@ -573,7 +573,7 @@ export default function ReadingPage() {
                   {question && (
                     <p
                       style={{
-                        fontFamily: 'Cormorant Garamond, serif',
+                        fontFamily: 'EB Garamond, serif',
                         fontSize: 18,
                         fontStyle: 'italic',
                         color: isDark ? 'var(--gold-muted)' : 'var(--brown-mid)',
@@ -637,7 +637,7 @@ export default function ReadingPage() {
                 {/* Error state */}
                 {error && !isReadingReady && (
                   <div className="text-center py-10 space-y-4">
-                    <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 18, fontStyle: 'italic', color: isDark ? 'rgba(248,244,239,0.6)' : 'var(--brown-light)' }}>
+                    <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 18, fontStyle: 'italic', color: isDark ? 'rgba(248,244,239,0.6)' : 'var(--brown-light)' }}>
                       {error}
                     </p>
                     <button onClick={startReading} className="btn-primary">Try Again</button>
@@ -661,6 +661,58 @@ export default function ReadingPage() {
                     transition={{ duration: 0.5 }}
                   >
                     <ReadingDisplay reading={reading} />
+
+                    {/* Download buttons */}
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10">
+                      <button
+                        onClick={async () => {
+                          const { downloadReadingPDF } = await import('../../lib/pdf');
+                          await downloadReadingPDF(reading);
+                        }}
+                        style={{
+                          background: 'transparent',
+                          color: 'var(--gold-light)',
+                          fontFamily: 'Cinzel, serif',
+                          fontSize: 11,
+                          letterSpacing: '0.12em',
+                          padding: '11px 24px',
+                          borderRadius: 2,
+                          border: '1px solid rgba(196,146,42,0.5)',
+                          cursor: 'pointer',
+                          transition: 'all 0.25s ease',
+                          textTransform: 'uppercase' as const,
+                          minWidth: 200,
+                        }}
+                        onMouseEnter={e => { (e.target as HTMLElement).style.background = 'rgba(196,146,42,0.1)'; }}
+                        onMouseLeave={e => { (e.target as HTMLElement).style.background = 'transparent'; }}
+                      >
+                        ↓ Download Reading
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const { downloadCardsPDF } = await import('../../lib/pdf');
+                          await downloadCardsPDF(reading);
+                        }}
+                        style={{
+                          background: 'transparent',
+                          color: isDark ? 'rgba(248,244,239,0.45)' : 'var(--brown-light)',
+                          fontFamily: 'Cinzel, serif',
+                          fontSize: 11,
+                          letterSpacing: '0.12em',
+                          padding: '11px 24px',
+                          borderRadius: 2,
+                          border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'var(--border-brown)'}`,
+                          cursor: 'pointer',
+                          transition: 'all 0.25s ease',
+                          textTransform: 'uppercase' as const,
+                          minWidth: 200,
+                        }}
+                        onMouseEnter={e => { (e.target as HTMLElement).style.borderColor = 'rgba(196,146,42,0.35)'; (e.target as HTMLElement).style.color = 'var(--gold-muted)'; }}
+                        onMouseLeave={e => { (e.target as HTMLElement).style.borderColor = isDark ? 'rgba(255,255,255,0.12)' : 'var(--border-brown)'; (e.target as HTMLElement).style.color = isDark ? 'rgba(248,244,239,0.45)' : 'var(--brown-light)'; }}
+                      >
+                        ↓ Print Cards
+                      </button>
+                    </div>
 
                     <div className="text-center mt-12">
                       <button

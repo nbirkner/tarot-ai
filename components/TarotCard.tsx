@@ -23,7 +23,7 @@ const SIZES = {
   hero: { width: 260, height: 390 },
 };
 
-function CardBackSVG() {
+function CardBackSVG({ cardName, position, reversed }: { cardName?: string; position?: string; reversed?: boolean }) {
   return (
     <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
       <defs>
@@ -175,18 +175,37 @@ function CardBackSVG() {
         TAROT · AI
       </text>
 
-      {/* Decorative stars bottom */}
-      <text
-        x="100" y="288"
-        textAnchor="middle"
-        fontFamily="serif"
-        fontSize="8"
-        fill="#C4922A"
-        opacity="0.5"
-        letterSpacing="7"
-      >
-        ✦ ✦ ✦
-      </text>
+      {/* Card name + position on the back */}
+      {cardName ? (
+        <g>
+          {/* Subtle frosted banner */}
+          <rect x="14" y="258" width="172" height="34" rx="3" fill="#1A0F06" opacity="0.45" />
+          <rect x="14" y="258" width="172" height="34" rx="3" fill="none" stroke="#C4922A" strokeWidth="0.5" opacity="0.3" />
+          <text
+            x="100" y="272"
+            textAnchor="middle"
+            fontFamily="Cinzel, Georgia, serif"
+            fontSize="8.5"
+            fill="#F5E9CC"
+            opacity="0.92"
+            letterSpacing="1.5"
+          >
+            {cardName.toUpperCase()}
+          </text>
+          {reversed && (
+            <text x="100" y="283" textAnchor="middle" fontFamily="Georgia, serif" fontSize="6.5" fill="#B5706E" opacity="0.85" fontStyle="italic">
+              reversed
+            </text>
+          )}
+          {position && !reversed && (
+            <text x="100" y="283" textAnchor="middle" fontFamily="Georgia, serif" fontSize="6.5" fill="#D4B483" opacity="0.75" fontStyle="italic">
+              {position}
+            </text>
+          )}
+        </g>
+      ) : (
+        <text x="100" y="288" textAnchor="middle" fontFamily="serif" fontSize="8" fill="#C4922A" opacity="0.5" letterSpacing="7">✦ ✦ ✦</text>
+      )}
 
       {/* Side line accents */}
       <line x1="17" y1="80" x2="17" y2="220" stroke="#C4922A" strokeWidth="0.5" opacity="0.18" />
@@ -263,14 +282,14 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
           animate={{ rotateY: isFlipped ? 180 : 0 }}
           transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
         >
-          {/* CARD BACK — face down (shown first) */}
+          {/* CARD BACK — face down (shown first), shows card name */}
           <div
             className={`absolute inset-0 rounded-lg overflow-hidden shadow-lg transition-shadow duration-500 ${
               isFlippable && !isFlipped ? 'card-glow shadow-[0_0_30px_rgba(196,146,42,0.2)]' : 'shadow-[0_4px_20px_rgba(42,31,20,0.12)]'
             }`}
             style={{ backfaceVisibility: 'hidden' }}
           >
-            <CardBackSVG />
+            <CardBackSVG cardName={drawn.card.name} position={drawn.position} reversed={drawn.reversed} />
           </div>
 
           {/* CARD FRONT — revealed on flip (the AI art) */}
@@ -289,17 +308,26 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
                 />
               </div>
             ) : (
-              <div className="w-full h-full bg-[#F5EDD8] flex items-center justify-center">
-                <span
-                  style={{
-                    fontFamily: 'Cormorant Garamond, serif',
-                    color: '#7A5C45',
-                    fontSize: 12,
-                    textAlign: 'center',
-                    padding: '0 8px',
-                  }}
-                >
-                  {drawn.card.name}
+              // Image still generating — shimmer skeleton
+              <div className="w-full h-full bg-[#1A1008] flex flex-col items-center justify-center gap-3" style={{ position: 'relative', overflow: 'hidden' }}>
+                {/* Shimmer sweep */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  backgroundImage: 'linear-gradient(105deg, transparent 40%, rgba(196,146,42,0.08) 50%, transparent 60%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'shimmer 2s ease-in-out infinite',
+                }} />
+                {/* Orbiting ring */}
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  border: '1px solid rgba(196,146,42,0.35)',
+                  animation: 'rotate-slow 4s linear infinite',
+                  position: 'relative', flexShrink: 0,
+                }}>
+                  <div style={{ position: 'absolute', top: -4, left: '50%', transform: 'translateX(-50%)', color: '#C4922A', fontSize: 7 }}>✦</div>
+                </div>
+                <span style={{ fontFamily: 'Cinzel, serif', fontSize: 7, letterSpacing: '0.15em', color: 'rgba(196,146,42,0.6)', textAlign: 'center', padding: '0 8px' }}>
+                  RENDERING
                 </span>
               </div>
             )}
@@ -327,12 +355,12 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
               {drawn.card.name}
             </p>
             {drawn.reversed && (
-              <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 12, color: '#B5706E', fontStyle: 'italic' }}>
+              <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 12, color: '#B5706E', fontStyle: 'italic' }}>
                 reversed
               </p>
             )}
             {drawn.position && (
-              <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 13, color: '#A88C78', fontStyle: 'italic' }}>
+              <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 13, color: '#A88C78', fontStyle: 'italic' }}>
                 {drawn.position}
               </p>
             )}
@@ -348,7 +376,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             style={{
-              fontFamily: 'Cormorant Garamond, serif',
+              fontFamily: 'EB Garamond, serif',
               fontSize: 13,
               color: '#C4922A',
               fontStyle: 'italic',

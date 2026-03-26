@@ -45,7 +45,7 @@ export function Navigation() {
                 key={l.href}
                 href={l.href}
                 style={{
-                  fontFamily: 'Cormorant Garamond, serif',
+                  fontFamily: 'EB Garamond, serif',
                   fontSize: 16,
                   letterSpacing: '0.05em',
                   color: path === l.href ? 'var(--gold)' : 'var(--brown-mid)',
@@ -102,7 +102,7 @@ export function Navigation() {
               style={{
                 display: 'block',
                 padding: '16px 24px',
-                fontFamily: 'Cormorant Garamond, serif',
+                fontFamily: 'EB Garamond, serif',
                 fontSize: 18,
                 letterSpacing: '0.05em',
                 color: path === l.href ? 'var(--gold)' : 'var(--brown-mid)',

@@ -50,7 +50,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
         </p>
         <p
           style={{
-            fontFamily: 'Cormorant Garamond, serif',
+            fontFamily: 'EB Garamond, serif',
             fontSize: 22,
             lineHeight: 1.7,
             color: 'var(--brown-dark)',
@@ -108,7 +108,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
                 </h4>
                 <p
                   style={{
-                    fontFamily: 'Cormorant Garamond, serif',
+                    fontFamily: 'EB Garamond, serif',
                     fontSize: 14,
                     fontStyle: 'italic',
                     color: 'var(--brown-light)',
@@ -122,7 +122,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
                   <span
                     key={kw}
                     style={{
-                      fontFamily: 'Cormorant Garamond, serif',
+                      fontFamily: 'EB Garamond, serif',
                       fontSize: 12,
                       color: 'var(--sage)',
                       border: '1px solid rgba(74,122,101,0.25)',
@@ -139,7 +139,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
             </div>
             <p
               style={{
-                fontFamily: 'Cormorant Garamond, serif',
+                fontFamily: 'EB Garamond, serif',
                 fontSize: 19,
                 lineHeight: 1.7,
                 color: 'var(--brown-mid)',
@@ -194,7 +194,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
         </p>
         <p
           style={{
-            fontFamily: 'Cormorant Garamond, serif',
+            fontFamily: 'EB Garamond, serif',
             fontSize: 20,
             lineHeight: 1.7,
             color: 'var(--brown-dark)',
@@ -236,7 +236,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
         >
           <p
             style={{
-              fontFamily: 'Cormorant Garamond, serif',
+              fontFamily: 'EB Garamond, serif',
               fontSize: 16,
               fontStyle: 'italic',
               color: 'var(--brown-light)',

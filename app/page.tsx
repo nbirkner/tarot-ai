@@ -298,7 +298,7 @@ export default function Home() {
               <div className="h-px flex-1 max-w-xs" style={{ background: 'var(--border-gold)' }} />
               <p
                 style={{
-                  fontFamily: 'Cormorant Garamond, serif',
+                  fontFamily: 'EB Garamond, serif',
                   fontSize: 12,
                   letterSpacing: '0.18em',
                   color: 'var(--brown-light)',
@@ -321,7 +321,7 @@ export default function Home() {
           >
             <p
               style={{
-                fontFamily: 'Cormorant Garamond, serif',
+                fontFamily: 'EB Garamond, serif',
                 fontSize: 'clamp(18px, 2vw, 22px)',
                 fontStyle: 'italic',
                 color: 'var(--brown-mid)',
@@ -351,7 +351,7 @@ export default function Home() {
               </svg>
               <p
                 style={{
-                  fontFamily: 'Cormorant Garamond, serif',
+                  fontFamily: 'EB Garamond, serif',
                   fontSize: 13,
                   fontStyle: 'italic',
                   color: 'var(--brown-light)',
@@ -376,7 +376,7 @@ export default function Home() {
                 key={tag}
                 className="feature-pill"
                 style={{
-                  fontFamily: 'Cormorant Garamond, serif',
+                  fontFamily: 'EB Garamond, serif',
                   fontSize: 13,
                   color: 'var(--brown-mid)',
                   border: '1px solid var(--border-gold)',
@@ -421,7 +421,7 @@ export default function Home() {
           >
             <p
               style={{
-                fontFamily: 'Cormorant Garamond, serif',
+                fontFamily: 'EB Garamond, serif',
                 fontSize: 13,
                 color: 'var(--brown-light)',
                 opacity: 0.65,

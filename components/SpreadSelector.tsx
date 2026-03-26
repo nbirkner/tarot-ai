@@ -42,7 +42,7 @@ export function SpreadSelector({ value, onChange }: SpreadSelectorProps) {
               </p>
               <p
                 style={{
-                  fontFamily: 'Cormorant Garamond, serif',
+                  fontFamily: 'EB Garamond, serif',
                   fontSize: 15,
                   fontStyle: 'italic',
                   color: 'var(--brown-light)',
@@ -53,7 +53,7 @@ export function SpreadSelector({ value, onChange }: SpreadSelectorProps) {
               </p>
               <p
                 style={{
-                  fontFamily: 'Cormorant Garamond, serif',
+                  fontFamily: 'EB Garamond, serif',
                   fontSize: 13,
                   color: 'var(--gold)',
                   marginTop: 4,

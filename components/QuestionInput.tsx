@@ -30,7 +30,7 @@ export function QuestionInput({ value, onChange, onSkip }: QuestionInputProps) {
       <div>
         <p
           style={{
-            fontFamily: 'Cormorant Garamond, serif',
+            fontFamily: 'EB Garamond, serif',
             fontSize: 13,
             color: 'var(--brown-light)',
             fontStyle: 'italic',
@@ -47,7 +47,7 @@ export function QuestionInput({ value, onChange, onSkip }: QuestionInputProps) {
               key={s}
               onClick={() => onChange(s)}
               style={{
-                fontFamily: 'Cormorant Garamond, serif',
+                fontFamily: 'EB Garamond, serif',
                 fontSize: 14,
                 fontStyle: 'italic',
                 color: 'var(--brown-mid)',
@@ -76,7 +76,7 @@ export function QuestionInput({ value, onChange, onSkip }: QuestionInputProps) {
       <button
         onClick={onSkip}
         style={{
-          fontFamily: 'Cormorant Garamond, serif',
+          fontFamily: 'EB Garamond, serif',
           fontSize: 15,
           color: 'var(--brown-light)',
           fontStyle: 'italic',

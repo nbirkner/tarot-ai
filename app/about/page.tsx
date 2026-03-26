@@ -78,7 +78,7 @@ export default function AboutPage() {
           </h1>
           <p
             style={{
-              fontFamily: 'Cormorant Garamond, serif',
+              fontFamily: 'EB Garamond, serif',
               fontSize: 18,
               fontStyle: 'italic',
               color: 'var(--brown-mid)',
@@ -114,7 +114,7 @@ export default function AboutPage() {
                 <div>
                   <p
                     style={{
-                      fontFamily: 'Cormorant Garamond, serif',
+                      fontFamily: 'EB Garamond, serif',
                       fontSize: 12,
                       letterSpacing: '0.15em',
                       color: m.accent,
@@ -138,7 +138,7 @@ export default function AboutPage() {
                   </h2>
                   <p
                     style={{
-                      fontFamily: 'Cormorant Garamond, serif',
+                      fontFamily: 'EB Garamond, serif',
                       fontSize: 13,
                       fontStyle: 'italic',
                       color: 'var(--brown-light)',
@@ -164,7 +164,7 @@ export default function AboutPage() {
               {/* Description */}
               <p
                 style={{
-                  fontFamily: 'Cormorant Garamond, serif',
+                  fontFamily: 'EB Garamond, serif',
                   fontSize: 17,
                   lineHeight: 1.65,
                   color: 'var(--brown-mid)',
@@ -177,7 +177,7 @@ export default function AboutPage() {
               {/* Detail note */}
               <p
                 style={{
-                  fontFamily: 'Cormorant Garamond, serif',
+                  fontFamily: 'EB Garamond, serif',
                   fontSize: 14,
                   fontStyle: 'italic',
                   color: 'var(--brown-light)',
@@ -194,7 +194,7 @@ export default function AboutPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    fontFamily: 'Cormorant Garamond, serif',
+                    fontFamily: 'EB Garamond, serif',
                     fontSize: 14,
                     color: m.accent,
                     textDecoration: 'none',
@@ -210,7 +210,7 @@ export default function AboutPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    fontFamily: 'Cormorant Garamond, serif',
+                    fontFamily: 'EB Garamond, serif',
                     fontSize: 14,
                     color: 'var(--brown-light)',
                     textDecoration: 'none',
@@ -249,7 +249,7 @@ export default function AboutPage() {
           </p>
           <p
             style={{
-              fontFamily: 'Cormorant Garamond, serif',
+              fontFamily: 'EB Garamond, serif',
               fontSize: 16,
               lineHeight: 1.65,
               color: 'var(--brown-mid)',
@@ -264,7 +264,7 @@ export default function AboutPage() {
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                fontFamily: 'Cormorant Garamond, serif',
+                fontFamily: 'EB Garamond, serif',
                 fontSize: 14,
                 color: 'var(--gold)',
                 textDecoration: 'none',
@@ -279,7 +279,7 @@ export default function AboutPage() {
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                fontFamily: 'Cormorant Garamond, serif',
+                fontFamily: 'EB Garamond, serif',
                 fontSize: 14,
                 color: 'var(--brown-light)',
                 textDecoration: 'none',
