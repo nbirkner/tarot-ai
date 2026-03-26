@@ -156,6 +156,23 @@ body::before {
   cursor: pointer;
   transition: all 0.25s ease;
   text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: -50%; left: -75%;
+  width: 50%; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  transform: skewX(-20deg);
+  transition: none;
+}
+
+.btn-primary:hover::after {
+  left: 125%;
+  transition: left 0.6s ease;
 }
 
 .btn-primary:hover {
@@ -163,6 +180,8 @@ body::before {
   transform: translateY(-1px);
   box-shadow: 0 4px 20px rgba(196, 146, 42, 0.3);
 }
+
+.btn-primary:active { transform: scale(0.98); }
 
 .btn-secondary {
   background: transparent;
@@ -183,6 +202,8 @@ body::before {
   color: var(--gold);
 }
 
+.btn-secondary:active { transform: scale(0.98); }
+
 /* Card input styles */
 .input-field {
   background: var(--cream-card);
@@ -198,8 +219,9 @@ body::before {
 }
 
 .input-field:focus {
+  outline: none;
   border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(196, 146, 42, 0.08);
+  box-shadow: 0 0 0 3px rgba(196,146,42,0.1);
 }
 
 .input-field::placeholder {
@@ -214,13 +236,13 @@ body::before {
   border-radius: 4px;
   padding: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
   text-align: left;
 }
 
 .select-card:hover {
   border-color: var(--gold);
-  box-shadow: 0 2px 16px rgba(196, 146, 42, 0.12);
+  box-shadow: 0 4px 16px rgba(196,146,42,0.12);
   transform: translateY(-1px);
 }
 
@@ -232,8 +254,12 @@ body::before {
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--parchment); }
-::-webkit-scrollbar-thumb { background: var(--gold-muted); border-radius: 3px; }
+::-webkit-scrollbar-track { background: var(--cream); }
+::-webkit-scrollbar-thumb { background: var(--border-gold); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+/* Text selection */
+::selection { background: var(--gold-pale); color: var(--brown-dark); }
 
 /* Mobile: prevent iOS zoom on inputs */
 input, textarea, select {
@@ -243,4 +269,37 @@ input, textarea, select {
 /* Touch targets */
 .btn-primary, .btn-secondary {
   min-height: 44px;
+}
+
+/* Floating particle animation */
+@keyframes drift-up {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.2; }
+  100% { transform: translateY(-120px) translateX(var(--drift-x, 20px)) scale(0.5); opacity: 0; }
+}
+
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: drift-up var(--duration, 4s) ease-in var(--delay, 0s) infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse-candle {
+  0%, 100% { opacity: 0.12; transform: scale(1); }
+  50% { opacity: 0.18; transform: scale(1.05); }
+}
+
+/* Feature pill hover */
+.feature-pill {
+  transition: all 0.2s ease;
+}
+.feature-pill:hover {
+  background: var(--gold-pale) !important;
+  border-color: var(--gold) !important;
+  color: var(--brown-dark) !important;
 }

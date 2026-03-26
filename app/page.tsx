@@ -17,7 +17,7 @@ export default function Home() {
           left: 0,
           width: '45%',
           height: '55%',
-          background: 'radial-gradient(ellipse at 0% 0%, rgba(42,31,20,0.18) 0%, transparent 65%)',
+          background: 'radial-gradient(ellipse at 0% 0%, rgba(15,8,4,0.18) 0%, transparent 65%)',
         }}
       />
       <div
@@ -27,7 +27,7 @@ export default function Home() {
           right: 0,
           width: '45%',
           height: '55%',
-          background: 'radial-gradient(ellipse at 100% 0%, rgba(42,31,20,0.14) 0%, transparent 65%)',
+          background: 'radial-gradient(ellipse at 100% 0%, rgba(15,8,4,0.18) 0%, transparent 65%)',
         }}
       />
 
@@ -41,16 +41,19 @@ export default function Home() {
           [8, 12], [15, 45], [22, 8], [35, 72], [42, 28], [55, 88], [62, 15],
           [70, 55], [78, 30], [85, 78], [92, 18], [5, 65], [48, 5], [88, 92],
           [30, 90], [72, 8], [18, 80], [95, 45], [40, 50], [65, 70],
+          [12, 30], [25, 60], [38, 18], [50, 82], [60, 40], [74, 68], [82, 12],
+          [90, 58], [3, 85], [45, 35], [58, 92], [67, 25], [77, 48], [86, 35],
+          [10, 52], [20, 75], [32, 42], [52, 15], [63, 55], [93, 28], [16, 20],
         ].map(([x, y], i) => (
           <circle
             key={i}
             cx={`${x}%`}
             cy={`${y}%`}
-            r={i % 3 === 0 ? 1.5 : 1}
+            r={i % 5 === 0 ? 2 : i % 4 === 0 ? 1.5 : i % 7 === 0 ? 2.5 : 1}
             fill="#C4922A"
             style={{
-              animation: `star-twinkle ${2 + (i % 4) * 0.7}s ease-in-out infinite`,
-              animationDelay: `${(i * 0.37) % 3}s`,
+              animation: `star-twinkle ${3 + (i % 9) * 1}s ease-in-out infinite`,
+              animationDelay: `${(i * 0.43) % 5}s`,
             }}
           />
         ))}
@@ -253,6 +256,7 @@ export default function Home() {
                 lineHeight: 1.05,
                 letterSpacing: '0.01em',
                 marginBottom: '0.1em',
+                textShadow: '0 2px 40px rgba(196,146,42,0.2)',
               }}
             >
               Read the cards.
@@ -309,7 +313,7 @@ export default function Home() {
 
           {/* Tagline prose */}
           <div
-            className="max-w-md mb-10"
+            className="max-w-md mb-4"
             style={{
               animation: 'shimmer-in 0.6s ease-out 0.5s forwards',
               opacity: 0,
@@ -330,6 +334,35 @@ export default function Home() {
             </p>
           </div>
 
+          {/* Floating moon phase indicator — decorative */}
+          <div
+            className="mb-8"
+            style={{
+              animation: 'shimmer-in 0.6s ease-out 0.58s forwards, float-gentle 6s ease-in-out 0.58s infinite',
+              opacity: 0,
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.6 }}>
+                <path
+                  d="M8 2 Q13 5 13 8 Q13 11 8 14 Q14 12.5 15 8 Q14.5 3 8 2Z"
+                  fill="var(--brown-light)"
+                />
+              </svg>
+              <p
+                style={{
+                  fontFamily: 'Cormorant Garamond, serif',
+                  fontSize: 13,
+                  fontStyle: 'italic',
+                  color: 'var(--brown-light)',
+                  letterSpacing: '0.08em',
+                }}
+              >
+                ✦ your oracle awaits ✦
+              </p>
+            </div>
+          </div>
+
           {/* Feature pills */}
           <div
             className="flex flex-wrap gap-2 mb-10"
@@ -341,6 +374,7 @@ export default function Home() {
             {['Unique card art', 'Moon & astrology', 'Your own oracle', 'Daily readings'].map((tag) => (
               <span
                 key={tag}
+                className="feature-pill"
                 style={{
                   fontFamily: 'Cormorant Garamond, serif',
                   fontSize: 13,
@@ -350,6 +384,7 @@ export default function Home() {
                   padding: '4px 14px',
                   background: 'rgba(253,250,246,0.6)',
                   letterSpacing: '0.04em',
+                  display: 'inline-block',
                 }}
               >
                 {tag}
@@ -392,7 +427,7 @@ export default function Home() {
                 opacity: 0.65,
               }}
             >
-              Powered by Together AI · Every card uniquely generated
+              Powered by Together AI · Every card uniquely generated · Readings influenced by the stars
             </p>
           </div>
 
