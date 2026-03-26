@@ -30,12 +30,12 @@ const models = [
     symbol: '◉',
   },
   {
-    name: 'Llama 3.3 70B Instruct Turbo',
+    name: 'Llama 4 Maverick',
     provider: 'Meta',
     role: 'Reading & follow-up questions',
     description:
-      'The heart of the oracle. Llama 3.3 70B powers two things: the full tarot reading — interpreting each card in context of your question, astrology, and situation — and the personalized follow-up questions it asks before drawing the cards.',
-    detail: 'Structured JSON output for consistent reading format. Temperature 0.85 for the reading, 0.8 for questions.',
+      'The heart of the oracle. Llama 4 Maverick powers the reading engine — interpreting each card in parallel, synthesizing the full spread into a unified narrative, and generating the personalized follow-up questions before the cards are drawn.',
+    detail: 'Structured JSON output for consistent reading format. Parallel card calls for speed. Temperature 0.85 for readings, 0.8 for questions.',
     docsUrl: 'https://docs.together.ai/docs/serverless-models',
     docsLabel: 'Serverless models',
     apiRef: 'https://docs.together.ai/reference/chat-completions',

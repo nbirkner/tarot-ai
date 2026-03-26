@@ -18,11 +18,12 @@ export async function POST(req: NextRequest) {
     }
 
     const styleModifier = STYLE_MODIFIERS[deckStyle];
-    let fullPrompt = `${basePrompt} ${styleModifier}. Ornate decorative tarot card border with corner flourishes. Card title "${cardName.toUpperCase()}" at the bottom in gothic serif lettering. High detail illustration.`;
+    const safetyPrefix = 'Safe, tasteful, fully clothed, family-friendly tarot illustration. ';
+    let fullPrompt = `${safetyPrefix}${basePrompt} ${styleModifier}. Ornate decorative tarot card border with corner flourishes. Card title "${cardName.toUpperCase()}" at the bottom in gothic serif lettering. High detail illustration.`;
 
     if (userPhotoBase64) {
       // Try FLUX.1-kontext-pro with the reference photo
-      fullPrompt += ' The human figures in this card should have the facial features and appearance of the person in the reference image.';
+      fullPrompt += ' Apply the faces and appearance of the people in the reference photo to the human figures in this card — if the reference shows one person apply them to the card\'s main figure, if multiple people are shown distribute them naturally across the card\'s figures. Keep all symbolic objects, animals, landscapes, and celestial elements unchanged. All figures must be fully clothed and tasteful.';
 
       try {
         const kontextResponse = await fetch('https://api.together.xyz/v1/images/generations', {

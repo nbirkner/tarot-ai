@@ -35,7 +35,7 @@ export const CARD_PROMPTS: Record<string, string> = {
   'The Tower':
     'tarot card, The Tower. A tall stone tower is struck by lightning, its crown blown off, two figures falling. Flames pour from windows. Sense of sudden upheaval, revelation, destruction of false structures, and liberation through chaos.',
   'The Star':
-    'tarot card, The Star. A nude figure kneels by a pool, pouring water from two jugs. Seven small stars and one large eight-pointed star glow in a serene night sky. Sense of hope, healing, renewal, and divine guidance.',
+    'tarot card, The Star. A robed figure kneels by a pool, pouring water from two jugs. Seven small stars and one large eight-pointed star glow in a serene night sky. Sense of hope, healing, renewal, and divine guidance.',
   'The Moon':
     'tarot card, The Moon. A large luminous moon shines over still dark water. A crayfish emerges from the pool. A wolf and a dog howl. Two towers stand in the distance. Sense of illusion, fear, the subconscious, and the mysteries of the night.',
   'The Sun':
