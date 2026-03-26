@@ -543,6 +543,33 @@ export default function ReadingPage() {
   const isSetupStep = SETUP_STEPS.includes(step as (typeof SETUP_STEPS)[number]);
   const isDark = !isSetupStep;
 
+  // Advance setup flow on Enter key press
+  useEffect(() => {
+    if (!isSetupStep) return;
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Enter') return;
+
+      const active = document.activeElement;
+      const isTextarea = active instanceof HTMLTextAreaElement;
+
+      // Shift+Enter inside a textarea = newline, don't advance
+      if (isTextarea && e.shiftKey) return;
+
+      // Plain Enter (textarea or elsewhere) = advance
+      e.preventDefault();
+      const currentIndex = SETUP_STEPS.indexOf(step as (typeof SETUP_STEPS)[number]);
+      if (step === 'astrology') {
+        startReading();
+      } else {
+        setStep(SETUP_STEPS[currentIndex + 1]);
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [step, isSetupStep]);
+
   // Background styles
   const lightBg = 'var(--cream)';
   const darkBg =
