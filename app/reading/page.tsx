@@ -139,6 +139,27 @@ const SETUP_STEPS: Array<Exclude<Step, 'generating' | 'reveal' | 'reading'>> = [
   'astrology',
 ];
 
+function unescapeJson(s: string): string {
+  return s.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+}
+
+// Extract the latest human-readable oracle text from partial streaming JSON
+function extractOracleWords(partial: string): string {
+  // Synthesis is last — show it once it starts
+  const synthMatch = partial.match(/"synthesis"\s*:\s*"((?:[^"\\]|\\.)*)/);
+  if (synthMatch) return unescapeJson(synthMatch[1]);
+
+  // Show the last in-progress interpretation
+  const interpMatches = [...partial.matchAll(/"interpretation"\s*:\s*"((?:[^"\\]|\\.)*)/g)];
+  if (interpMatches.length > 0) return unescapeJson(interpMatches[interpMatches.length - 1][1]);
+
+  // Fall back to overallEnergy
+  const energyMatch = partial.match(/"overallEnergy"\s*:\s*"((?:[^"\\]|\\.)*)/);
+  if (energyMatch) return unescapeJson(energyMatch[1]);
+
+  return '';
+}
+
 export default function ReadingPage() {
   const [step, setStep] = useState<Step>('question');
   const [question, setQuestion] = useState('');
@@ -152,6 +173,7 @@ export default function ReadingPage() {
   const [isReadingReady, setIsReadingReady] = useState(false);
   const [reading, setReading] = useState<ReadingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [streamText, setStreamText] = useState('');
   const resolvedImagesRef = useRef<(string | undefined)[]>([]);
 
   const allFlipped = drawnCards.length > 0 && flippedCards.size === drawnCards.length;
@@ -170,6 +192,7 @@ export default function ReadingPage() {
     setError(null);
     setIsReadingReady(false);
     setFlippedCards(new Set());
+    setStreamText('');
 
     const spread = getSpread(spreadType);
     const cards = drawCards(spread.cardCount);
@@ -177,7 +200,6 @@ export default function ReadingPage() {
     const userId = getUserId();
     const dateStr = now.toISOString().split('T')[0];
 
-    // All cards appear face-down immediately
     const initialDrawn: DrawnCard[] = cards.map((card, i) => ({
       card,
       position: spread.positions[i],
@@ -186,8 +208,8 @@ export default function ReadingPage() {
     setDrawnCards(initialDrawn);
     resolvedImagesRef.current = new Array(initialDrawn.length).fill(undefined);
 
-    // Generate images in parallel (background)
-    const imagePromises = initialDrawn.map(async (drawn, i) => {
+    // Option 3: Fire images independently — each updates drawnCards as it resolves
+    initialDrawn.forEach(async (drawn, i) => {
       try {
         const res = await fetch('/api/generate-card', {
           method: 'POST',
@@ -203,59 +225,100 @@ export default function ReadingPage() {
         const data = await res.json();
         if (data.imageUrl) {
           resolvedImagesRef.current[i] = data.imageUrl;
+          setDrawnCards((prev) =>
+            prev.map((d, j) => (j === i ? { ...d, imageUrl: data.imageUrl } : d))
+          );
         }
       } catch {
         console.error(`Image gen failed for ${drawn.card.name}`);
       }
     });
 
-    // Generate reading in parallel with images
+    // Option 2: Stream the reading — cards become ready as soon as text is done
     const context = buildReadingContext(now);
     const formattedAstrology = formatAstrologyContext(astrology, now);
 
-    const readingPromise = fetch('/api/generate-reading', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    try {
+      const readingRes = await fetch('/api/generate-reading', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question,
+          spreadType,
+          cards: initialDrawn.map((d) => ({
+            name: d.card.name,
+            position: d.position,
+            reversed: d.reversed,
+          })),
+          astrology,
+          formattedAstrology,
+          userContext: userContext || undefined,
+          ...context,
+        }),
+      });
+
+      if (!readingRes.ok || !readingRes.body) {
+        setError('The oracle is silent. Please try again.');
+        setStep('question');
+        return;
+      }
+
+      // Consume SSE stream
+      const reader = readingRes.body.getReader();
+      const decoder = new TextDecoder();
+      let sseBuffer = '';
+      let jsonText = '';
+
+      outer: while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        sseBuffer += decoder.decode(value, { stream: true });
+        const lines = sseBuffer.split('\n');
+        sseBuffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const payload = line.slice(6).trim();
+          if (payload === '[DONE]') break outer;
+          try {
+            const chunk = JSON.parse(payload);
+            const token: string = chunk.choices?.[0]?.delta?.content ?? '';
+            if (token) {
+              jsonText += token;
+              const words = extractOracleWords(jsonText);
+              if (words) setStreamText(words);
+            }
+          } catch {
+            // malformed chunk — skip
+          }
+        }
+      }
+
+      const readingData = JSON.parse(jsonText);
+
+      const result: ReadingResult = {
+        id: crypto.randomUUID(),
+        date: now.toISOString(),
         question,
         spreadType,
-        cards: initialDrawn.map((d) => ({
-          name: d.card.name,
-          position: d.position,
-          reversed: d.reversed,
-        })),
-        astrology,
-        formattedAstrology,
-        userContext: userContext || undefined,
-        ...context,
-      }),
-    }).then((r) => r.json());
+        deckStyle,
+        cards: initialDrawn.map((d, i) => ({ ...d, imageUrl: resolvedImagesRef.current[i] })),
+        overallEnergy: readingData.overallEnergy || '',
+        cardReadings: readingData.cardReadings || [],
+        synthesis: readingData.synthesis || '',
+        affirmation: readingData.affirmation || '',
+        notableTiming: readingData.notableTiming || '',
+      };
 
-    // Wait for both images and reading
-    const [, readingData] = await Promise.all([Promise.all(imagePromises), readingPromise]);
-
-    // Update drawn cards with resolved images
-    setDrawnCards(
-      initialDrawn.map((d, i) => ({ ...d, imageUrl: resolvedImagesRef.current[i] }))
-    );
-
-    const result: ReadingResult = {
-      id: crypto.randomUUID(),
-      date: now.toISOString(),
-      question,
-      spreadType,
-      deckStyle,
-      cards: initialDrawn.map((d, i) => ({ ...d, imageUrl: resolvedImagesRef.current[i] })),
-      overallEnergy: readingData.overallEnergy || '',
-      cardReadings: readingData.cardReadings || [],
-      synthesis: readingData.synthesis || '',
-      affirmation: readingData.affirmation || '',
-      notableTiming: readingData.notableTiming || '',
-    };
-
-    saveReading(result);
-    setReading(result);
-    setIsReadingReady(true); // Cards now glow and are clickable
+      saveReading(result);
+      setReading(result);
+      setIsReadingReady(true); // Cards now glow and are clickable — images may still be loading
+    } catch (err) {
+      console.error('Reading error:', err);
+      setError('The oracle is silent. Please try again.');
+      setStep('question');
+    }
   }
 
   function reset() {
@@ -268,6 +331,7 @@ export default function ReadingPage() {
     setIsReadingReady(false);
     setReading(null);
     setError(null);
+    setStreamText('');
   }
 
   // Determine card size based on count
@@ -494,8 +558,29 @@ export default function ReadingPage() {
                   ))}
                 </div>
 
-                {/* Loading state */}
-                {!isReadingReady && <WitchyLoader />}
+                {/* Loading state — WitchyLoader until stream starts, then live oracle words */}
+                {!isReadingReady && (
+                  streamText ? (
+                    <div className="text-center py-8 max-w-xl mx-auto px-4">
+                      <p
+                        style={{
+                          fontFamily: 'Cormorant Garamond, serif',
+                          fontSize: 19,
+                          fontStyle: 'italic',
+                          color: '#E8C96A',
+                          lineHeight: 1.75,
+                          opacity: 0.9,
+                          whiteSpace: 'pre-wrap',
+                        }}
+                      >
+                        {streamText}
+                        <span style={{ animation: 'blink-cursor 1s step-end infinite', opacity: 1 }}>|</span>
+                      </p>
+                    </div>
+                  ) : (
+                    <WitchyLoader />
+                  )
+                )}
 
                 {/* Reading — appears after all cards flipped */}
                 <AnimatePresence>

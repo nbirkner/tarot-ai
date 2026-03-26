@@ -79,6 +79,12 @@ body::before {
   font-family: 'Cormorant Garamond', Georgia, serif;
 }
 
+/* Streaming cursor blink */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 /* Card flip animation */
 @keyframes card-flip-in {
   0% { transform: rotateY(90deg) scale(0.9); opacity: 0; }

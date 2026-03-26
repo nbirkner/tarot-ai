@@ -117,7 +117,8 @@ Respond with JSON:
         ],
         response_format: { type: 'json_object' },
         temperature: 0.85,
-        max_tokens: 3500,
+        max_tokens: 1400,
+        stream: true,
       }),
     });
 
@@ -127,19 +128,14 @@ Respond with JSON:
       return NextResponse.json({ error: 'Reading generation failed' }, { status: 500 });
     }
 
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-
-    if (!content) {
-      return NextResponse.json({ error: 'No reading returned' }, { status: 500 });
-    }
-
-    const reading = JSON.parse(content);
-
-    // Cost estimate: ~3500 tokens at $0.88/1M = ~$0.0031
-    const estimatedCost = 0.0031;
-
-    return NextResponse.json({ ...reading, estimatedCost });
+    // Pass the SSE stream directly to the client
+    return new Response(response.body, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'X-Accel-Buffering': 'no',
+      },
+    });
   } catch (err) {
     console.error('generate-reading error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
