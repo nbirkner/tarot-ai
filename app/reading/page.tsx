@@ -578,7 +578,7 @@ export default function ReadingPage() {
       : 'sm';
 
   const isSetupStep = SETUP_STEPS.includes(step as (typeof SETUP_STEPS)[number]);
-  const isDark = !isSetupStep;
+  const isDark = false; // always light background — sections have their own styling
 
   // Advance setup flow on Enter key press
   useEffect(() => {
@@ -845,7 +845,7 @@ export default function ReadingPage() {
 
                 {/* Cards spread */}
                 <div
-                  className={`flex flex-wrap gap-6 justify-center items-end ${
+                  className={`flex flex-wrap gap-6 justify-center items-start ${
                     drawnCards.length === 1 ? 'py-4' : ''
                   }`}
                 >

@@ -8,7 +8,7 @@ export function Navigation() {
   const path = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
-  const isDarkPage = path === '/reading';
+  const isDarkPage = false; // reading page is now always light
 
   const links = [
     { href: '/reading', label: 'Oracle' },

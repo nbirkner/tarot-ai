@@ -265,20 +265,22 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
               </motion.div>
             )}
 
-            {/* Interpretation */}
-            {hasInterpretation ? (
-              <p style={{
-                fontFamily: 'var(--font-spectral), Spectral, serif',
-                fontSize: 'clamp(16px,2vw,19px)',
-                lineHeight: 1.75,
-                color: bodyColor,
-              }}>
-                {cardData.interpretation}
-                {!cardData.interpretationDone && <StreamCursor />}
-              </p>
-            ) : (
-              <SkeletonBlock lines={3} isDark={isDark} />
-            )}
+            {/* Interpretation — min-height prevents layout shifts as text streams in */}
+            <div style={{ minHeight: 130 }}>
+              {hasInterpretation ? (
+                <p style={{
+                  fontFamily: 'var(--font-spectral), Spectral, serif',
+                  fontSize: 'clamp(16px,2vw,19px)',
+                  lineHeight: 1.75,
+                  color: bodyColor,
+                }}>
+                  {cardData.interpretation}
+                  {!cardData.interpretationDone && <StreamCursor />}
+                </p>
+              ) : (
+                <SkeletonBlock lines={3} isDark={isDark} />
+              )}
+            </div>
           </motion.div>
         );
       })}

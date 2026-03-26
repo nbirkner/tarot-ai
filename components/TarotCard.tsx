@@ -404,7 +404,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
               <p style={{
                 fontFamily: 'var(--font-spectral), Spectral, serif',
                 fontSize: 12,
-                color: 'rgba(248,244,239,0.5)',
+                color: 'var(--brown-light)',
                 fontStyle: 'italic',
               }}>
                 {drawn.position}
@@ -417,6 +417,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
                 color: 'var(--gold)',
                 fontStyle: 'italic',
                 opacity: 0.7,
+                marginTop: 2,
               }}>
                 ↻ Reversed
               </p>
