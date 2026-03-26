@@ -23,7 +23,7 @@ export function Navigation() {
           borderBottom: '1px solid rgba(196, 146, 42, 0.15)',
         }}
       >
-        <div className="max-w-3xl mx-auto px-6 flex items-center justify-between h-14">
+        <div className="w-full px-6 sm:px-10 flex items-center justify-between h-14">
           <Link href="/" onClick={() => setIsOpen(false)}>
             <span
               style={{
