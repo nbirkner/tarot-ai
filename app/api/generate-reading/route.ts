@@ -57,6 +57,11 @@ function getDominantSuit(cards: Array<{ name: string }>): string {
 }
 
 export async function POST(req: NextRequest) {
+  if (!TOGETHER_API_KEY) {
+    console.error('TOGETHER_API_KEY is not set');
+    return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
+  }
+
   try {
     const body = await req.json() as GenerateReadingRequest;
     const { userContext } = body;

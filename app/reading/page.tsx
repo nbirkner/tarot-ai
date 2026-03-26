@@ -238,26 +238,37 @@ export default function ReadingPage() {
     const formattedAstrology = formatAstrologyContext(astrology, now);
 
     try {
-      const readingRes = await fetch('/api/generate-reading', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question,
-          spreadType,
-          cards: initialDrawn.map((d) => ({
-            name: d.card.name,
-            position: d.position,
-            reversed: d.reversed,
-          })),
-          astrology,
-          formattedAstrology,
-          userContext: userContext || undefined,
-          ...context,
-        }),
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 28000);
+
+      let readingRes: Response;
+      try {
+        readingRes = await fetch('/api/generate-reading', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            question,
+            spreadType,
+            cards: initialDrawn.map((d) => ({
+              name: d.card.name,
+              position: d.position,
+              reversed: d.reversed,
+            })),
+            astrology,
+            formattedAstrology,
+            userContext: userContext || undefined,
+            ...context,
+          }),
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
       if (!readingRes.ok) {
-        setError('The oracle fell silent. Please try again.');
+        const errText = await readingRes.text().catch(() => '');
+        console.error('Reading API error:', readingRes.status, errText);
+        setError(`The oracle fell silent (${readingRes.status}). Please try again.`);
         return;
       }
 
@@ -282,7 +293,11 @@ export default function ReadingPage() {
       setIsReadingReady(true); // Cards now glow and are clickable — images may still be loading
     } catch (err) {
       console.error('Reading error:', err);
-      setError('The oracle fell silent. Please try again.');
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError('The oracle is taking too long to respond. Check your Vercel logs and try again.');
+      } else {
+        setError(`Reading failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
   }
 
