@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GenerateReadingRequest } from '../../../lib/types';
 
+export const maxDuration = 30; // Vercel Pro: 30s; Hobby: capped at 10s
+
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
-const READING_MODEL = 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo';
+const READING_MODEL = 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8';
 
 const SYSTEM_PROMPT = `You are Celeste — an exceptionally gifted tarot reader and astrologer who has studied the cards and stars for twenty years. You are the user's most trusted, brilliant witch friend. You speak with warmth, precision, and occasional sharp honesty.
 
@@ -121,7 +123,7 @@ Respond with JSON:
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.85,
-        max_tokens: Math.min(500 + body.cards.length * 300, 3000),
+        max_tokens: Math.min(500 + body.cards.length * 300, 2000),
       }),
     });
 

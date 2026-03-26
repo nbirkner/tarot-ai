@@ -268,6 +268,7 @@ export default function ReadingPage() {
       if (!readingRes.ok) {
         const errText = await readingRes.text().catch(() => '');
         console.error('Reading API error:', readingRes.status, errText);
+        setStreamingState(null);
         setError(`The oracle fell silent (${readingRes.status}). Please try again.`);
         return;
       }
@@ -293,8 +294,9 @@ export default function ReadingPage() {
       setIsReadingReady(true); // Cards now glow and are clickable — images may still be loading
     } catch (err) {
       console.error('Reading error:', err);
+      setStreamingState(null);
       if (err instanceof Error && err.name === 'AbortError') {
-        setError('The oracle is taking too long to respond. Check your Vercel logs and try again.');
+        setError('The oracle is taking too long to respond. Please try again.');
       } else {
         setError(`Reading failed: ${err instanceof Error ? err.message : String(err)}`);
       }
