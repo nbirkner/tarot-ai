@@ -365,7 +365,15 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
     })}.pdf`,
   ).replace(/\s+/g, ' ');
 
-  doc.save(filename || 'tarot-reading.pdf');
+  const blob = doc.output('blob');
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'tarot-reading.pdf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 
 // ── Print-and-cut cards PDF ───────────────────────────────────────────────────
@@ -442,5 +450,14 @@ export async function downloadCardsPDF(reading: ReadingResult): Promise<void> {
       month: 'short', day: 'numeric', year: 'numeric',
     })}.pdf`,
   ).replace(/\s+/g, ' ');
-  doc.save(filename || 'tarot-cards.pdf');
+
+  const blob = doc.output('blob');
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'tarot-cards.pdf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
 }

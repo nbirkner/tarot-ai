@@ -271,6 +271,7 @@ export default function ReadingPage() {
   const [streamingState, setStreamingState] = useState<StreamingState | null>(null);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const resolvedImagesRef = useRef<(string | undefined)[]>([]);
+  const hangTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const allFlipped = drawnCards.length > 0 && flippedCards.size === drawnCards.length;
 
@@ -289,6 +290,14 @@ export default function ReadingPage() {
     setIsReadingReady(false);
     setFlippedCards(new Set());
     setStreamingState(null);
+
+    // If nothing streams within 10s, the oracle is stuck — show a friendly error.
+    // Cleared as soon as the first card chunk arrives.
+    if (hangTimerRef.current) clearTimeout(hangTimerRef.current);
+    hangTimerRef.current = setTimeout(() => {
+      setStreamingState(null);
+      setError('hang');
+    }, 10000);
 
     const spread = getSpread(spreadType);
     const cards = drawCards(spread.cardCount);
@@ -422,6 +431,8 @@ export default function ReadingPage() {
 
         const json = await withTimeout(
           readSseStream(res, (partial) => {
+            // Clear hang timer the moment first streaming data arrives
+            if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
             const fields = extractCardFields(partial);
             if (Object.keys(fields).length > 0) {
               setStreamingState(prev => {
@@ -609,7 +620,7 @@ export default function ReadingPage() {
   }, [step, isSetupStep]);
 
   // Background styles
-  const lightBg = 'var(--cream)';
+  const lightBg = 'radial-gradient(ellipse at 30% 15%, rgba(196,146,42,0.06) 0%, transparent 50%), radial-gradient(ellipse at 72% 85%, rgba(150,130,200,0.07) 0%, transparent 50%), #EAE6F2';
   const darkBg =
     'radial-gradient(ellipse at 50% 0%, #0D1535 0%, #060C22 60%, #030710 100%)';
   const candleGlow =
@@ -623,6 +634,33 @@ export default function ReadingPage() {
         transition: 'background 0.8s ease',
       }}
     >
+      {/* Subtle star field — visible on light background */}
+      {!isDark && (
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ opacity: 0.13 }}
+        >
+          {([
+            [8, 12], [15, 45], [22, 8], [35, 72], [42, 28], [55, 88], [62, 15],
+            [70, 55], [78, 30], [85, 78], [92, 18], [5, 65], [48, 5], [88, 92],
+            [30, 90], [72, 8], [18, 80], [95, 45], [40, 50], [65, 70],
+            [12, 30], [25, 60], [38, 18], [50, 82], [60, 40],
+          ] as [number, number][]).map(([x, y], i) => (
+            <circle
+              key={i}
+              cx={`${x}%`}
+              cy={`${y}%`}
+              r={i % 5 === 0 ? 2 : i % 3 === 0 ? 1.5 : 1}
+              fill="#C4922A"
+              style={{
+                animation: `star-twinkle ${3 + (i % 7) * 1.1}s ease-in-out infinite`,
+                animationDelay: `${(i * 0.6) % 5}s`,
+              }}
+            />
+          ))}
+        </svg>
+      )}
       <div className="max-w-3xl mx-auto px-6">
         <AnimatePresence mode="wait">
           <motion.div
@@ -881,9 +919,36 @@ export default function ReadingPage() {
                 {/* Error state */}
                 {error && !isReadingReady && (
                   <div className="text-center py-10 space-y-4">
-                    <p style={{ fontFamily: 'Spectral, serif', fontSize: 18, fontStyle: 'italic', color: isDark ? 'rgba(248,244,239,0.6)' : 'var(--brown-light)' }}>
-                      {error}
-                    </p>
+                    {error === 'hang' ? (
+                      <>
+                        <div style={{ fontSize: 32, opacity: 0.6, marginBottom: 4 }}>☽</div>
+                        <p style={{
+                          fontFamily: 'var(--font-cinzel), Cinzel, serif',
+                          fontSize: 12,
+                          letterSpacing: '0.2em',
+                          color: 'var(--gold)',
+                          textTransform: 'uppercase',
+                          opacity: 0.8,
+                        }}>
+                          The Oracle is Unreachable
+                        </p>
+                        <p style={{
+                          fontFamily: 'var(--font-spectral), Spectral, serif',
+                          fontSize: 16,
+                          fontStyle: 'italic',
+                          color: 'var(--brown-light)',
+                          maxWidth: 360,
+                          margin: '0 auto',
+                          lineHeight: 1.65,
+                        }}>
+                          The crystal ball is buffering... Perhaps Mercury is in retrograde. The spirits will realign — try summoning them again.
+                        </p>
+                      </>
+                    ) : (
+                      <p style={{ fontFamily: 'Spectral, serif', fontSize: 18, fontStyle: 'italic', color: 'var(--brown-light)' }}>
+                        {error}
+                      </p>
+                    )}
                     <button onClick={startReading} className="btn-primary">Try Again</button>
                   </div>
                 )}
@@ -937,6 +1002,9 @@ export default function ReadingPage() {
                                 try {
                                   const { downloadReadingPDF } = await import('../../lib/pdf');
                                   await downloadReadingPDF(readingWithImages);
+                                } catch (e) {
+                                  console.error('PDF generation failed:', e);
+                                  alert('PDF generation failed. Please try again.');
                                 } finally {
                                   setIsPdfGenerating(false);
                                 }
@@ -954,6 +1022,9 @@ export default function ReadingPage() {
                                 try {
                                   const { downloadCardsPDF } = await import('../../lib/pdf');
                                   await downloadCardsPDF(readingWithImages);
+                                } catch (e) {
+                                  console.error('PDF generation failed:', e);
+                                  alert('PDF generation failed. Please try again.');
                                 } finally {
                                   setIsPdfGenerating(false);
                                 }
