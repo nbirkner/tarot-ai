@@ -96,26 +96,26 @@ export default function AboutPage() {
           }}
         >
           <p>
-            I work in AI. I also read tarot. For a long time those felt like two separate things
-            I didn&apos;t mention in the same sentence.
+            By day I&apos;m a product manager at Together AI, which means I spend a lot of time
+            thinking about inference infrastructure, model benchmarks, and token pricing. Very
+            grounded. Very left-brained.
           </p>
           <p>
-            Then I built this.
+            I also pull tarot cards most mornings and have strong opinions about my rising sign.
           </p>
           <p>
-            Tarot isn&apos;t really about predicting the future — it never was. It&apos;s a mirror.
-            A structured way to ask yourself the questions you&apos;ve been avoiding, using a
-            framework old enough to feel like it knows something. The cards don&apos;t have answers.
-            You do. They just make you say them out loud.
+            For a long time those two sides of my life existed in completely separate tabs. I
+            didn&apos;t really talk about the tarot thing at work, and I didn&apos;t think too hard
+            about the AI thing during my more witchy moments. This was probably fine.
           </p>
           <p>
-            I wanted to see what happened when you paired that with genuinely good AI. Not as a
-            gimmick — as a real tool. Fresh art for every card. A reading that actually responds
-            to your context, your question, your chart. Something that feels like it&apos;s paying
-            attention.
+            But I kept thinking: what would it actually look like to merge them? Not in a
+            corporate &ldquo;AI-powered wellness&rdquo; kind of way. Just — what if I used the
+            models I work with every day to build something I actually believed in?
           </p>
           <p>
-            It surprised me how much it works.
+            This is that. A real tarot app, built with real AI, made by someone who uses both
+            sincerely and is fine being judged for it.
           </p>
         </div>
 
