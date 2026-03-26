@@ -62,7 +62,7 @@ export default function AboutPage() {
               marginBottom: 12,
             }}
           >
-            Built with Together AI
+            About
           </p>
           <h1
             style={{
@@ -74,19 +74,8 @@ export default function AboutPage() {
               marginBottom: 12,
             }}
           >
-            Under the Hood
+            A side project that got out of hand.
           </h1>
-          <p
-            style={{
-              fontFamily: 'Spectral, serif',
-              fontSize: 18,
-              fontStyle: 'italic',
-              color: 'var(--brown-mid)',
-              lineHeight: 1.6,
-            }}
-          >
-            Every card drawn, every reading delivered, every question asked — powered by models running on the Together AI inference platform.
-          </p>
         </div>
 
         {/* Ornamental divider */}
@@ -95,6 +84,102 @@ export default function AboutPage() {
           <span style={{ fontSize: 10 }}>✦</span>
           <div style={{ flex: 1, height: 1, background: 'var(--border-gold)' }} />
         </div>
+
+        {/* Story */}
+        <div
+          className="space-y-5 mb-12"
+          style={{
+            fontFamily: 'Spectral, serif',
+            fontSize: 18,
+            lineHeight: 1.75,
+            color: 'var(--brown-mid)',
+          }}
+        >
+          <p>
+            I work in AI. I also read tarot. For a long time those felt like two separate things
+            I didn&apos;t mention in the same sentence.
+          </p>
+          <p>
+            Then I built this.
+          </p>
+          <p>
+            Tarot isn&apos;t really about predicting the future — it never was. It&apos;s a mirror.
+            A structured way to ask yourself the questions you&apos;ve been avoiding, using a
+            framework old enough to feel like it knows something. The cards don&apos;t have answers.
+            You do. They just make you say them out loud.
+          </p>
+          <p>
+            I wanted to see what happened when you paired that with genuinely good AI. Not as a
+            gimmick — as a real tool. Fresh art for every card. A reading that actually responds
+            to your context, your question, your chart. Something that feels like it&apos;s paying
+            attention.
+          </p>
+          <p>
+            It surprised me how much it works.
+          </p>
+        </div>
+
+        {/* Readwise quote */}
+        <div
+          style={{
+            borderLeft: '3px solid var(--border-gold)',
+            paddingLeft: 24,
+            marginBottom: 48,
+          }}
+        >
+          <p
+            style={{
+              fontFamily: 'Spectral, serif',
+              fontSize: 17,
+              fontStyle: 'italic',
+              color: 'var(--brown-dark)',
+              lineHeight: 1.75,
+              marginBottom: 10,
+            }}
+          >
+            &ldquo;You may sense the truth before you fully understand it. You may feel closure
+            before you see visible results. You may know something must change — even if you
+            cannot yet explain why.&rdquo;
+          </p>
+          <p
+            style={{
+              fontFamily: 'Spectral, serif',
+              fontSize: 13,
+              color: 'var(--brown-light)',
+              letterSpacing: '0.04em',
+            }}
+          >
+            — Divine Feminine Energy, <em>The Lunar Eclipse in Virgo</em>
+          </p>
+        </div>
+
+        {/* Built with */}
+        <p
+          style={{
+            fontFamily: 'Cinzel, serif',
+            fontSize: 11,
+            letterSpacing: '0.25em',
+            color: 'var(--gold)',
+            textTransform: 'uppercase',
+            marginBottom: 24,
+          }}
+        >
+          Built with Together AI
+        </p>
+
+        <p
+          style={{
+            fontFamily: 'Spectral, serif',
+            fontSize: 17,
+            fontStyle: 'italic',
+            color: 'var(--brown-mid)',
+            lineHeight: 1.65,
+            marginBottom: 32,
+          }}
+        >
+          Every card drawn, every reading delivered, every question asked — powered by models
+          running on the Together AI inference platform.
+        </p>
 
         {/* Model cards */}
         <div className="space-y-6">
@@ -109,7 +194,6 @@ export default function AboutPage() {
                 padding: 'clamp(18px, 4vw, 28px) clamp(18px, 5vw, 32px)',
               }}
             >
-              {/* Symbol + role */}
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div>
                   <p
@@ -161,7 +245,6 @@ export default function AboutPage() {
                 </span>
               </div>
 
-              {/* Description */}
               <p
                 style={{
                   fontFamily: 'Spectral, serif',
@@ -174,7 +257,6 @@ export default function AboutPage() {
                 {m.description}
               </p>
 
-              {/* Detail note */}
               <p
                 style={{
                   fontFamily: 'Spectral, serif',
@@ -187,7 +269,6 @@ export default function AboutPage() {
                 {m.detail}
               </p>
 
-              {/* Links */}
               <div className="flex flex-wrap gap-4">
                 <a
                   href={m.docsUrl}
@@ -256,7 +337,8 @@ export default function AboutPage() {
               marginBottom: 14,
             }}
           >
-            All models run on Together AI's serverless inference platform — no infrastructure to manage, no GPUs to provision. One API key, unified billing, sub-second cold starts.
+            All models run on Together AI&apos;s serverless inference platform — no infrastructure
+            to manage, no GPUs to provision. One API key, unified billing, sub-second cold starts.
           </p>
           <div className="flex flex-wrap gap-4">
             <a

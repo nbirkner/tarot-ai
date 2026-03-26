@@ -202,7 +202,7 @@ export default function Home() {
                 textShadow: '0 4px 60px rgba(196,146,42,0.18)',
               }}
             >
-              Read the cards.
+              Ancient practice.
             </p>
             <p
               style={{
@@ -213,7 +213,7 @@ export default function Home() {
                 letterSpacing: '-0.01em',
               }}
             >
-              Know yourself.
+              Freshly hallucinated.
             </p>
           </div>
 
@@ -247,12 +247,13 @@ export default function Home() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                Your Personal Oracle (No Liability)
+                Your Personal Oracle · No Notes
               </p>
             </div>
           </div>
 
-          {/* Tagline — whispering italic */}
+
+          {/* Body tagline */}
           <div
             className="max-w-sm mb-10"
             style={{ animation: 'shimmer-in 0.6s ease-out 0.6s forwards', opacity: 0 }}
@@ -268,9 +269,7 @@ export default function Home() {
                 opacity: 0.85,
               }}
             >
-              AI-generated card art, woven from the stars,
-              the moon, and the moment you ask. It's not therapy.
-              It's better.
+              It&apos;s 500 years old. It&apos;s also running on a GPU. Both things are true.
             </p>
           </div>
 
@@ -280,10 +279,10 @@ export default function Home() {
             style={{ animation: 'shimmer-in 0.6s ease-out 0.75s forwards', opacity: 0 }}
           >
             {[
-              { symbol: '✦', label: 'Unique card art' },
-              { symbol: '☽', label: 'Moon & astrology' },
-              { symbol: '✦', label: 'Your own oracle' },
-              { symbol: '☽', label: 'Mostly accurate™' },
+              { symbol: '✦', label: 'AI-illustrated' },
+              { symbol: '☽', label: 'Not therapy' },
+              { symbol: '✦', label: 'Free' },
+              { symbol: '☽', label: 'Unsolicited advice' },
             ].map((item) => (
               <span
                 key={item.label}
@@ -333,7 +332,7 @@ export default function Home() {
                   alignSelf: 'center',
                 }}
               >
-                no account · the stars already know
+                no account · the void doesn&apos;t need your email
               </p>
             </div>
           </div>
@@ -354,7 +353,7 @@ export default function Home() {
                   letterSpacing: '0.04em',
                 }}
               >
-                Powered by Together AI · Every card uniquely generated · Mercury's behavior not guaranteed
+                Powered by Together AI · Centuries of symbolism. Generated in seconds. · The oracle is not liable for epiphanies
               </p>
             </div>
           </div>
