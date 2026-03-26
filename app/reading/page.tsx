@@ -662,57 +662,75 @@ export default function ReadingPage() {
                   >
                     <ReadingDisplay reading={reading} />
 
-                    {/* Download buttons */}
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10">
-                      <button
-                        onClick={async () => {
-                          const { downloadReadingPDF } = await import('../../lib/pdf');
-                          await downloadReadingPDF(reading);
-                        }}
-                        style={{
-                          background: 'transparent',
-                          color: 'var(--gold-light)',
-                          fontFamily: 'Cinzel, serif',
-                          fontSize: 11,
-                          letterSpacing: '0.12em',
-                          padding: '11px 24px',
-                          borderRadius: 2,
-                          border: '1px solid rgba(196,146,42,0.5)',
-                          cursor: 'pointer',
-                          transition: 'all 0.25s ease',
-                          textTransform: 'uppercase' as const,
-                          minWidth: 200,
-                        }}
-                        onMouseEnter={e => { (e.target as HTMLElement).style.background = 'rgba(196,146,42,0.1)'; }}
-                        onMouseLeave={e => { (e.target as HTMLElement).style.background = 'transparent'; }}
-                      >
-                        ↓ Download Reading
-                      </button>
-                      <button
-                        onClick={async () => {
-                          const { downloadCardsPDF } = await import('../../lib/pdf');
-                          await downloadCardsPDF(reading);
-                        }}
-                        style={{
-                          background: 'transparent',
-                          color: isDark ? 'rgba(248,244,239,0.45)' : 'var(--brown-light)',
-                          fontFamily: 'Cinzel, serif',
-                          fontSize: 11,
-                          letterSpacing: '0.12em',
-                          padding: '11px 24px',
-                          borderRadius: 2,
-                          border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'var(--border-brown)'}`,
-                          cursor: 'pointer',
-                          transition: 'all 0.25s ease',
-                          textTransform: 'uppercase' as const,
-                          minWidth: 200,
-                        }}
-                        onMouseEnter={e => { (e.target as HTMLElement).style.borderColor = 'rgba(196,146,42,0.35)'; (e.target as HTMLElement).style.color = 'var(--gold-muted)'; }}
-                        onMouseLeave={e => { (e.target as HTMLElement).style.borderColor = isDark ? 'rgba(255,255,255,0.12)' : 'var(--border-brown)'; (e.target as HTMLElement).style.color = isDark ? 'rgba(248,244,239,0.45)' : 'var(--brown-light)'; }}
-                      >
-                        ↓ Print Cards
-                      </button>
-                    </div>
+                    {/* Download buttons — enabled only when all card images have loaded */}
+                    {(() => {
+                      const allImagesLoaded = drawnCards.length > 0 && drawnCards.every(d => d.imageUrl);
+                      const readingWithImages = { ...reading, cards: drawnCards };
+                      const disabledTip = 'Available once all card images have rendered';
+                      return (
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10">
+                          <div title={allImagesLoaded ? undefined : disabledTip} style={{ display: 'inline-flex' }}>
+                            <button
+                              disabled={!allImagesLoaded}
+                              onClick={async () => {
+                                const { downloadReadingPDF } = await import('../../lib/pdf');
+                                await downloadReadingPDF(readingWithImages);
+                              }}
+                              style={{
+                                background: 'transparent',
+                                color: allImagesLoaded ? 'var(--gold-light)' : 'rgba(196,146,42,0.3)',
+                                fontFamily: 'Cinzel, serif',
+                                fontSize: 11,
+                                letterSpacing: '0.12em',
+                                padding: '11px 24px',
+                                borderRadius: 2,
+                                border: `1px solid ${allImagesLoaded ? 'rgba(196,146,42,0.5)' : 'rgba(196,146,42,0.18)'}`,
+                                cursor: allImagesLoaded ? 'pointer' : 'not-allowed',
+                                transition: 'all 0.25s ease',
+                                textTransform: 'uppercase' as const,
+                                minWidth: 200,
+                              }}
+                              onMouseEnter={e => { if (allImagesLoaded) (e.target as HTMLElement).style.background = 'rgba(196,146,42,0.1)'; }}
+                              onMouseLeave={e => { if (allImagesLoaded) (e.target as HTMLElement).style.background = 'transparent'; }}
+                            >
+                              {allImagesLoaded ? '↓ Download Reading' : '⋯ Rendering cards…'}
+                            </button>
+                          </div>
+                          <div title={allImagesLoaded ? undefined : disabledTip} style={{ display: 'inline-flex' }}>
+                            <button
+                              disabled={!allImagesLoaded}
+                              onClick={async () => {
+                                const { downloadCardsPDF } = await import('../../lib/pdf');
+                                await downloadCardsPDF(readingWithImages);
+                              }}
+                              style={{
+                                background: 'transparent',
+                                color: allImagesLoaded
+                                  ? (isDark ? 'rgba(248,244,239,0.55)' : 'var(--brown-light)')
+                                  : (isDark ? 'rgba(248,244,239,0.18)' : 'rgba(122,92,69,0.3)'),
+                                fontFamily: 'Cinzel, serif',
+                                fontSize: 11,
+                                letterSpacing: '0.12em',
+                                padding: '11px 24px',
+                                borderRadius: 2,
+                                border: `1px solid ${allImagesLoaded
+                                  ? (isDark ? 'rgba(255,255,255,0.12)' : 'var(--border-brown)')
+                                  : 'rgba(255,255,255,0.06)'}`,
+                                cursor: allImagesLoaded ? 'pointer' : 'not-allowed',
+                                transition: 'all 0.25s ease',
+                                textTransform: 'uppercase' as const,
+                                minWidth: 200,
+                              }}
+                              onMouseEnter={e => { if (allImagesLoaded) { (e.target as HTMLElement).style.borderColor = 'rgba(196,146,42,0.35)'; (e.target as HTMLElement).style.color = 'var(--gold-muted)'; } }}
+                              onMouseLeave={e => { if (allImagesLoaded) { (e.target as HTMLElement).style.borderColor = isDark ? 'rgba(255,255,255,0.12)' : 'var(--border-brown)'; (e.target as HTMLElement).style.color = isDark ? 'rgba(248,244,239,0.55)' : 'var(--brown-light)'; } }}
+                            >
+                              {allImagesLoaded ? '↓ Print Cards' : '⋯ Rendering cards…'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
 
                     <div className="text-center mt-12">
                       <button
