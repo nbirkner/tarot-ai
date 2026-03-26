@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GenerateReadingRequest } from '../../../lib/types';
 
+export const runtime = 'edge';
+
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
 const READING_MODEL = 'meta-llama/Llama-3.3-70B-Instruct-Turbo';
 
@@ -115,7 +117,6 @@ Respond with JSON:
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: userPrompt },
         ],
-        response_format: { type: 'json_object' },
         temperature: 0.85,
         max_tokens: 1400,
         stream: true,

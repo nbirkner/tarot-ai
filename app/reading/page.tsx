@@ -295,7 +295,9 @@ export default function ReadingPage() {
         }
       }
 
-      const readingData = JSON.parse(jsonText);
+      // Strip markdown fences if model wrapped the JSON
+      const cleanJson = jsonText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+      const readingData = JSON.parse(cleanJson);
 
       const result: ReadingResult = {
         id: crypto.randomUUID(),
