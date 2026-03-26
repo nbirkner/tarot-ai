@@ -7,6 +7,8 @@ export const STYLE_MODIFIERS: Record<DeckStyle, string> = {
     'ethereal dreamy aesthetic, soft glowing light, watercolor washes, pastel lavender and pearl tones, delicate brushwork, luminous spiritual atmosphere, gossamer and translucent effects',
   classic:
     'classic tarot illustration style, traditional symbolism, lush detailed figurative art, rich jewel tones, decorative border, reminiscent of Rider-Waite but elevated and contemporary',
+  'osho-zen':
+    'Osho Zen Tarot style, expressive watercolor washes, vibrant earthy and jewel tones, Zen Buddhist-inspired imagery, meditative and contemplative atmosphere, loose gestural brushwork, luminous warm light, cosmic and nature elements, spiritual depth',
 };
 
 export const CARD_BACK_DESCRIPTION =

@@ -18,7 +18,7 @@ import {
   DrawnCard,
   ReadingResult,
 } from '../../lib/types';
-import { drawCards, isReversed, getSpread } from '../../lib/tarot';
+import { drawCards, drawOshoZenCards, isReversed, getSpread } from '../../lib/tarot';
 import { buildReadingContext, formatAstrologyContext } from '../../lib/astronomy';
 import { getUserId, saveReading } from '../../lib/storage';
 
@@ -278,6 +278,17 @@ export default function ReadingPage() {
   const [question, setQuestion] = useState('');
   const [spreadType, setSpreadType] = useState<SpreadType>('three');
   const [deckStyle, setDeckStyle] = useState<DeckStyle>('dark-gothic');
+
+  const isOshoZen = deckStyle === 'osho-zen';
+
+  function handleDeckChange(style: DeckStyle) {
+    setDeckStyle(style);
+    const toOsho = style === 'osho-zen';
+    const fromOsho = deckStyle === 'osho-zen';
+    const currentIsOshoSpread = spreadType.startsWith('osho-');
+    if (toOsho && !currentIsOshoSpread) setSpreadType('osho-three');
+    if (!toOsho && currentIsOshoSpread) setSpreadType('three');
+  }
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [astrology, setAstrology] = useState<AstrologyInputType>({ type: 'none' });
   const [userContext, setUserContext] = useState('');
@@ -323,7 +334,7 @@ export default function ReadingPage() {
     }, 30000);
 
     const spread = getSpread(spreadType);
-    const cards = drawCards(spread.cardCount);
+    const cards = isOshoZen ? drawOshoZenCards(spread.cardCount) : drawCards(spread.cardCount);
     const now = new Date();
     const userId = getUserId();
     const dateStr = now.toISOString().split('T')[0];
@@ -331,7 +342,7 @@ export default function ReadingPage() {
     const initialDrawn: DrawnCard[] = cards.map((card, i) => ({
       card,
       position: spread.positions[i],
-      reversed: isReversed(),
+      reversed: isOshoZen ? false : isReversed(),
     }));
     setDrawnCards(initialDrawn);
     resolvedImagesRef.current = new Array(initialDrawn.length).fill(undefined);
@@ -406,6 +417,7 @@ export default function ReadingPage() {
         formattedAstrology,
         userContext: userContext || undefined,
         spreadPositions: spread.positions,
+        deckStyle,
         ...context,
       };
 
@@ -742,10 +754,14 @@ export default function ReadingPage() {
                   />
                 )}
                 {step === 'spread' && (
-                  <SpreadSelector value={spreadType} onChange={setSpreadType} />
+                  <SpreadSelector
+                    value={spreadType}
+                    onChange={setSpreadType}
+                    deckType={isOshoZen ? 'osho-zen' : 'rider-waite'}
+                  />
                 )}
                 {step === 'deck' && (
-                  <DeckSelector value={deckStyle} onChange={setDeckStyle} />
+                  <DeckSelector value={deckStyle} onChange={handleDeckChange} />
                 )}
                 {step === 'photo' && (
                   <PhotoUpload value={userPhoto} onChange={setUserPhoto} />

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CARD_PROMPTS } from '../../../data/card-prompts';
+import { OSHO_ZEN_PROMPTS } from '../../../data/osho-zen-prompts';
 import { STYLE_MODIFIERS } from '../../../data/style-modifiers';
 import { GenerateCardRequest } from '../../../lib/types';
 
@@ -14,14 +15,21 @@ export async function POST(req: NextRequest) {
     const body: GenerateCardRequest = await req.json();
     const { cardName, deckStyle, userPhotoBase64 } = body;
 
-    const basePrompt = CARD_PROMPTS[cardName];
+    const promptTable = deckStyle === 'osho-zen' ? OSHO_ZEN_PROMPTS : CARD_PROMPTS;
+    const basePrompt = promptTable[cardName];
     if (!basePrompt) {
       return NextResponse.json({ error: `Unknown card: ${cardName}` }, { status: 400 });
     }
 
     const styleModifier = STYLE_MODIFIERS[deckStyle];
     const safetyPrefix = 'Safe, tasteful, fully clothed, family-friendly tarot illustration. ';
-    let fullPrompt = `${safetyPrefix}${basePrompt} ${styleModifier}. Ornate decorative tarot card border with corner flourishes. Card title "${cardName.toUpperCase()}" at the bottom in gothic serif lettering. High detail illustration.`;
+    const borderStyle = deckStyle === 'osho-zen'
+      ? 'Simple elegant border with subtle geometric accents.'
+      : 'Ornate decorative tarot card border with corner flourishes.';
+    const titleStyle = deckStyle === 'osho-zen'
+      ? `Card title "${cardName}" at the bottom in elegant serif lettering.`
+      : `Card title "${cardName.toUpperCase()}" at the bottom in gothic serif lettering.`;
+    let fullPrompt = `${safetyPrefix}${basePrompt} ${styleModifier}. ${borderStyle} ${titleStyle} High detail illustration.`;
 
     if (userPhotoBase64) {
       // Try FLUX.1-kontext-pro with the reference photo

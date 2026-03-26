@@ -6,6 +6,7 @@ import { SpreadType } from '../lib/types';
 interface SpreadSelectorProps {
   value: SpreadType;
   onChange: (type: SpreadType) => void;
+  deckType?: 'rider-waite' | 'osho-zen';
 }
 
 // Geometric card-count visualizations
@@ -49,10 +50,11 @@ function SpreadDots({ count, isSelected }: { count: number; isSelected: boolean 
   );
 }
 
-export function SpreadSelector({ value, onChange }: SpreadSelectorProps) {
+export function SpreadSelector({ value, onChange, deckType = 'rider-waite' }: SpreadSelectorProps) {
+  const visibleSpreads = SPREADS.filter((s) => s.deck === deckType);
   return (
     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-      {SPREADS.map((spread) => {
+      {visibleSpreads.map((spread) => {
         const isSelected = value === spread.type;
         return (
           <button

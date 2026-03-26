@@ -5,7 +5,9 @@ export const maxDuration = 60;
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
 const MODEL = 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8';
 
-const SYSTEM = `You are Celeste — an exceptionally gifted tarot reader who has studied the cards for twenty years. You are warm, precise, and occasionally sharply honest. You always respond in valid JSON. No markdown, no text outside JSON.`;
+const SYSTEM_STANDARD = `You are Celeste — an exceptionally gifted tarot reader who has studied the cards for twenty years. You are warm, precise, and occasionally sharply honest. You always respond in valid JSON. No markdown, no text outside JSON.`;
+
+const SYSTEM_OSHO = `You are a Zen oracle rooted in Osho's teachings. You read the Osho Zen Tarot with clarity, directness, and deep compassion. You speak to what is present in this moment — not prediction, but recognition. You see through the mind's games to the essential. You always respond in valid JSON. No markdown, no text outside JSON.`;
 
 export async function POST(req: NextRequest) {
   if (!TOGETHER_API_KEY) {
@@ -19,13 +21,49 @@ export async function POST(req: NextRequest) {
       spreadPositions, otherCards,
       question, formattedAstrology, userContext,
       moonPhase, dayOfWeek, season, timeOfDay,
+      deckStyle,
     } = body;
+
+    const isOshoZen = deckStyle === 'osho-zen';
+    const SYSTEM = isOshoZen ? SYSTEM_OSHO : SYSTEM_STANDARD;
 
     const otherCardsStr = otherCards?.length
       ? otherCards.join(', ')
       : 'none';
 
-    const prompt = `Interpret a single tarot card in its spread position.
+    const prompt = isOshoZen
+      ? `Interpret a single Osho Zen Tarot card in its spread position.
+
+CARD: ${card}
+POSITION: "${position}"
+FULL SPREAD: ${spreadPositions.join(' / ')}
+OTHER CARDS: ${otherCardsStr}
+
+QUESTION: "${question || 'No specific question — what does this person most need to see right now?'}"
+
+ASTROLOGICAL PROFILE:
+${formattedAstrology || 'Not provided'}
+
+${userContext ? `USER CONTEXT (weave into the interpretation): "${userContext}"` : ''}
+
+TIMING: Moon: ${moonPhase} · ${dayOfWeek} · ${season} · ${timeOfDay}
+
+RULES:
+- Open with the quality of awareness or energy this card reflects in this position
+- Speak to what is present in this moment, not future prediction
+- Draw on Zen and Osho teachings: witnessing, consciousness, the present, the watcher
+- Reference astrology if provided
+- End with a question or observation to sit with — something that opens rather than closes
+- The suits: Fire = life force, creativity, passion; Water = emotion, the heart; Clouds = mind, thought; Rainbows = the material world, celebration
+- Tone: direct and clear, but spacious. Not psychic prediction — recognition of what is already here.
+- Never use: "journey", "path forward", "exciting times", "trust the process"
+
+Respond with JSON only:
+{
+  "keywords": ["3-4 specific qualities for THIS card in THIS position — not generic"],
+  "interpretation": "4-6 sentences"
+}`
+      : `Interpret a single tarot card in its spread position.
 
 CARD: ${card}${reversed ? ' (REVERSED)' : ''}
 POSITION: "${position}"

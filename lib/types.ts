@@ -1,6 +1,8 @@
-export type SpreadType = 'single' | 'three' | 'five' | 'celtic';
+export type SpreadType =
+  | 'single' | 'three' | 'five' | 'celtic'
+  | 'osho-quickie' | 'osho-three' | 'osho-diamond' | 'osho-bird';
 
-export type DeckStyle = 'dark-gothic' | 'ethereal' | 'classic';
+export type DeckStyle = 'dark-gothic' | 'ethereal' | 'classic' | 'osho-zen';
 
 export type AstrologyInput =
   | { type: 'sun-sign'; sign: string }
@@ -10,8 +12,8 @@ export type AstrologyInput =
 export interface TarotCard {
   name: string;
   arcana: 'major' | 'minor';
-  suit?: 'wands' | 'cups' | 'swords' | 'pentacles';
-  number?: number; // 1-14 for minor, 0-21 for major
+  suit?: 'wands' | 'cups' | 'swords' | 'pentacles' | 'fire' | 'water' | 'clouds' | 'rainbows';
+  number?: number; // 1-14 for minor, 0-22 for major
 }
 
 export interface DrawnCard {
@@ -74,6 +76,7 @@ export interface SpreadDefinition {
   cardCount: number;
   positions: string[];
   description: string;
+  deck: 'rider-waite' | 'osho-zen';
 }
 
 export interface DeckDefinition {

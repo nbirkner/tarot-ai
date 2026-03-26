@@ -5,7 +5,9 @@ export const maxDuration = 60;
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
 const MODEL = 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8';
 
-const SYSTEM = `You are Celeste — an exceptionally gifted tarot reader who synthesizes card readings into a coherent narrative. You always respond in valid JSON. No markdown, no text outside JSON.`;
+const SYSTEM_STANDARD = `You are Celeste — an exceptionally gifted tarot reader who synthesizes card readings into a coherent narrative. You always respond in valid JSON. No markdown, no text outside JSON.`;
+
+const SYSTEM_OSHO = `You are a Zen oracle rooted in Osho's teachings. You synthesize Osho Zen Tarot readings into a unified reflection — not prediction, but recognition. You illuminate what is already present. You always respond in valid JSON. No markdown, no text outside JSON.`;
 
 export async function POST(req: NextRequest) {
   if (!TOGETHER_API_KEY) {
@@ -18,7 +20,11 @@ export async function POST(req: NextRequest) {
       cardReadings,
       question, spreadType, formattedAstrology, userContext,
       moonPhase, dayOfWeek, season, timeOfDay,
+      deckStyle,
     } = body;
+
+    const isOshoZen = deckStyle === 'osho-zen';
+    const SYSTEM = isOshoZen ? SYSTEM_OSHO : SYSTEM_STANDARD;
 
     const cardSummaries = cardReadings
       .map((cr: { card: string; position: string; reversed?: boolean; interpretation: string }, i: number) =>
@@ -32,9 +38,44 @@ export async function POST(req: NextRequest) {
       five: 'Five-Card',
       celtic: 'Celtic Cross',
       'celtic-cross': 'Celtic Cross',
+      'osho-quickie': 'Super Quickie (The Mirror)',
+      'osho-three': 'Mind / Heart / Being',
+      'osho-diamond': 'The Diamond (5-Card)',
+      'osho-bird': 'Flying Bird (7-Card)',
     };
 
-    const prompt = `Synthesize these tarot card readings into a unified whole.
+    const prompt = isOshoZen
+      ? `Synthesize these Osho Zen Tarot card readings into a unified reflection.
+
+QUESTION: "${question || 'No specific question'}"
+SPREAD: ${spreadNames[spreadType] ?? spreadType}
+
+CARD READINGS:
+${cardSummaries}
+
+ASTROLOGICAL PROFILE:
+${formattedAstrology || 'Not provided'}
+
+${userContext ? `USER CONTEXT: "${userContext}"` : ''}
+
+TIMING: Moon: ${moonPhase} · ${dayOfWeek} · ${season} · ${timeOfDay}
+
+RULES:
+- overallEnergy: 2-3 sentences capturing the essential quality of awareness in this reading — reference specific cards
+- synthesis: 4-6 sentences reflecting the unified picture these cards reveal. Name specific cards. Speak to what is present right now, not what will happen. End with the one recognition these cards most invite.
+- affirmation: one sentence in second person — a recognition that lands like something they already knew but hadn't named. Specific to this reading.
+- notableTiming: 1-2 sentences on what the current moment in nature and the cosmos reflects
+- Tone: spacious, direct, Zen. Not prediction — recognition. Not fortune-telling — witnessing.
+- Never use: "journey", "path forward", "exciting times", "trust the process"
+
+Respond with JSON only:
+{
+  "overallEnergy": "...",
+  "synthesis": "...",
+  "affirmation": "...",
+  "notableTiming": "..."
+}`
+      : `Synthesize these tarot card readings into a unified whole.
 
 QUESTION: "${question || 'No specific question'}"
 SPREAD: ${spreadNames[spreadType] ?? spreadType}
