@@ -1,7 +1,34 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { DrawnCard } from '../lib/types';
+
+const ORACLE_PHRASES = [
+  'consulting the oracle…',
+  'asking the stars to please hold…',
+  'negotiating with the cosmos…',
+  'the oracle is in — one moment…',
+  'shuffling the universe…',
+  'Mercury is cooperating (for once)…',
+  'reading the vibes… and the cards…',
+  'the cards are conferring about you…',
+  'contacting the ancient ones…',
+  'filing a cosmic inquiry on your behalf…',
+  'divining your fate (results may vary)…',
+  'the oracle is buffering…',
+  'checking what the moon thinks…',
+  'your destiny is loading (26%)…',
+];
+
+function useRotatingPhrase(phrases: string[], intervalMs = 2800) {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setIdx(i => (i + 1) % phrases.length), intervalMs);
+    return () => clearInterval(t);
+  }, [phrases, intervalMs]);
+  return phrases[idx];
+}
 
 export interface StreamingState {
   overallEnergy: string;
@@ -84,6 +111,7 @@ interface Props {
 }
 
 export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
+  const oraclePhrase = useRotatingPhrase(ORACLE_PHRASES);
   const bodyColor = isDark ? 'rgba(248,244,239,0.8)' : 'var(--brown-mid)';
   const headingColor = isDark ? 'rgba(248,244,239,0.92)' : 'var(--brown-dark)';
   const borderSubtle = isDark ? 'rgba(255,255,255,0.05)' : 'var(--border-brown)';
@@ -113,15 +141,22 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
           >
             <div style={{ position: 'absolute', top: -3, left: '50%', transform: 'translateX(-50%)', color: 'var(--gold)', fontSize: 7 }}>✦</div>
           </div>
-          <p style={{
-            fontFamily: 'var(--font-spectral), Spectral, serif',
-            fontSize: 15,
-            fontStyle: 'italic',
-            color: isDark ? 'rgba(248,244,239,0.38)' : 'var(--brown-light)',
-            letterSpacing: '0.04em',
-          }}>
-            consulting the oracle…
-          </p>
+          <motion.p
+            key={oraclePhrase}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.35 }}
+            style={{
+              fontFamily: 'var(--font-spectral), Spectral, serif',
+              fontSize: 15,
+              fontStyle: 'italic',
+              color: isDark ? 'rgba(248,244,239,0.38)' : 'var(--brown-light)',
+              letterSpacing: '0.04em',
+            }}
+          >
+            {oraclePhrase}
+          </motion.p>
         </div>
       )}
 

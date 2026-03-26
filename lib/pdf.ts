@@ -6,57 +6,10 @@ const DARK: [number, number, number]       = [30, 20, 10];
 const GRAY: [number, number, number]       = [100, 85, 70];
 const LIGHT_GRAY: [number, number, number] = [200, 190, 180];
 
-// ── Font loader ───────────────────────────────────────────────────────────────
-// Fetches TTF from /public/fonts/, converts to base64, registers with jsPDF.
-async function arrayBufToBase64(buf: ArrayBuffer): Promise<string> {
-  return new Promise((resolve) => {
-    const blob = new Blob([buf]);
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      resolve(dataUrl.split(',')[1]);
-    };
-    reader.readAsDataURL(blob);
-  });
-}
-
-type jsPDFType = import('jspdf').jsPDF;
-
-// Returns font names to use: custom fonts if they loaded, built-ins otherwise.
-async function loadFonts(doc: jsPDFType): Promise<{ heading: string; body: string }> {
-  const fonts = [
-    { path: '/fonts/Cinzel-Regular.ttf',    name: 'Cinzel',   style: 'normal' },
-    { path: '/fonts/Cinzel-Bold.ttf',       name: 'Cinzel',   style: 'bold'   },
-    { path: '/fonts/Spectral-Regular.ttf',  name: 'Spectral', style: 'normal' },
-    { path: '/fonts/Spectral-Italic.ttf',   name: 'Spectral', style: 'italic' },
-  ] as const;
-
-  await Promise.all(
-    fonts.map(async ({ path, name, style }) => {
-      try {
-        const res = await fetch(path);
-        if (!res.ok) return;
-        const buf = await res.arrayBuffer();
-        const b64 = await arrayBufToBase64(buf);
-        const filename = path.split('/').pop()!;
-        doc.addFileToVFS(filename, b64);
-        doc.addFont(filename, name, style);
-      } catch {
-        // silently skip — we'll fall back to built-ins
-      }
-    }),
-  );
-
-  // Verify fonts actually registered — jsPDF can silently fail
-  const registered = doc.getFontList();
-  const cinzelLoaded = 'Cinzel' in registered;
-  const spectralLoaded = 'Spectral' in registered;
-
-  return {
-    heading: cinzelLoaded  ? 'Cinzel'   : 'helvetica',
-    body:    spectralLoaded ? 'Spectral' : 'times',
-  };
-}
+// jsPDF v4 TTF custom fonts have broken unicode cmap handling.
+// Use built-in fonts only: helvetica (heading) and times (body).
+const H = 'helvetica';
+const B = 'times';
 
 // ── Unicode sanitizer ─────────────────────────────────────────────────────────
 // jsPDF built-in fonts only support Latin-1. Strip everything else.
@@ -150,13 +103,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
 
   const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
 
-  // Fonts and images in parallel, but images themselves max 3 concurrent
-  const [cardImages, fonts] = await Promise.all([
-    fetchImagesPooled(reading.cards, 3),
-    loadFonts(doc),
-  ]);
-  const H = fonts.heading;  // 'Cinzel' or 'helvetica'
-  const B = fonts.body;     // 'Spectral' or 'times'
+  const cardImages = await fetchImagesPooled(reading.cards, 3);
 
   const pageW  = 612;
   const pageH  = 792;
@@ -394,12 +341,7 @@ export async function downloadCardsPDF(reading: ReadingResult): Promise<void> {
   const { jsPDF } = await import('jspdf');
 
   const doc   = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
-  const [cardImages, fonts2] = await Promise.all([
-    fetchImagesPooled(reading.cards, 3),
-    loadFonts(doc),
-  ]);
-  const H2 = fonts2.heading;
-  const B2 = fonts2.body;
+  const cardImages = await fetchImagesPooled(reading.cards, 3);
 
   const pageW = 612;
   const pageH = 792;
@@ -435,7 +377,7 @@ export async function downloadCardsPDF(reading: ReadingResult): Promise<void> {
     } else {
       doc.setFillColor(240, 235, 225);
       doc.rect(x, y, cardW, cardH, 'F');
-      doc.setFont(B2, 'italic');
+      doc.setFont(B, 'italic');
       doc.setFontSize(9);
       doc.setTextColor(120, 100, 80);
       const nl = doc.splitTextToSize(sanitize(reading.cards[i].card.name), cardW - 10);
@@ -446,11 +388,11 @@ export async function downloadCardsPDF(reading: ReadingResult): Promise<void> {
     doc.setLineWidth(0.5);
     doc.rect(x, y, cardW, cardH, 'S');
 
-    doc.setFont(H2, 'normal');
+    doc.setFont(H, 'normal');
     doc.setFontSize(8);
     doc.setTextColor(...DARK);
     doc.text(sanitize(reading.cards[i].card.name), x + cardW / 2, y + cardH + 13, { align: 'center' });
-    doc.setFont(B2, 'normal');
+    doc.setFont(B, 'normal');
     doc.setFontSize(7);
     doc.setTextColor(...GRAY);
     const posLabel = sanitize(reading.cards[i].position + (reading.cards[i].reversed ? ' (Rev.)' : ''));
