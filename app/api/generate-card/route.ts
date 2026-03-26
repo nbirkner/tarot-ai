@@ -3,6 +3,8 @@ import { CARD_PROMPTS } from '../../../data/card-prompts';
 import { STYLE_MODIFIERS } from '../../../data/style-modifiers';
 import { GenerateCardRequest } from '../../../lib/types';
 
+export const maxDuration = 60;
+
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
 const IMAGE_MODEL_SCHNELL = 'black-forest-labs/FLUX.1-schnell';
 const IMAGE_MODEL_KONTEXT = 'black-forest-labs/FLUX.1-kontext-pro';

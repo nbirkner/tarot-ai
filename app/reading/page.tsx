@@ -314,13 +314,13 @@ export default function ReadingPage() {
     setFlippedCards(new Set());
     setStreamingState(null);
 
-    // If nothing streams within 20s, the oracle is stuck — show a friendly error.
+    // If nothing streams within 30s, the oracle is stuck — show a friendly error.
     // Cleared as soon as the first card chunk arrives.
     if (hangTimerRef.current) clearTimeout(hangTimerRef.current);
     hangTimerRef.current = setTimeout(() => {
       setStreamingState(null);
       setError('hang');
-    }, 20000);
+    }, 30000);
 
     const spread = getSpread(spreadType);
     const cards = drawCards(spread.cardCount);
@@ -413,7 +413,8 @@ export default function ReadingPage() {
       // from blocking all of Promise.allSettled forever.
       const PER_CARD_TIMEOUT_MS = 22000;
 
-      // Helper: fetch one card reading with a 429-retry and a hard per-card timeout.
+      // Helper: fetch one card reading with retry on any failure (up to 2 attempts,
+      // 2s back-off between), plus a hard per-card timeout.
       async function fetchCardReading(drawn: DrawnCard, i: number) {
         const body = JSON.stringify({
           ...sharedBody,
@@ -425,60 +426,51 @@ export default function ReadingPage() {
             .map(d => `${d.card.name} (${d.position})`),
         });
 
-        const attemptFetch = async (): Promise<Response> => {
-          const res = await fetch('/api/generate-card-reading', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: controller.signal,
-            body,
-          });
-          // Retry once on 429 (rate limit) after a 1s back-off
-          if (res.status === 429) {
-            await new Promise(r => setTimeout(r, 1000));
-            return fetch('/api/generate-card-reading', {
+        return withRetry(async () => {
+          const res = await withTimeout(
+            fetch('/api/generate-card-reading', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               signal: controller.signal,
               body,
-            });
+            }),
+            PER_CARD_TIMEOUT_MS,
+            `card ${i} fetch`,
+          );
+
+          if (!res.ok) {
+            const errText = await res.text().catch(() => '');
+            console.error(`Card ${i} API error:`, res.status, errText);
+            throw new Error(`Card reading failed (${res.status})`);
           }
-          return res;
-        };
 
-        const res = await withTimeout(attemptFetch(), PER_CARD_TIMEOUT_MS, `card ${i} fetch`);
+          const json = await withTimeout(
+            readSseStream(res, (partial) => {
+              // Clear hang timer the moment first streaming data arrives
+              if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
+              const fields = extractCardFields(partial);
+              if (Object.keys(fields).length > 0) {
+                setStreamingState(prev => {
+                  if (!prev) return prev;
+                  const cards = [...prev.cards];
+                  cards[i] = { ...cards[i], ...fields };
+                  return { ...prev, cards };
+                });
+              }
+            }),
+            PER_CARD_TIMEOUT_MS,
+            `card ${i} stream`,
+          );
 
-        if (!res.ok) {
-          const errText = await res.text().catch(() => '');
-          console.error(`Card ${i} API error:`, res.status, errText);
-          throw new Error(`Card reading failed (${res.status})`);
-        }
-
-        const json = await withTimeout(
-          readSseStream(res, (partial) => {
-            // Clear hang timer the moment first streaming data arrives
-            if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
-            const fields = extractCardFields(partial);
-            if (Object.keys(fields).length > 0) {
-              setStreamingState(prev => {
-                if (!prev) return prev;
-                const cards = [...prev.cards];
-                cards[i] = { ...cards[i], ...fields };
-                return { ...prev, cards };
-              });
-            }
-          }),
-          PER_CARD_TIMEOUT_MS,
-          `card ${i} stream`,
-        );
-
-        const parsed = JSON.parse(json);
-        return {
-          card: drawn.card.name,
-          position: drawn.position,
-          reversed: drawn.reversed,
-          keywords: parsed.keywords ?? [],
-          interpretation: parsed.interpretation ?? '',
-        };
+          const parsed = JSON.parse(json);
+          return {
+            card: drawn.card.name,
+            position: drawn.position,
+            reversed: drawn.reversed,
+            keywords: parsed.keywords ?? [],
+            interpretation: parsed.interpretation ?? '',
+          };
+        }, 2, 2000);
       }
 
         // ── Fire card reading calls with concurrency cap ───────
@@ -529,31 +521,49 @@ export default function ReadingPage() {
       }
 
       // ── Fire synthesis call (with whatever cards succeeded) ────────────────────────────────
-      const synthRes = await fetch('/api/generate-synthesis', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          ...sharedBody,
-          spreadType,
-          cardReadings,
-        }),
-      });
+      // Retry once after 2s on any failure (network blip, 5xx, etc.)
+      const SYNTH_TIMEOUT_MS = 30000;
+      let synthJson = '';
+      try {
+        synthJson = await withRetry(async () => {
+          const synthRes = await withTimeout(
+            fetch('/api/generate-synthesis', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              signal: controller.signal,
+              body: JSON.stringify({
+                ...sharedBody,
+                spreadType,
+                cardReadings,
+              }),
+            }),
+            SYNTH_TIMEOUT_MS,
+            'synthesis fetch',
+          );
 
-      if (!synthRes.ok) {
-        const errText = await synthRes.text().catch(() => '');
-        console.error('Synthesis API error:', synthRes.status, errText);
+          if (!synthRes.ok) {
+            const errText = await synthRes.text().catch(() => '');
+            console.error('Synthesis API error:', synthRes.status, errText);
+            throw new Error(`Synthesis failed (${synthRes.status})`);
+          }
+
+          return withTimeout(
+            readSseStream(synthRes, (partial) => {
+              const fields = extractSynthesisFields(partial);
+              if (Object.keys(fields).length > 0) {
+                setStreamingState(prev => prev ? { ...prev, ...fields } : prev);
+              }
+            }),
+            SYNTH_TIMEOUT_MS,
+            'synthesis stream',
+          );
+        }, 2, 2000);
+      } catch (synthErr) {
+        console.error('Synthesis failed after retries:', synthErr);
         setStreamingState(null);
-        setError(`The oracle fell silent (${synthRes.status}). Please try again.`);
+        setError('The oracle fell silent during synthesis. Please try again.');
         return;
       }
-
-      const synthJson = await readSseStream(synthRes, (partial) => {
-        const fields = extractSynthesisFields(partial);
-        if (Object.keys(fields).length > 0) {
-          setStreamingState(prev => prev ? { ...prev, ...fields } : prev);
-        }
-      });
 
       const synthData = JSON.parse(synthJson);
 

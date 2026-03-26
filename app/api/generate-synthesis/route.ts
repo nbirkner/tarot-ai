@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
 const MODEL = 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8';
@@ -64,12 +64,16 @@ Respond with JSON only:
   "notableTiming": "..."
 }`;
 
+    const togetherAbort = new AbortController();
+    const togetherTimeout = setTimeout(() => togetherAbort.abort(), 25000);
+
     const response = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${TOGETHER_API_KEY}`,
         'Content-Type': 'application/json',
       },
+      signal: togetherAbort.signal,
       body: JSON.stringify({
         model: MODEL,
         messages: [
@@ -80,7 +84,7 @@ Respond with JSON only:
         max_tokens: 700,
         stream: true,
       }),
-    });
+    }).finally(() => clearTimeout(togetherTimeout));
 
     if (!response.ok) {
       const error = await response.text();
@@ -93,6 +97,7 @@ Respond with JSON only:
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache, no-transform',
         'X-Accel-Buffering': 'no',
+        'Connection': 'keep-alive',
       },
     });
   } catch (err) {

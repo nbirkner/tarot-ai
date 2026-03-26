@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GenerateReadingRequest } from '../../../lib/types';
 
-export const maxDuration = 30; // Vercel Pro: 30s; Hobby: capped at 10s
+export const maxDuration = 60;
 
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
 const READING_MODEL = 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8';
@@ -110,12 +110,16 @@ Respond with JSON:
   "notableTiming": "1-2 sentences on what the current celestial moment (moon phase + day + season) adds — what is this moment energetically good for?"
 }`;
 
+    const togetherAbort = new AbortController();
+    const togetherTimeout = setTimeout(() => togetherAbort.abort(), 25000);
+
     const response = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${TOGETHER_API_KEY}`,
         'Content-Type': 'application/json',
       },
+      signal: togetherAbort.signal,
       body: JSON.stringify({
         model: READING_MODEL,
         messages: [
@@ -126,7 +130,7 @@ Respond with JSON:
         max_tokens: Math.min(500 + body.cards.length * 300, 2000),
         stream: true,
       }),
-    });
+    }).finally(() => clearTimeout(togetherTimeout));
 
     if (!response.ok) {
       const error = await response.text();
@@ -140,6 +144,7 @@ Respond with JSON:
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache, no-transform',
         'X-Accel-Buffering': 'no',
+        'Connection': 'keep-alive',
       },
     });
   } catch (err) {
