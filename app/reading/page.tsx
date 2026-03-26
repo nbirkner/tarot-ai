@@ -10,6 +10,7 @@ import { PhotoUpload } from '../../components/PhotoUpload';
 import { ContextInput } from '../../components/ContextInput';
 import { TarotCard } from '../../components/TarotCard';
 import { ReadingDisplay } from '../../components/ReadingDisplay';
+import { StreamingReadingDisplay, StreamingState } from '../../components/StreamingReadingDisplay';
 import {
   SpreadType,
   DeckStyle,
@@ -143,21 +144,80 @@ function unescapeJson(s: string): string {
   return s.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
 }
 
-// Extract the latest human-readable oracle text from partial streaming JSON
-function extractOracleWords(partial: string): string {
-  // Synthesis is last — show it once it starts
-  const synthMatch = partial.match(/"synthesis"\s*:\s*"((?:[^"\\]|\\.)*)/);
-  if (synthMatch) return unescapeJson(synthMatch[1]);
+function extractStringField(partial: string, key: string): { text: string; done: boolean } | null {
+  // Check for complete field first
+  const completeRe = new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 's');
+  const completeMatch = partial.match(completeRe);
+  if (completeMatch) return { text: unescapeJson(completeMatch[1]), done: true };
 
-  // Show the last in-progress interpretation
-  const interpMatches = [...partial.matchAll(/"interpretation"\s*:\s*"((?:[^"\\]|\\.)*)/g)];
-  if (interpMatches.length > 0) return unescapeJson(interpMatches[interpMatches.length - 1][1]);
+  // Check for in-progress field
+  const partialRe = new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)$`, 's');
+  const partialMatch = partial.match(partialRe);
+  if (partialMatch && partialMatch[1].length > 3) return { text: unescapeJson(partialMatch[1]), done: false };
 
-  // Fall back to overallEnergy
-  const energyMatch = partial.match(/"overallEnergy"\s*:\s*"((?:[^"\\]|\\.)*)/);
-  if (energyMatch) return unescapeJson(energyMatch[1]);
+  return null;
+}
 
-  return '';
+function extractCardInterpretations(partial: string, count: number): StreamingState['cards'] {
+  const cards: StreamingState['cards'] = Array.from({ length: count }, () => ({
+    keywords: [],
+    interpretation: '',
+    interpretationDone: false,
+  }));
+
+  // Keywords: find each "keywords": [...] array
+  const kwRe = /"keywords"\s*:\s*\[([^\]]*)\]/g;
+  let kwMatch;
+  let kwIdx = 0;
+  while ((kwMatch = kwRe.exec(partial)) !== null && kwIdx < count) {
+    try { cards[kwIdx].keywords = JSON.parse(`[${kwMatch[1]}]`); } catch {}
+    kwIdx++;
+  }
+
+  // Interpretations: find each "interpretation": "..." (complete or in-progress)
+  const interpRe = /"interpretation"\s*:\s*"/g;
+  let interpMatch;
+  let interpIdx = 0;
+  while ((interpMatch = interpRe.exec(partial)) !== null && interpIdx < count) {
+    const afterOpen = partial.slice(interpMatch.index + interpMatch[0].length);
+    // Walk characters to find unescaped closing quote
+    let closeIdx = -1;
+    let j = 0;
+    while (j < afterOpen.length) {
+      if (afterOpen[j] === '\\') { j += 2; continue; }
+      if (afterOpen[j] === '"') { closeIdx = j; break; }
+      j++;
+    }
+    if (closeIdx !== -1) {
+      cards[interpIdx].interpretation = unescapeJson(afterOpen.slice(0, closeIdx));
+      cards[interpIdx].interpretationDone = true;
+    } else {
+      cards[interpIdx].interpretation = unescapeJson(afterOpen);
+      cards[interpIdx].interpretationDone = false;
+    }
+    interpIdx++;
+  }
+
+  return cards;
+}
+
+function extractStreamingState(partial: string, cardCount: number): StreamingState | null {
+  const energy = extractStringField(partial, 'overallEnergy');
+  if (!energy) return null; // nothing meaningful yet
+
+  const synthesis = extractStringField(partial, 'synthesis');
+  const affirmation = extractStringField(partial, 'affirmation');
+  const timing = extractStringField(partial, 'notableTiming');
+
+  return {
+    overallEnergy: energy.text,
+    overallEnergyDone: energy.done,
+    cards: extractCardInterpretations(partial, cardCount),
+    synthesis: synthesis?.text ?? '',
+    synthesisDone: synthesis?.done ?? false,
+    affirmation: affirmation?.text ?? '',
+    notableTiming: timing?.text ?? '',
+  };
 }
 
 export default function ReadingPage() {
@@ -173,7 +233,7 @@ export default function ReadingPage() {
   const [isReadingReady, setIsReadingReady] = useState(false);
   const [reading, setReading] = useState<ReadingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [streamText, setStreamText] = useState('');
+  const [streamingState, setStreamingState] = useState<StreamingState | null>(null);
   const resolvedImagesRef = useRef<(string | undefined)[]>([]);
 
   const allFlipped = drawnCards.length > 0 && flippedCards.size === drawnCards.length;
@@ -192,7 +252,7 @@ export default function ReadingPage() {
     setError(null);
     setIsReadingReady(false);
     setFlippedCards(new Set());
-    setStreamText('');
+    setStreamingState(null);
 
     const spread = getSpread(spreadType);
     const cards = drawCards(spread.cardCount);
@@ -286,8 +346,8 @@ export default function ReadingPage() {
             const token: string = chunk.choices?.[0]?.delta?.content ?? '';
             if (token) {
               jsonText += token;
-              const words = extractOracleWords(jsonText);
-              if (words) setStreamText(words);
+              const state = extractStreamingState(jsonText, initialDrawn.length);
+              if (state) setStreamingState(state);
             }
           } catch {
             // malformed chunk — skip
@@ -333,7 +393,7 @@ export default function ReadingPage() {
     setIsReadingReady(false);
     setReading(null);
     setError(null);
-    setStreamText('');
+    setStreamingState(null);
   }
 
   // Determine card size based on count
@@ -560,125 +620,62 @@ export default function ReadingPage() {
                   ))}
                 </div>
 
-                {/* Loading state — WitchyLoader until stream starts, then live oracle words */}
-                {!isReadingReady && (
-                  streamText ? (
-                    <div className="text-center py-8 max-w-xl mx-auto px-4">
-                      <p
-                        style={{
-                          fontFamily: 'Cormorant Garamond, serif',
-                          fontSize: 19,
-                          fontStyle: 'italic',
-                          color: '#E8C96A',
-                          lineHeight: 1.75,
-                          opacity: 0.9,
-                          whiteSpace: 'pre-wrap',
-                        }}
-                      >
-                        {streamText}
-                        <span style={{ animation: 'blink-cursor 1s step-end infinite', opacity: 1 }}>|</span>
-                      </p>
-                    </div>
-                  ) : (
-                    <WitchyLoader />
-                  )
+                {/* Ornamental divider before reading sections */}
+                {streamingState && (
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 h-px" style={{ background: isDark ? 'rgba(196,146,42,0.3)' : 'var(--border-gold)' }} />
+                    <span style={{ color: 'var(--gold)', fontSize: 14 }}>✦ ✦ ✦</span>
+                    <div className="flex-1 h-px" style={{ background: isDark ? 'rgba(196,146,42,0.3)' : 'var(--border-gold)' }} />
+                  </div>
                 )}
 
-                {/* Reading — appears after all cards flipped */}
-                <AnimatePresence>
-                  {allFlipped && reading && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6 }}
-                    >
-                      {/* Ornamental divider — adapts to dark */}
-                      <div className="flex items-center gap-4 my-8">
-                        <div
-                          className="flex-1 h-px"
-                          style={{
-                            background: isDark
-                              ? 'rgba(196,146,42,0.35)'
-                              : 'var(--border-gold)',
-                          }}
-                        />
-                        <span style={{ color: 'var(--gold)', fontSize: 16 }}>✦ ✦ ✦</span>
-                        <div
-                          className="flex-1 h-px"
-                          style={{
-                            background: isDark
-                              ? 'rgba(196,146,42,0.35)'
-                              : 'var(--border-gold)',
-                          }}
-                        />
-                      </div>
+                {/* Pre-stream: WitchyLoader */}
+                {!streamingState && !isReadingReady && <WitchyLoader />}
 
-                      {/* ReadingDisplay — wrapped in dark panel when isDark */}
-                      <div
+                {/* Streaming: skeleton blocks filling in */}
+                {streamingState && !isReadingReady && (
+                  <StreamingReadingDisplay
+                    state={streamingState}
+                    drawnCards={drawnCards}
+                    isDark={isDark}
+                  />
+                )}
+
+                {/* Complete: full reading with motion reveals */}
+                {isReadingReady && reading && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <ReadingDisplay reading={reading} />
+
+                    <div className="text-center mt-12">
+                      <button
+                        onClick={reset}
                         style={
                           isDark
                             ? {
-                                background: 'rgba(255,255,255,0.02)',
-                                border: '1px solid rgba(255,255,255,0.04)',
-                                borderRadius: 4,
-                                padding: '8px',
+                                background: 'transparent',
+                                color: 'var(--gold-light)',
+                                fontFamily: 'Cinzel, serif',
+                                fontSize: 12,
+                                letterSpacing: '0.1em',
+                                padding: '12px 28px',
+                                borderRadius: 2,
+                                border: '1px solid rgba(196,146,42,0.45)',
+                                cursor: 'pointer',
+                                transition: 'all 0.25s ease',
+                                textTransform: 'uppercase' as const,
                               }
-                            : {}
+                            : undefined
                         }
+                        className={isDark ? '' : 'btn-secondary'}
                       >
-                        <ReadingDisplay reading={reading} />
-                      </div>
-
-                      <div className="text-center mt-12">
-                        <button
-                          onClick={reset}
-                          style={
-                            isDark
-                              ? {
-                                  background: 'transparent',
-                                  color: 'var(--gold-light)',
-                                  fontFamily: 'Cinzel, serif',
-                                  fontSize: 12,
-                                  letterSpacing: '0.1em',
-                                  padding: '12px 28px',
-                                  borderRadius: 2,
-                                  border: '1px solid rgba(196,146,42,0.45)',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.25s ease',
-                                  textTransform: 'uppercase' as const,
-                                }
-                              : undefined
-                          }
-                          className={isDark ? '' : 'btn-secondary'}
-                        >
-                          Begin a New Reading
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Hint to flip remaining cards */}
-                {isReadingReady && !allFlipped && (
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="text-center"
-                    style={{
-                      fontFamily: 'Cormorant Garamond, serif',
-                      fontSize: 15,
-                      color: isDark ? 'rgba(248,244,239,0.45)' : 'var(--brown-light)',
-                      fontStyle: 'italic',
-                      transition: 'color 0.6s ease',
-                    }}
-                  >
-                    {flippedCards.size === 0
-                      ? 'Tap each card above to unveil your reading'
-                      : `${drawnCards.length - flippedCards.size} card${
-                          drawnCards.length - flippedCards.size > 1 ? 's' : ''
-                        } remaining`}
-                  </motion.p>
+                        Begin a New Reading
+                      </button>
+                    </div>
+                  </motion.div>
                 )}
               </div>
             )}
