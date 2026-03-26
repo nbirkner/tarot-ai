@@ -118,7 +118,7 @@ Respond with JSON:
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.85,
-        max_tokens: 1400,
+        max_tokens: Math.min(500 + body.cards.length * 300, 3000),
         stream: true,
       }),
     });

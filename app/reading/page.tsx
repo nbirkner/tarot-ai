@@ -378,8 +378,7 @@ export default function ReadingPage() {
       setIsReadingReady(true); // Cards now glow and are clickable — images may still be loading
     } catch (err) {
       console.error('Reading error:', err);
-      setError('The oracle is silent. Please try again.');
-      setStep('question');
+      setError('The oracle fell silent. Please try again.');
     }
   }
 
@@ -629,8 +628,18 @@ export default function ReadingPage() {
                   </div>
                 )}
 
+                {/* Error state */}
+                {error && !isReadingReady && (
+                  <div className="text-center py-10 space-y-4">
+                    <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 18, fontStyle: 'italic', color: isDark ? 'rgba(248,244,239,0.6)' : 'var(--brown-light)' }}>
+                      {error}
+                    </p>
+                    <button onClick={startReading} className="btn-primary">Try Again</button>
+                  </div>
+                )}
+
                 {/* Pre-stream: WitchyLoader */}
-                {!streamingState && !isReadingReady && <WitchyLoader />}
+                {!streamingState && !isReadingReady && !error && <WitchyLoader />}
 
                 {/* Streaming: skeleton blocks filling in */}
                 {streamingState && !isReadingReady && (
