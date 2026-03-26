@@ -148,18 +148,38 @@ function cleanJson(raw: string): string {
   return raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
 }
 
-// Read a Together AI SSE stream to completion, calling onToken on each partial accumulation
+// Wrap a promise with a timeout. Rejects with a TimeoutError after ms milliseconds.
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout: ${label} exceeded ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
+// Read a Together AI SSE stream to completion, calling onPartial on each partial accumulation.
+// Per-read timeout prevents a stalled stream from blocking forever.
 async function readSseStream(
   res: Response,
   onPartial: (accumulated: string) => void,
 ): Promise<string> {
-  const reader = res.body!.getReader();
+  if (!res.body) {
+    throw new Error('Response body is null — cannot read SSE stream');
+  }
+  const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let sseBuffer = '';
   let accumulated = '';
+  // 20s per individual read — if a chunk doesn't arrive in 20s the stream is stuck
+  const READ_TIMEOUT_MS = 20000;
   try {
     outer: while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await withTimeout(
+        reader.read(),
+        READ_TIMEOUT_MS,
+        'SSE chunk read',
+      );
       if (done) break;
       sseBuffer += decoder.decode(value, { stream: true });
       const lines = sseBuffer.split('\n');
@@ -179,7 +199,7 @@ async function readSseStream(
       }
     }
   } finally {
-    reader.releaseLock();
+    try { reader.releaseLock(); } catch {}
   }
   return cleanJson(accumulated);
 }
@@ -306,8 +326,8 @@ export default function ReadingPage() {
 
     try {
       const controller = new AbortController();
-      // Each card call + synthesis, give generous budget
-      setTimeout(() => controller.abort(), 55000);
+      // 45s global budget — well under any realistic Vercel cold-start + N cards + synthesis
+      setTimeout(() => controller.abort(), 45000);
 
       const sharedBody = {
         question,
@@ -317,22 +337,43 @@ export default function ReadingPage() {
         ...context,
       };
 
-      // ── Fire all card reading calls in parallel ────────────
-      const cardReadingPromises = initialDrawn.map(async (drawn, i) => {
-        const res = await fetch('/api/generate-card-reading', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            ...sharedBody,
-            card: drawn.card.name,
-            position: drawn.position,
-            reversed: drawn.reversed,
-            otherCards: initialDrawn
-              .filter((_, j) => j !== i)
-              .map(d => `${d.card.name} (${d.position})`),
-          }),
+      // Per-card timeout: 22s is enough for one LLM call + stream; keeps one stuck card
+      // from blocking all of Promise.allSettled forever.
+      const PER_CARD_TIMEOUT_MS = 22000;
+
+      // Helper: fetch one card reading with a 429-retry and a hard per-card timeout.
+      async function fetchCardReading(drawn: DrawnCard, i: number) {
+        const body = JSON.stringify({
+          ...sharedBody,
+          card: drawn.card.name,
+          position: drawn.position,
+          reversed: drawn.reversed,
+          otherCards: initialDrawn
+            .filter((_, j) => j !== i)
+            .map(d => `${d.card.name} (${d.position})`),
         });
+
+        const attemptFetch = async (): Promise<Response> => {
+          const res = await fetch('/api/generate-card-reading', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body,
+          });
+          // Retry once on 429 (rate limit) after a 1s back-off
+          if (res.status === 429) {
+            await new Promise(r => setTimeout(r, 1000));
+            return fetch('/api/generate-card-reading', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              signal: controller.signal,
+              body,
+            });
+          }
+          return res;
+        };
+
+        const res = await withTimeout(attemptFetch(), PER_CARD_TIMEOUT_MS, `card ${i} fetch`);
 
         if (!res.ok) {
           const errText = await res.text().catch(() => '');
@@ -340,17 +381,21 @@ export default function ReadingPage() {
           throw new Error(`Card reading failed (${res.status})`);
         }
 
-        const json = await readSseStream(res, (partial) => {
-          const fields = extractCardFields(partial);
-          if (Object.keys(fields).length > 0) {
-            setStreamingState(prev => {
-              if (!prev) return prev;
-              const cards = [...prev.cards];
-              cards[i] = { ...cards[i], ...fields };
-              return { ...prev, cards };
-            });
-          }
-        });
+        const json = await withTimeout(
+          readSseStream(res, (partial) => {
+            const fields = extractCardFields(partial);
+            if (Object.keys(fields).length > 0) {
+              setStreamingState(prev => {
+                if (!prev) return prev;
+                const cards = [...prev.cards];
+                cards[i] = { ...cards[i], ...fields };
+                return { ...prev, cards };
+              });
+            }
+          }),
+          PER_CARD_TIMEOUT_MS,
+          `card ${i} stream`,
+        );
 
         const parsed = JSON.parse(json);
         return {
@@ -360,12 +405,57 @@ export default function ReadingPage() {
           keywords: parsed.keywords ?? [],
           interpretation: parsed.interpretation ?? '',
         };
+      }
+
+      // ── Fire all card reading calls in parallel ────────────
+      // allSettled means one stuck/failed card doesn't cancel the rest.
+      const cardResults = await Promise.allSettled(
+        initialDrawn.map((drawn, i) => fetchCardReading(drawn, i))
+      );
+
+      // Build the list of successful card readings. For failed cards, show a fallback
+      // in the streaming state and pass a placeholder to synthesis.
+      const cardReadings: Array<{
+        card: string;
+        position: string;
+        reversed: boolean;
+        keywords: string[];
+        interpretation: string;
+      }> = cardResults.map((result, i) => {
+        if (result.status === 'fulfilled') {
+          return result.value;
+        }
+        // Failed card — log and set a fallback in the streaming UI
+        console.error(`Card ${i} failed:`, result.reason);
+        setStreamingState(prev => {
+          if (!prev) return prev;
+          const cards = [...prev.cards];
+          cards[i] = {
+            ...cards[i],
+            interpretation: '[Reading unavailable for this card]',
+            interpretationDone: true,
+            keywords: [],
+          };
+          return { ...prev, cards };
+        });
+        return {
+          card: initialDrawn[i].card.name,
+          position: initialDrawn[i].position,
+          reversed: initialDrawn[i].reversed,
+          keywords: [],
+          interpretation: '[Reading unavailable for this card]',
+        };
       });
 
-      // Wait for all cards (they stream in parallel — first tokens visible within ~1s)
-      const cardReadings = await Promise.all(cardReadingPromises);
+      // If every single card failed, abort — there's nothing to synthesize.
+      const successCount = cardResults.filter(r => r.status === 'fulfilled').length;
+      if (successCount === 0) {
+        setStreamingState(null);
+        setError('The oracle could not read any of your cards. Please try again.');
+        return;
+      }
 
-      // ── Fire synthesis call ────────────────────────────────
+      // ── Fire synthesis call (with whatever cards succeeded) ────────────────────────────────
       const synthRes = await fetch('/api/generate-synthesis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
