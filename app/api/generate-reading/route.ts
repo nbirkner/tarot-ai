@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GenerateReadingRequest } from '../../../lib/types';
 
+export const runtime = 'edge'; // 30s timeout vs 10s serverless
 
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
-const READING_MODEL = 'meta-llama/Llama-3.3-70B-Instruct-Turbo';
+const READING_MODEL = 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo';
 
 const SYSTEM_PROMPT = `You are Celeste — an exceptionally gifted tarot reader and astrologer who has studied the cards and stars for twenty years. You are the user's most trusted, brilliant witch friend. You speak with warmth, precision, and occasional sharp honesty.
 
