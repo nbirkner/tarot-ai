@@ -309,13 +309,13 @@ export default function ReadingPage() {
     setFlippedCards(new Set());
     setStreamingState(null);
 
-    // If nothing streams within 10s, the oracle is stuck — show a friendly error.
+    // If nothing streams within 20s, the oracle is stuck — show a friendly error.
     // Cleared as soon as the first card chunk arrives.
     if (hangTimerRef.current) clearTimeout(hangTimerRef.current);
     hangTimerRef.current = setTimeout(() => {
       setStreamingState(null);
       setError('hang');
-    }, 10000);
+    }, 20000);
 
     const spread = getSpread(spreadType);
     const cards = drawCards(spread.cardCount);
@@ -941,7 +941,9 @@ export default function ReadingPage() {
                         {error}
                       </p>
                     )}
-                    <button onClick={startReading} className="btn-primary">Try Again</button>
+                    <div style={{ marginTop: 28 }}>
+                      <button onClick={startReading} className="btn-primary">Try Again</button>
+                    </div>
                   </div>
                 )}
 
