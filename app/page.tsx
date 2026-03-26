@@ -356,6 +356,22 @@ export default function Home() {
                 Powered by Together AI · Centuries of symbolism, generated in seconds · The oracle is not liable for epiphanies
               </p>
             </div>
+            <div className="flex items-center gap-4 mt-3" style={{ paddingLeft: 48 }}>
+              <Link
+                href="/about"
+                style={{
+                  fontFamily: 'var(--font-spectral), serif',
+                  fontSize: 12,
+                  fontStyle: 'italic',
+                  color: 'var(--brown-light)',
+                  opacity: 0.4,
+                  letterSpacing: '0.04em',
+                  textDecoration: 'none',
+                }}
+              >
+                about this →
+              </Link>
+            </div>
           </div>
 
         </div>
