@@ -144,6 +144,52 @@ function unescapeJson(s: string): string {
   return s.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
 }
 
+// Extract progressively readable fields from a partial JSON buffer
+function extractStreamingFields(buf: string, cardCount: number): Partial<StreamingState> {
+  const u: Partial<StreamingState> = {};
+
+  // overallEnergy — streams character by character
+  const oe = buf.match(/"overallEnergy"\s*:\s*"((?:[^"\\]|\\.)*)(")?/);
+  if (oe?.[1] !== undefined) {
+    u.overallEnergy = unescapeJson(oe[1]);
+    u.overallEnergyDone = oe[2] === '"';
+  }
+
+  // Card keywords (only when the full array is present) + interpretations (stream)
+  const kwAll = [...buf.matchAll(/"keywords"\s*:\s*(\[[^\]]*\])/g)];
+  const intAll = [...buf.matchAll(/"interpretation"\s*:\s*"((?:[^"\\]|\\.)*)(")?/g)];
+  if (kwAll.length > 0 || intAll.length > 0) {
+    u.cards = Array.from({ length: cardCount }, (_, i) => {
+      let keywords: string[] = [];
+      let interpretation = '';
+      let interpretationDone = false;
+      if (kwAll[i]) { try { keywords = JSON.parse(kwAll[i][1]); } catch {} }
+      if (intAll[i]) {
+        interpretation = unescapeJson(intAll[i][1]);
+        interpretationDone = intAll[i][2] === '"';
+      }
+      return { keywords, interpretation, interpretationDone };
+    });
+  }
+
+  // synthesis — streams
+  const syn = buf.match(/"synthesis"\s*:\s*"((?:[^"\\]|\\.)*)(")?/);
+  if (syn?.[1] !== undefined) {
+    u.synthesis = unescapeJson(syn[1]);
+    u.synthesisDone = syn[2] === '"';
+  }
+
+  // affirmation — only when the closing quote is visible
+  const aff = buf.match(/"affirmation"\s*:\s*"((?:[^"\\]|\\.)*)"(?=\s*[,}\n])/);
+  if (aff) u.affirmation = unescapeJson(aff[1]);
+
+  // notableTiming — only when the closing quote is visible
+  const timing = buf.match(/"notableTiming"\s*:\s*"((?:[^"\\]|\\.)*)"(?=\s*[,}\n])/);
+  if (timing) u.notableTiming = unescapeJson(timing[1]);
+
+  return u;
+}
+
 
 export default function ReadingPage() {
   const [step, setStep] = useState<Step>('question');
@@ -273,7 +319,46 @@ export default function ReadingPage() {
         return;
       }
 
-      const readingData = await readingRes.json();
+      // Read the SSE stream and fill in skeleton blocks as tokens arrive
+      const reader = readingRes.body!.getReader();
+      const decoder = new TextDecoder();
+      let sseBuffer = '';
+      let accumulatedJson = '';
+      const cardCount = initialDrawn.length;
+
+      try {
+        outer: while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          sseBuffer += decoder.decode(value, { stream: true });
+          const lines = sseBuffer.split('\n');
+          sseBuffer = lines.pop() ?? '';
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const data = line.slice(6).trim();
+            if (data === '[DONE]') break outer;
+            try {
+              const event = JSON.parse(data);
+              const token: string = event.choices?.[0]?.delta?.content ?? '';
+              if (token) {
+                accumulatedJson += token;
+                const fields = extractStreamingFields(accumulatedJson, cardCount);
+                if (Object.keys(fields).length > 0) {
+                  setStreamingState(prev => prev ? { ...prev, ...fields } : prev);
+                }
+              }
+            } catch {}
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
+      const cleanContent = accumulatedJson
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/\s*```$/, '')
+        .trim();
+      const readingData = JSON.parse(cleanContent);
 
       const result: ReadingResult = {
         id: crypto.randomUUID(),

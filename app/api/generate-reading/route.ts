@@ -124,6 +124,7 @@ Respond with JSON:
         ],
         temperature: 0.85,
         max_tokens: Math.min(500 + body.cards.length * 300, 2000),
+        stream: true,
       }),
     });
 
@@ -133,15 +134,14 @@ Respond with JSON:
       return NextResponse.json({ error: 'Reading generation failed' }, { status: 500 });
     }
 
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-    if (!content) {
-      return NextResponse.json({ error: 'No reading returned' }, { status: 500 });
-    }
-
-    const cleanContent = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-    const reading = JSON.parse(cleanContent);
-    return NextResponse.json(reading);
+    // Forward the SSE stream directly to the client
+    return new Response(response.body, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        'X-Accel-Buffering': 'no',
+      },
+    });
   } catch (err) {
     console.error('generate-reading error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
