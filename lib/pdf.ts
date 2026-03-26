@@ -1,559 +1,384 @@
 import { ReadingResult } from './types';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
-const GOLD: [number, number, number]         = [196, 146, 42];
-const DARK_BROWN: [number, number, number]   = [42, 31, 20];
-const MID_BROWN: [number, number, number]    = [122, 92, 69];
-const CREAM: [number, number, number]        = [253, 250, 246];
-const PARCHMENT: [number, number, number]    = [245, 237, 216];
-const PARCHMENT_DARK: [number, number, number] = [237, 229, 208];
+const GOLD: [number, number, number]       = [180, 130, 40];
+const DARK: [number, number, number]       = [30, 20, 10];
+const GRAY: [number, number, number]       = [100, 85, 70];
+const LIGHT_GRAY: [number, number, number] = [200, 190, 180];
 
 // ── Unicode sanitizer ─────────────────────────────────────────────────────────
-// jsPDF built-in fonts (helvetica, times, courier) only support Latin-1.
-// Anything outside that range -- curly quotes, em dashes, bullets, ✦, etc. --
-// renders as "?" or garbled bytes. Sanitize every string before passing to jsPDF.
+// jsPDF built-in fonts only support Latin-1. Strip everything else.
 function sanitize(text: string): string {
   if (!text) return '';
   return text
-    // Smart quotes -> straight quotes
     .replace(/[\u2018\u2019]/g, "'")
     .replace(/[\u201C\u201D]/g, '"')
-    // Em dash / en dash -> hyphen
     .replace(/[\u2013\u2014]/g, '-')
-    // Ellipsis character -> three dots
     .replace(/\u2026/g, '...')
-    // Common decorative chars
-    .replace(/\u2022/g, '-')   // bullet •
-    .replace(/\u00B7/g, '-')   // middle dot ·
-    .replace(/\u2605/g, '*')   // black star ★
-    .replace(/\u2606/g, '*')   // white star ☆
-    .replace(/\u2728/g, '*')   // sparkles ✨
-    .replace(/\u2734/g, '*')   // eight pointed star ✴
-    .replace(/\u2736/g, '*')   // six pointed star ✶
-    .replace(/\u2739/g, '*')   // twelve pointed star ✹
-    .replace(/\u2726/g, '*')   // four pointed star ✦
-    .replace(/\u2746/g, '*')   // asterisk ❆
-    .replace(/\u27B8/g, '*')   // heavy arrow
-    .replace(/[^\u0000-\u00FF]/g, '') // strip anything outside Latin-1
+    .replace(/[\u2022\u00B7\u2027]/g, '-')
+    .replace(/[\u2605\u2606\u2728\u2734\u2736\u2726\u2739]/g, '*')
+    .replace(/[^\u0000-\u00FF]/g, '')
     .trim();
 }
 
-// ── Canvas-based image loader ─────────────────────────────────────────────────
-// jsPDF only renders JPEG and PNG. /_next/image returns WebP to modern browsers,
-// which jsPDF silently ignores. We must fetch -> blob -> canvas -> JPEG ourselves.
-async function imageToBase64(url: string): Promise<string | null> {
+// ── Server-side image proxy ───────────────────────────────────────────────────
+// Fetches image via /api/proxy-image (runs on the server, no CORS),
+// then converts to JPEG via canvas so jsPDF can embed it.
+async function fetchImageAsJpeg(imageUrl: string): Promise<string | null> {
   try {
-    // Route through Next.js image optimizer proxy so:
-    //   (a) We get the image regardless of CORS on the CDN origin
-    //   (b) The response is cached/optimized
-    const proxyUrl = `/_next/image?url=${encodeURIComponent(url)}&w=512&q=85`;
-
-    const res = await fetch(proxyUrl, { cache: 'force-cache' });
-    if (!res.ok) throw new Error(`fetch ${res.status}`);
+    const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+    const res = await fetch(proxyUrl);
+    if (!res.ok) {
+      console.warn('proxy-image failed:', res.status, imageUrl);
+      return null;
+    }
     const blob = await res.blob();
 
     return await new Promise<string | null>((resolve) => {
       const objectUrl = URL.createObjectURL(blob);
       const img = new Image();
 
-      // Must set crossOrigin BEFORE src when the canvas needs to be read.
-      // (blob: URLs are same-origin, but setting it doesn't hurt.)
-      img.crossOrigin = 'anonymous';
-
       img.onload = () => {
         URL.revokeObjectURL(objectUrl);
         try {
           const w = img.naturalWidth  || 512;
           const h = img.naturalHeight || 768;
-
           const canvas = document.createElement('canvas');
           canvas.width  = w;
           canvas.height = h;
-
           const ctx = canvas.getContext('2d');
           if (!ctx) { resolve(null); return; }
-
-          // White background so transparent PNGs don't go black
           ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(0, 0, w, h);
           ctx.drawImage(img, 0, 0);
-
-          resolve(canvas.toDataURL('image/jpeg', 0.85));
-        } catch {
+          resolve(canvas.toDataURL('image/jpeg', 0.88));
+        } catch (e) {
+          console.warn('canvas toDataURL failed:', e);
           resolve(null);
         }
       };
 
-      img.onerror = () => {
+      img.onerror = (e) => {
         URL.revokeObjectURL(objectUrl);
+        console.warn('img.onerror:', e);
         resolve(null);
       };
 
       img.src = objectUrl;
     });
-  } catch {
+  } catch (e) {
+    console.warn('fetchImageAsJpeg error:', e);
     return null;
   }
 }
 
-// ── jsPDF type alias ───────────────────────────────────────────────────────────
-type jsPDFType = import('jspdf').jsPDF;
-
-// ── Page chrome ───────────────────────────────────────────────────────────────
-function drawPageChrome(doc: jsPDFType, pageW: number, pageH: number) {
-  doc.setFillColor(...CREAM);
-  doc.rect(0, 0, pageW, pageH, 'F');
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(0.8);
-  doc.rect(10, 10, pageW - 20, pageH - 20, 'S');
-  doc.setLineWidth(0.25);
-  doc.rect(14, 14, pageW - 28, pageH - 28, 'S');
-}
-
-function newPage(doc: jsPDFType, pageW: number, pageH: number): void {
-  doc.addPage();
-  drawPageChrome(doc, pageW, pageH);
-}
-
-// Returns updated y, possibly after adding a page break.
-function checkBreak(
-  doc: jsPDFType,
-  y: number,
-  needed: number,
-  pageW: number,
-  pageH: number,
-  margin: number,
-): number {
-  if (y + needed > pageH - margin - 18) {
-    newPage(doc, pageW, pageH);
-    return margin;
-  }
-  return y;
-}
-
-function goldRule(doc: jsPDFType, x1: number, y: number, x2: number, w = 0.4) {
-  doc.setDrawColor(...GOLD);
-  doc.setLineWidth(w);
-  doc.line(x1, y, x2, y);
-}
-
-function sectionLabel(
-  doc: jsPDFType,
-  text: string,
-  cx: number,
-  y: number,
-  align: 'center' | 'left' = 'center',
-) {
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
-  doc.setTextColor(...GOLD);
-  doc.text(sanitize(text), cx, y, { align, charSpace: 2.5 });
-}
-
-// ── Main reading PDF ───────────────────────────────────────────────────────────
+// ── Main export ───────────────────────────────────────────────────────────────
 export async function downloadReadingPDF(reading: ReadingResult): Promise<void> {
   const { jsPDF } = await import('jspdf');
 
-  // Preload ALL card images in parallel before building the doc
+  // Fetch all card images in parallel before building the doc
   const cardImages = await Promise.all(
-    reading.cards.map(c => c.imageUrl ? imageToBase64(c.imageUrl) : Promise.resolve(null)),
+    reading.cards.map(c => c.imageUrl ? fetchImageAsJpeg(c.imageUrl) : Promise.resolve(null)),
   );
 
-  const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
+  const doc    = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
   const pageW  = 612;
   const pageH  = 792;
-  const margin = 52;
-  const textW  = pageW - margin * 2;
+  const M      = 48;   // margin
+  const col    = M;
+  const maxW   = pageW - M * 2;
 
-  // ── PAGE 1: Cover ────────────────────────────────────────────────────────────
-  drawPageChrome(doc, pageW, pageH);
-  let y = margin + 6;
+  // helpers
+  const newPage = () => { doc.addPage(); return M; };
+  const needsBreak = (y: number, h: number) => y + h > pageH - M;
+  const maybeBreak = (y: number, h: number) => needsBreak(y, h) ? newPage() : y;
 
-  // Wordmark
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...GOLD);
-  doc.text('T A R O T  A I', pageW / 2, y, { align: 'center', charSpace: 3 });
-  y += 14;
+  // ── Header ─────────────────────────────────────────────────────────────────
+  let y = M;
 
-  // Date
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.setTextColor(...DARK);
+  doc.text('Tarot Reading', col, y);
+  y += 22;
+
   const dateStr = sanitize(
     new Date(reading.date).toLocaleDateString('en-US', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     }),
   );
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(...MID_BROWN);
-  doc.text(dateStr, pageW / 2, y, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setTextColor(...GRAY);
+  doc.text(dateStr, col, y);
   y += 18;
 
-  goldRule(doc, margin, y, pageW - margin, 0.6);
-  y += 16;
-
-  // Spread type label
-  const spreadNames: Record<string, string> = {
-    single:       'SINGLE CARD',
-    three:        'THREE-CARD SPREAD',
-    five:         'FIVE-CARD SPREAD',
-    celtic:       'CELTIC CROSS',
-    'celtic-cross': 'CELTIC CROSS',
-  };
-  sectionLabel(doc, spreadNames[reading.spreadType] ?? 'TAROT SPREAD', pageW / 2, y);
-  y += 18;
-
-  // Question
   if (reading.question) {
     doc.setFont('times', 'italic');
-    doc.setFontSize(15);
-    doc.setTextColor(...DARK_BROWN);
-    const qText  = sanitize(`"${reading.question}"`);
-    const qLines = doc.splitTextToSize(qText, textW - 40);
-    doc.text(qLines, pageW / 2, y, { align: 'center' });
-    y += qLines.length * 20 + 8;
+    doc.setFontSize(13);
+    doc.setTextColor(...DARK);
+    const qLines = doc.splitTextToSize(sanitize(`"${reading.question}"`), maxW);
+    doc.text(qLines, col, y);
+    y += qLines.length * 17 + 6;
   }
 
-  y += 6;
-  goldRule(doc, margin + 40, y, pageW - margin - 40, 0.3);
-  y += 18;
+  // Gold rule under header
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.8);
+  doc.line(col, y, col + maxW, y);
+  y += 20;
 
-  // ── Card image gallery on cover ──────────────────────────────────────────────
-  const cardCount = reading.cards.length;
-  const isCeltic  = cardCount >= 10;
-
-  if (isCeltic) {
-    // Celtic Cross: two rows of 5
-    const cw  = 74;
-    const ch  = cw * 1.5;
-    const gap = (textW - 5 * cw) / 4;
-
-    for (let row = 0; row < 2; row++) {
-      const rowStart = row * 5;
-      const rowEnd   = Math.min(rowStart + 5, cardCount);
-      const rowCount = rowEnd - rowStart;
-      const rowW     = rowCount * cw + (rowCount - 1) * gap;
-      let   cx       = (pageW - rowW) / 2;
-
-      for (let i = rowStart; i < rowEnd; i++) {
-        const img = cardImages[i];
-        if (img) {
-          doc.addImage(img, 'JPEG', cx, y, cw, ch);
-        } else {
-          doc.setFillColor(...PARCHMENT);
-          doc.roundedRect(cx, y, cw, ch, 2, 2, 'F');
-          doc.setFontSize(6); doc.setFont('times', 'normal'); doc.setTextColor(...MID_BROWN);
-          const nl = doc.splitTextToSize(sanitize(reading.cards[i].card.name), cw - 8);
-          doc.text(nl, cx + cw / 2, y + ch / 2, { align: 'center' });
-        }
-        doc.setDrawColor(...GOLD); doc.setLineWidth(0.35);
-        doc.roundedRect(cx, y, cw, ch, 2, 2, 'S');
-
-        doc.setFont('times', 'italic'); doc.setFontSize(6); doc.setTextColor(...MID_BROWN);
-        const posLabel = sanitize(reading.cards[i].position + (reading.cards[i].reversed ? ' (Rev.)' : ''));
-        doc.text(posLabel, cx + cw / 2, y + ch + 9, { align: 'center' });
-        cx += cw + gap;
-      }
-      y += ch + 20;
-    }
-  } else {
-    // 1-5 cards: single centred row
-    const maxCw = cardCount === 1 ? 170 : cardCount <= 3 ? 128 : 92;
-    const cw    = Math.min(maxCw, (textW - (cardCount - 1) * 14) / cardCount);
-    const ch    = cw * 1.575;
-    const totalW = cardCount * cw + (cardCount - 1) * 14;
-    let   cx     = (pageW - totalW) / 2;
-
-    for (let i = 0; i < cardCount; i++) {
-      const img = cardImages[i];
-      if (img) {
-        doc.addImage(img, 'JPEG', cx, y, cw, ch);
-      } else {
-        doc.setFillColor(...PARCHMENT);
-        doc.roundedRect(cx, y, cw, ch, 3, 3, 'F');
-        doc.setFontSize(7.5); doc.setFont('times', 'normal'); doc.setTextColor(...MID_BROWN);
-        const nl = doc.splitTextToSize(sanitize(reading.cards[i].card.name), cw - 10);
-        doc.text(nl, cx + cw / 2, y + ch / 2, { align: 'center' });
-      }
-      // Gold frame
-      doc.setDrawColor(...GOLD); doc.setLineWidth(0.4);
-      doc.roundedRect(cx, y, cw, ch, 3, 3, 'S');
-
-      // Card name + position below image
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...DARK_BROWN);
-      doc.text(sanitize(reading.cards[i].card.name), cx + cw / 2, y + ch + 11, { align: 'center' });
-
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(...MID_BROWN);
-      const posLabel = sanitize(reading.cards[i].position + (reading.cards[i].reversed ? '  Rev.' : ''));
-      doc.text(posLabel, cx + cw / 2, y + ch + 20, { align: 'center' });
-
-      cx += cw + 14;
-    }
-    y += ch + 32;
-  }
-
-  goldRule(doc, margin + 20, y, pageW - margin - 20, 0.3);
-  y += 16;
-
-  // Overall energy
-  sectionLabel(doc, 'THE ENERGY OF THIS READING', pageW / 2, y);
-  y += 14;
-
-  doc.setFont('times', 'italic');
-  doc.setFontSize(11);
-  doc.setTextColor(...DARK_BROWN);
-  const oeLines = doc.splitTextToSize(sanitize(reading.overallEnergy), textW - 20);
-  y = checkBreak(doc, y, oeLines.length * 15 + 10, pageW, pageH, margin);
-  doc.text(oeLines, pageW / 2, y, { align: 'center' });
-  y += oeLines.length * 15 + 20;
-
-  // ── Per-card readings ────────────────────────────────────────────────────────
-  const roman      = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
-  const thumbW     = 96;
-  const thumbH     = thumbW * 1.575;
-  const textCol    = margin + thumbW + 16;
-  const textColW   = pageW - margin - thumbW - 16 - margin;
+  // ── Cards ──────────────────────────────────────────────────────────────────
+  const imgW  = 108;  // card image width in points (~1.5")
+  const imgH  = imgW * 1.575;
+  const textX = col + imgW + 16;
+  const textW = maxW - imgW - 16;
 
   for (let i = 0; i < reading.cardReadings.length; i++) {
-    const cr           = reading.cardReadings[i];
-    const sectionNeeded = thumbH + 24;
-    y = checkBreak(doc, y, sectionNeeded, pageW, pageH, margin);
-
-    const sectionTop = y;
-
-    // Top rule for this card
-    doc.setDrawColor(...GOLD);
-    doc.setLineWidth(0.3);
-    doc.line(margin - 6, y - 4, margin + textW + 6, y - 4);
-
-    // Thumbnail
+    const cr  = reading.cardReadings[i];
+    const dc  = reading.cards[i];
     const img = cardImages[i];
+
+    // Each card needs at least the image height + some padding
+    const cardBlockMin = imgH + 24;
+    y = maybeBreak(y, cardBlockMin);
+    const blockTop = y;
+
+    // Card image (or placeholder)
     if (img) {
-      doc.addImage(img, 'JPEG', margin, y, thumbW, thumbH);
+      doc.addImage(img, 'JPEG', col, y, imgW, imgH);
     } else {
-      doc.setFillColor(...PARCHMENT_DARK);
-      doc.roundedRect(margin, y, thumbW, thumbH, 2, 2, 'F');
-      doc.setFont('times', 'normal'); doc.setFontSize(7); doc.setTextColor(...MID_BROWN);
-      const nl = doc.splitTextToSize(sanitize(cr.card), thumbW - 8);
-      doc.text(nl, margin + thumbW / 2, y + thumbH / 2, { align: 'center' });
+      doc.setFillColor(240, 235, 225);
+      doc.roundedRect(col, y, imgW, imgH, 3, 3, 'F');
+      doc.setFont('times', 'italic');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...GRAY);
+      const nameLines = doc.splitTextToSize(sanitize(cr.card), imgW - 8);
+      doc.text(nameLines, col + imgW / 2, y + imgH / 2, { align: 'center' });
     }
-    doc.setDrawColor(...GOLD); doc.setLineWidth(0.4);
-    doc.roundedRect(margin, y, thumbW, thumbH, 2, 2, 'S');
+    // Gold border around image
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(col, y, imgW, imgH, 3, 3, 'S');
 
-    // Right column header
+    // Right column: card name
     let ry = y + 2;
-
-    // Roman numeral
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...GOLD);
-    doc.text(roman[i] ?? `${i + 1}`, textCol, ry);
-
-    // Card name (+ reversed indicator)
-    const cardLabel = sanitize(cr.card + (reading.cards[i]?.reversed ? '  -  Reversed' : ''));
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5); doc.setTextColor(...DARK_BROWN);
-    doc.text(cardLabel, textCol + 14, ry);
-    ry += 16;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(...DARK);
+    const nameLabel = sanitize(cr.card + (dc?.reversed ? '  (Reversed)' : ''));
+    const nameLines2 = doc.splitTextToSize(nameLabel, textW);
+    doc.text(nameLines2, textX, ry);
+    ry += nameLines2.length * 16 + 2;
 
     // Position
-    doc.setFont('times', 'italic'); doc.setFontSize(9.5); doc.setTextColor(...MID_BROWN);
-    doc.text(sanitize(cr.position), textCol, ry);
+    doc.setFont('times', 'italic');
+    doc.setFontSize(10);
+    doc.setTextColor(...GRAY);
+    doc.text(sanitize(cr.position), textX, ry);
     ry += 14;
 
     // Keywords
     if (cr.keywords?.length) {
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...GOLD);
-      doc.text(sanitize(cr.keywords.join('  -  ')), textCol, ry);
-      ry += 13;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...GOLD);
+      doc.text(sanitize(cr.keywords.join('  -  ')), textX, ry);
+      ry += 14;
     }
 
+    // Thin rule
     ry += 2;
-    // Thin rule before body text
-    doc.setDrawColor(200, 185, 165); doc.setLineWidth(0.25);
-    doc.line(textCol, ry, pageW - margin, ry);
-    ry += 9;
+    doc.setDrawColor(...LIGHT_GRAY);
+    doc.setLineWidth(0.25);
+    doc.line(textX, ry, textX + textW, ry);
+    ry += 10;
 
-    // Interpretation text -- wraps in right column, then expands full-width below thumbnail
-    doc.setFont('times', 'normal'); doc.setFontSize(10); doc.setTextColor(...DARK_BROWN);
-    const interpLines = doc.splitTextToSize(sanitize(cr.interpretation), textColW);
+    // Interpretation — flows in right column while image is there, then full width
+    doc.setFont('times', 'normal');
+    doc.setFontSize(10.5);
+    doc.setTextColor(...DARK);
+    const interp = doc.splitTextToSize(sanitize(cr.interpretation), textW);
 
-    for (const line of interpLines) {
-      const lineX = ry < sectionTop + thumbH + 8 ? textCol : margin;
-
-      const newY = checkBreak(doc, ry, 13, pageW, pageH, margin);
-      if (newY !== ry) {
-        ry = newY;
-      }
-
-      doc.setFont('times', 'normal'); doc.setFontSize(10); doc.setTextColor(...DARK_BROWN);
+    for (const line of interp) {
+      // Once we're past the image bottom, switch to full width
+      const isBelow = ry > blockTop + imgH + 4;
+      const lineX   = isBelow ? col : textX;
+      const lineMaxW = isBelow ? maxW : textW;
+      // re-split if we just switched columns (single line is fine either way)
+      ry = maybeBreak(ry, 14);
+      doc.setFont('times', 'normal');
+      doc.setFontSize(10.5);
+      doc.setTextColor(...DARK);
       doc.text(line, lineX, ry);
       ry += 14;
     }
 
-    y = Math.max(ry, sectionTop + thumbH + 8);
-    y += 14;
+    y = Math.max(ry, blockTop + imgH + 6);
+    y += 10;
 
     // Divider between cards
     if (i < reading.cardReadings.length - 1) {
-      y = checkBreak(doc, y, 12, pageW, pageH, margin);
-      doc.setDrawColor(214, 200, 178); doc.setLineWidth(0.25);
-      doc.line(margin + 20, y, pageW - margin - 20, y);
-      y += 14;
+      y = maybeBreak(y, 10);
+      doc.setDrawColor(...LIGHT_GRAY);
+      doc.setLineWidth(0.3);
+      doc.line(col + 20, y, col + maxW - 20, y);
+      y += 18;
     }
   }
 
-  // ── Synthesis ────────────────────────────────────────────────────────────────
-  y = checkBreak(doc, y, 160, pageW, pageH, margin);
-  y += 8;
-  goldRule(doc, margin, y, pageW - margin, 0.5);
-  y += 20;
-
-  sectionLabel(doc, 'WHAT THE CARDS SAY TOGETHER', pageW / 2, y);
-  y += 16;
-
-  doc.setFont('times', 'italic'); doc.setFontSize(11.5); doc.setTextColor(...DARK_BROWN);
-  const synLines = doc.splitTextToSize(sanitize(reading.synthesis), textW - 20);
-  for (const line of synLines) {
-    y = checkBreak(doc, y, 16, pageW, pageH, margin);
-    doc.text(line, pageW / 2, y, { align: 'center' });
-    y += 16;
-  }
+  // ── Synthesis ─────────────────────────────────────────────────────────────
+  y = maybeBreak(y, 80);
   y += 12;
 
-  // ── Affirmation ──────────────────────────────────────────────────────────────
-  y = checkBreak(doc, y, 60, pageW, pageH, margin);
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.8);
+  doc.line(col, y, col + maxW, y);
+  y += 18;
 
-  const affText  = sanitize(`"${reading.affirmation}"`);
-  doc.setFont('times', 'italic'); doc.setFontSize(13.5); doc.setTextColor(...GOLD);
-  const affLines = doc.splitTextToSize(affText, textW - 60);
-  const affH     = affLines.length * 19 + 20;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(...DARK);
+  doc.text('The Reading as a Whole', col, y);
+  y += 18;
 
-  doc.setFillColor(...PARCHMENT);
-  doc.roundedRect(margin + 10, y - 8, textW - 20, affH, 4, 4, 'F');
-  doc.setDrawColor(...GOLD); doc.setLineWidth(0.35);
-  doc.roundedRect(margin + 10, y - 8, textW - 20, affH, 4, 4, 'S');
-  doc.text(affLines, pageW / 2, y + 6, { align: 'center' });
-  y += affH + 8;
-
-  // ── Notable timing ───────────────────────────────────────────────────────────
-  if (reading.notableTiming) {
-    y = checkBreak(doc, y, 36, pageW, pageH, margin);
-    y += 4;
-    doc.setFont('times', 'italic'); doc.setFontSize(9); doc.setTextColor(...MID_BROWN);
-    const timingLines = doc.splitTextToSize(sanitize(reading.notableTiming), textW - 40);
-    doc.text(timingLines, pageW / 2, y, { align: 'center' });
-    y += timingLines.length * 13 + 8;
+  if (reading.overallEnergy) {
+    doc.setFont('times', 'italic');
+    doc.setFontSize(11.5);
+    doc.setTextColor(...DARK);
+    const oeLines = doc.splitTextToSize(sanitize(reading.overallEnergy), maxW);
+    y = maybeBreak(y, oeLines.length * 16 + 8);
+    doc.text(oeLines, col, y);
+    y += oeLines.length * 16 + 10;
   }
 
-  // ── Footers on every page ────────────────────────────────────────────────────
-  const pageCount = doc.getNumberOfPages();
-  for (let p = 1; p <= pageCount; p++) {
+  if (reading.synthesis) {
+    doc.setFont('times', 'normal');
+    doc.setFontSize(10.5);
+    doc.setTextColor(...DARK);
+    const synLines = doc.splitTextToSize(sanitize(reading.synthesis), maxW);
+    y = maybeBreak(y, synLines.length * 14 + 8);
+    doc.text(synLines, col, y);
+    y += synLines.length * 14 + 14;
+  }
+
+  if (reading.affirmation) {
+    y = maybeBreak(y, 50);
+    const affText  = sanitize(`"${reading.affirmation}"`);
+    const affLines = doc.splitTextToSize(affText, maxW - 40);
+    const affH     = affLines.length * 17 + 20;
+    doc.setFillColor(248, 243, 232);
+    doc.roundedRect(col + 10, y - 6, maxW - 20, affH, 4, 4, 'F');
+    doc.setFont('times', 'italic');
+    doc.setFontSize(12);
+    doc.setTextColor(...GOLD);
+    doc.text(affLines, col + 30, y + 6);
+    y += affH + 10;
+  }
+
+  if (reading.notableTiming) {
+    y = maybeBreak(y, 30);
+    doc.setFont('times', 'italic');
+    doc.setFontSize(9);
+    doc.setTextColor(...GRAY);
+    const tLines = doc.splitTextToSize(sanitize(reading.notableTiming), maxW);
+    doc.text(tLines, col, y);
+  }
+
+  // ── Footer on every page ──────────────────────────────────────────────────
+  const total = doc.getNumberOfPages();
+  for (let p = 1; p <= total; p++) {
     doc.setPage(p);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...GOLD);
-    doc.text('TAROT  AI', pageW / 2, pageH - 24, { align: 'center' });
-    if (pageCount > 1) {
-      doc.setFontSize(6.5); doc.setTextColor(...MID_BROWN);
-      doc.text(`${p} of ${pageCount}`, pageW - margin + 4, pageH - 24, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(...LIGHT_GRAY);
+    doc.text('Tarot AI', col, pageH - 24);
+    if (total > 1) {
+      doc.text(`${p} / ${total}`, pageW - M, pageH - 24, { align: 'right' });
     }
   }
 
   const filename = sanitize(
-    `Tarot Reading ${new Date(reading.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.pdf`,
+    `Tarot Reading ${new Date(reading.date).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+    })}.pdf`,
   ).replace(/\s+/g, ' ');
+
   doc.save(filename || 'tarot-reading.pdf');
 }
 
 // ── Print-and-cut cards PDF ───────────────────────────────────────────────────
-/** Standard tarot size: 2.75" x 4.75" per card, 3-up across a letter sheet. */
 export async function downloadCardsPDF(reading: ReadingResult): Promise<void> {
   const { jsPDF } = await import('jspdf');
 
   const cardImages = await Promise.all(
-    reading.cards.map(c => c.imageUrl ? imageToBase64(c.imageUrl) : Promise.resolve(null)),
+    reading.cards.map(c => c.imageUrl ? fetchImageAsJpeg(c.imageUrl) : Promise.resolve(null)),
   );
 
-  const doc    = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
-  const pageW  = 612;
-  const pageH  = 792;
-  const margin = 36;
-
-  const cardW  = 198;  // 2.75" @ 72 pt/in
-  const cardH  = 342;  // 4.75" @ 72 pt/in
-  const cols   = 3;
+  const doc   = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
+  const pageW = 612;
+  const pageH = 792;
+  const M     = 36;
+  const cardW = 198;
+  const cardH = 342;
+  const cols  = 3;
+  const gutX  = (pageW - M * 2 - cols * cardW) / (cols - 1);
+  const gutY  = 18;
   const labelH = 24;
-  const gutterX = (pageW - margin * 2 - cols * cardW) / (cols - 1);
-  const gutterY = 18;
-
-  function initPage() {
-    doc.setFillColor(...CREAM);
-    doc.rect(0, 0, pageW, pageH, 'F');
-    doc.setDrawColor(...GOLD); doc.setLineWidth(0.7);
-    doc.rect(8, 8, pageW - 16, pageH - 16, 'S');
-    doc.setLineWidth(0.25);
-    doc.rect(12, 12, pageW - 24, pageH - 24, 'S');
-  }
-
-  initPage();
-
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...GOLD);
-  doc.text('TAROT  AI  -  PRINT & CUT', pageW / 2, 26, { align: 'center', charSpace: 1.5 });
-  doc.setFontSize(6.5); doc.setTextColor(...MID_BROWN);
-  doc.text('Standard tarot size - 2.75" x 4.75" - Cut along gold borders', pageW / 2, 35, { align: 'center' });
 
   let col = 0;
   let row = 0;
 
-  for (let i = 0; i < reading.cards.length; i++) {
-    const x = margin + col * (cardW + gutterX);
-    const y = 46 + row * (cardH + labelH + gutterY);
+  const pageTop = () => {
+    doc.setFillColor(253, 250, 246);
+    doc.rect(0, 0, pageW, pageH, 'F');
+  };
+  pageTop();
 
-    if (y + cardH + labelH > pageH - margin - 10) {
+  for (let i = 0; i < reading.cards.length; i++) {
+    if (i > 0 && col === 0) {
       doc.addPage();
-      initPage();
-      col = 0; row = 0;
-      i--;
-      continue;
+      pageTop();
     }
+
+    const x = M + col * (cardW + gutX);
+    const y = M + row * (cardH + labelH + gutY);
 
     const img = cardImages[i];
     if (img) {
-      if (reading.cards[i].reversed) {
-        doc.addImage(img, 'JPEG', x, y, cardW, cardH, undefined, 'NONE', 180);
-      } else {
-        doc.addImage(img, 'JPEG', x, y, cardW, cardH);
-      }
+      doc.addImage(img, 'JPEG', x, y, cardW, cardH);
     } else {
-      doc.setFillColor(...PARCHMENT);
-      doc.roundedRect(x, y, cardW, cardH, 3, 3, 'F');
-      doc.setFont('times', 'normal'); doc.setFontSize(11); doc.setTextColor(...MID_BROWN);
-      const nl = doc.splitTextToSize(sanitize(reading.cards[i].card.name), cardW - 20);
+      doc.setFillColor(240, 235, 225);
+      doc.rect(x, y, cardW, cardH, 'F');
+      doc.setFont('times', 'italic');
+      doc.setFontSize(9);
+      doc.setTextColor(120, 100, 80);
+      const nl = doc.splitTextToSize(sanitize(reading.cards[i].card.name), cardW - 10);
       doc.text(nl, x + cardW / 2, y + cardH / 2, { align: 'center' });
     }
 
-    doc.setDrawColor(...GOLD); doc.setLineWidth(0.5);
-    doc.roundedRect(x, y, cardW, cardH, 3, 3, 'S');
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.5);
+    doc.rect(x, y, cardW, cardH, 'S');
 
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...DARK_BROWN);
-    doc.text(sanitize(reading.cards[i].card.name), x + cardW / 2, y + cardH + 12, { align: 'center' });
-
-    doc.setFont('times', 'italic'); doc.setFontSize(7.5); doc.setTextColor(...MID_BROWN);
-    const posLabel = sanitize(reading.cards[i].position + (reading.cards[i].reversed ? '  -  Reversed' : ''));
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...DARK);
+    doc.text(sanitize(reading.cards[i].card.name), x + cardW / 2, y + cardH + 13, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...GRAY);
+    const posLabel = sanitize(reading.cards[i].position + (reading.cards[i].reversed ? ' (Rev.)' : ''));
     doc.text(posLabel, x + cardW / 2, y + cardH + 22, { align: 'center' });
 
     col++;
     if (col >= cols) { col = 0; row++; }
   }
 
-  const pageCount = doc.getNumberOfPages();
-  for (let p = 1; p <= pageCount; p++) {
-    doc.setPage(p);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...GOLD);
-    doc.text('TAROT  AI', pageW / 2, pageH - 22, { align: 'center' });
-    if (pageCount > 1) {
-      doc.setFontSize(6.5); doc.setTextColor(...MID_BROWN);
-      doc.text(`${p} of ${pageCount}`, pageW - margin, pageH - 22, { align: 'right' });
-    }
-  }
-
   const filename = sanitize(
-    `Tarot Cards ${new Date(reading.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.pdf`,
+    `Tarot Cards ${new Date(reading.date).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+    })}.pdf`,
   ).replace(/\s+/g, ' ');
   doc.save(filename || 'tarot-cards.pdf');
 }
