@@ -148,6 +148,29 @@ function cleanJson(raw: string): string {
   return raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
 }
 
+// Run `fn` over `items` with at most `concurrency` in-flight at once.
+// Returns results in the same order, matching Promise.allSettled semantics.
+async function pooledAllSettled<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> {
+  const results: PromiseSettledResult<R>[] = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      try {
+        results[i] = { status: 'fulfilled', value: await fn(items[i], i) };
+      } catch (reason) {
+        results[i] = { status: 'rejected', reason };
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  return results;
+}
+
 // Wrap a promise with a timeout. Rejects with a TimeoutError after ms milliseconds.
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return Promise.race([
@@ -295,29 +318,26 @@ export default function ReadingPage() {
       notableTiming: '',
     });
 
-    // Option 3: Fire images independently — each updates drawnCards as it resolves
-    initialDrawn.forEach(async (drawn, i) => {
-      try {
-        const res = await fetch('/api/generate-card', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            cardName: drawn.card.name,
-            deckStyle,
-            userId,
-            date: dateStr,
-            ...(userPhoto ? { userPhotoBase64: userPhoto } : {}),
-          }),
-        });
-        const data = await res.json();
-        if (data.imageUrl) {
-          resolvedImagesRef.current[i] = data.imageUrl;
-          setDrawnCards((prev) =>
-            prev.map((d, j) => (j === i ? { ...d, imageUrl: data.imageUrl } : d))
-          );
-        }
-      } catch {
-        console.error(`Image gen failed for ${drawn.card.name}`);
+    // Fire image generation with a concurrency cap of 3 — avoids rate-limiting
+    // on larger spreads. Each resolves independently and patches drawnCards.
+    void pooledAllSettled(initialDrawn, 3, async (drawn, i) => {
+      const res = await fetch('/api/generate-card', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cardName: drawn.card.name,
+          deckStyle,
+          userId,
+          date: dateStr,
+          ...(userPhoto ? { userPhotoBase64: userPhoto } : {}),
+        }),
+      });
+      const data = await res.json();
+      if (data.imageUrl) {
+        resolvedImagesRef.current[i] = data.imageUrl;
+        setDrawnCards((prev) =>
+          prev.map((d, j) => (j === i ? { ...d, imageUrl: data.imageUrl } : d))
+        );
       }
     });
 
@@ -326,8 +346,8 @@ export default function ReadingPage() {
 
     try {
       const controller = new AbortController();
-      // 45s global budget — well under any realistic Vercel cold-start + N cards + synthesis
-      setTimeout(() => controller.abort(), 45000);
+      // Global budget: concurrency=3 means ceil(10/3)=4 rounds × ~15s + synthesis ~10s ≈ 70s
+      setTimeout(() => controller.abort(), 90000);
 
       const sharedBody = {
         question,
@@ -407,11 +427,10 @@ export default function ReadingPage() {
         };
       }
 
-      // ── Fire all card reading calls in parallel ────────────
-      // allSettled means one stuck/failed card doesn't cancel the rest.
-      const cardResults = await Promise.allSettled(
-        initialDrawn.map((drawn, i) => fetchCardReading(drawn, i))
-      );
+        // ── Fire card reading calls with concurrency cap ───────
+      // Max 3 in-flight at once to avoid Together AI rate limits.
+      // Larger spreads (5, 10) queue naturally as slots free up.
+      const cardResults = await pooledAllSettled(initialDrawn, 3, fetchCardReading);
 
       // Build the list of successful card readings. For failed cards, show a fallback
       // in the streaming state and pass a placeholder to synthesis.
