@@ -268,6 +268,21 @@ export default function ReadingPage() {
     setDrawnCards(initialDrawn);
     resolvedImagesRef.current = new Array(initialDrawn.length).fill(undefined);
 
+    // Show skeleton layout immediately — don't wait for streaming to start
+    setStreamingState({
+      overallEnergy: '',
+      overallEnergyDone: false,
+      cards: Array.from({ length: initialDrawn.length }, () => ({
+        keywords: [],
+        interpretation: '',
+        interpretationDone: false,
+      })),
+      synthesis: '',
+      synthesisDone: false,
+      affirmation: '',
+      notableTiming: '',
+    });
+
     // Option 3: Fire images independently — each updates drawnCards as it resolves
     initialDrawn.forEach(async (drawn, i) => {
       try {
@@ -619,8 +634,8 @@ export default function ReadingPage() {
                   ))}
                 </div>
 
-                {/* Ornamental divider before reading sections */}
-                {streamingState && (
+                {/* Ornamental divider — appears as soon as cards are drawn */}
+                {drawnCards.length > 0 && (
                   <div className="flex items-center gap-4">
                     <div className="flex-1 h-px" style={{ background: isDark ? 'rgba(196,146,42,0.3)' : 'var(--border-gold)' }} />
                     <span style={{ color: 'var(--gold)', fontSize: 14 }}>✦ ✦ ✦</span>
@@ -638,10 +653,7 @@ export default function ReadingPage() {
                   </div>
                 )}
 
-                {/* Pre-stream: WitchyLoader */}
-                {!streamingState && !isReadingReady && !error && <WitchyLoader />}
-
-                {/* Streaming: skeleton blocks filling in */}
+                {/* Skeleton + streaming (shown immediately once cards are drawn, no WitchyLoader wait) */}
                 {streamingState && !isReadingReady && (
                   <StreamingReadingDisplay
                     state={streamingState}

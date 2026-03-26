@@ -79,8 +79,32 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
   // Show synthesis section once any card interpretation has completed
   const showSynthesis = state.synthesis || state.cards.some(c => c.interpretationDone);
 
+  const isWaiting = !state.overallEnergy;
+
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
+
+      {/* Compact waiting indicator — shows until first token arrives */}
+      {isWaiting && (
+        <div className="flex items-center justify-center gap-3 py-2">
+          <div
+            style={{
+              width: 16,
+              height: 16,
+              borderRadius: '50%',
+              border: `1px solid rgba(196,146,42,${isDark ? '0.4' : '0.3'})`,
+              animation: 'rotate-slow 4s linear infinite',
+              position: 'relative',
+              flexShrink: 0,
+            }}
+          >
+            <div style={{ position: 'absolute', top: -3, left: '50%', transform: 'translateX(-50%)', color: 'var(--gold)', fontSize: 7 }}>✦</div>
+          </div>
+          <p style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 15, fontStyle: 'italic', color: isDark ? 'rgba(248,244,239,0.4)' : 'var(--brown-light)' }}>
+            consulting the oracle…
+          </p>
+        </div>
+      )}
 
       {/* Overall Energy */}
       <motion.div
