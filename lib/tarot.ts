@@ -42,21 +42,21 @@ export const SPREADS: SpreadDefinition[] = [
     label: 'Single Card',
     cardCount: 1,
     positions: ['Your Card'],
-    description: 'One card for daily guidance',
+    description: 'One card. One truth. No excuses.',
   },
   {
     type: 'three',
     label: 'Three Card',
     cardCount: 3,
     positions: ['Past', 'Present', 'Future'],
-    description: 'Past, Present, Future',
+    description: 'Past, Present, Future (allegedly)',
   },
   {
     type: 'five',
     label: 'Five Card',
     cardCount: 5,
     positions: ['Situation', 'Challenge', 'Advice', 'Hidden Influences', 'Outcome'],
-    description: 'A path through a decision',
+    description: 'A path through a decision (no refunds)',
   },
   {
     type: 'celtic',
@@ -74,7 +74,7 @@ export const SPREADS: SpreadDefinition[] = [
       'Hopes and Fears',
       'Final Outcome',
     ],
-    description: 'A deep dive into any question',
+    description: 'Ten cards. Zero chill. Maximum unsolicited advice.',
   },
 ];
 

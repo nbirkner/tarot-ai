@@ -173,7 +173,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
               letterSpacing: '0.03em',
               lineHeight: 1.6,
             }}>
-              The synthesis appears once the card readings below finish — scroll down to follow along.
+              Your cards are in a closed-door meeting about you right now. Scroll down to follow along.
             </p>
           </div>
         )}

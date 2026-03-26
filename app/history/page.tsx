@@ -78,7 +78,7 @@ export default function HistoryPage() {
               lineHeight: 1.5,
             }}
           >
-            Your readings are saved locally in this browser. They may be lost if you clear your browser data, open a private window, or switch devices.
+            The oracle has no memory. (Relatable.) Your readings live in this browser only — clear your cache and they're gone. No cloud. No account. The cards forget everything.
           </p>
         </div>
 
@@ -104,7 +104,7 @@ export default function HistoryPage() {
                 marginBottom: 16,
               }}
             >
-              No readings yet.
+              The void stares back. It has opinions.
             </p>
             <Link
               href="/reading"
@@ -115,7 +115,7 @@ export default function HistoryPage() {
                 textDecoration: 'none',
               }}
             >
-              Begin your first reading →
+              Ask it something →
             </Link>
           </div>
         ) : (

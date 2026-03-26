@@ -282,7 +282,7 @@ export default function Home() {
               { symbol: '✦', label: 'Unique card art' },
               { symbol: '☽', label: 'Moon & astrology' },
               { symbol: '✦', label: 'Your own oracle' },
-              { symbol: '☽', label: 'Daily readings' },
+              { symbol: '☽', label: 'Mostly accurate™' },
             ].map((item) => (
               <span
                 key={item.label}
@@ -332,7 +332,7 @@ export default function Home() {
                   alignSelf: 'center',
                 }}
               >
-                no account required
+                no account · the stars already know
               </p>
             </div>
           </div>

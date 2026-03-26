@@ -37,6 +37,14 @@ const WITCHY_PHRASES = [
   'channeling the oracle within...',
   'dissolving karmic blockages...',
   'attuning to your higher self...',
+  'googling "what the moon wants"...',
+  'asking the ancient ones to please hold...',
+  'defragging the spirit realm...',
+  'estimating your fate (margin of error: ±one lifetime)...',
+  'checking if Mercury is up to something again...',
+  'filing a cosmic ticket on your behalf...',
+  'waiting for the universe to load...',
+  'consulting the oracle (she's with another client)...',
 ];
 
 function WitchyLoader() {
@@ -111,11 +119,11 @@ const STEP_CONFIG: Record<
   },
   context: {
     title: 'Add context',
-    subtitle: 'Optional — helps the cards speak to your specific situation.',
+    subtitle: 'Optional — but the more you share, the nosier the oracle gets.',
   },
   spread: {
     title: 'Choose your spread',
-    subtitle: 'How many cards shall the oracle draw?',
+    subtitle: 'More cards = more unsolicited advice from the universe.',
   },
   deck: {
     title: 'Choose your deck',
@@ -123,11 +131,11 @@ const STEP_CONFIG: Record<
   },
   photo: {
     title: 'Add your photo',
-    subtitle: 'Optional — lets the cards mirror your likeness.',
+    subtitle: 'Optional — so you can see your face in The Tower card.',
   },
   astrology: {
     title: 'Your astrological self',
-    subtitle: 'Optional — deepens the reading. Nothing is saved.',
+    subtitle: 'Optional — great for blaming Mercury when the reading is accurate.',
   },
 };
 
@@ -877,7 +885,7 @@ export default function ReadingPage() {
                         color: 'var(--gold)',
                       }}
                     >
-                      YOUR CARDS AWAIT — CLICK EACH TO REVEAL
+                      YOUR FATE IS SEALED — CLICK EACH TO UNSEAL IT
                     </motion.p>
                   )}
                 </div>

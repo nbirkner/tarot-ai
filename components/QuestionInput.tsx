@@ -13,6 +13,7 @@ const SUGGESTIONS = [
   'What should I release?',
   'What is the path forward?',
   'What do I need to hear today?',
+  'Why does Mercury retrograde personally target me?',
 ];
 
 export function QuestionInput({ value, onChange, onSkip }: QuestionInputProps) {
