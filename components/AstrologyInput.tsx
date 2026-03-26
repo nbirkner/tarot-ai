@@ -18,7 +18,7 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
     setTab(t);
     if (t === 'none') onChange({ type: 'none' });
     if (t === 'sun-sign') onChange({ type: 'sun-sign', sign: '' });
-    if (t === 'birth-data') onChange({ type: 'birth-data', date: '', time: '', location: '' });
+    if (t === 'birth-data') onChange({ type: 'birth-data', date: '', time: '', location: '', lat: undefined, lon: undefined });
   }
 
   const tabs: { id: Tab; label: string; desc: string }[] = [
@@ -138,6 +138,43 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
               value.type === 'birth-data' && onChange({ ...value, location: e.target.value })
             }
           />
+          <input
+            type="number"
+            min={-90}
+            max={90}
+            step={0.01}
+            placeholder="e.g. 40.71"
+            className="input-field"
+            value={value.type === 'birth-data' && value.lat != null ? value.lat : ''}
+            onChange={(e) =>
+              value.type === 'birth-data' &&
+              onChange({ ...value, lat: e.target.value !== '' ? parseFloat(e.target.value) : undefined })
+            }
+          />
+          <input
+            type="number"
+            min={-180}
+            max={180}
+            step={0.01}
+            placeholder="e.g. -74.01"
+            className="input-field"
+            value={value.type === 'birth-data' && value.lon != null ? value.lon : ''}
+            onChange={(e) =>
+              value.type === 'birth-data' &&
+              onChange({ ...value, lon: e.target.value !== '' ? parseFloat(e.target.value) : undefined })
+            }
+          />
+          <p
+            style={{
+              fontFamily: 'Cormorant Garamond, serif',
+              fontSize: 12,
+              fontStyle: 'italic',
+              color: 'var(--brown-light)',
+              marginTop: 2,
+            }}
+          >
+            Latitude &amp; longitude for Rising sign calculation (optional). Find your coordinates at latlong.net
+          </p>
         </div>
       )}
     </div>

@@ -4,7 +4,7 @@ export type DeckStyle = 'dark-gothic' | 'ethereal' | 'classic';
 
 export type AstrologyInput =
   | { type: 'sun-sign'; sign: string }
-  | { type: 'birth-data'; date: string; time: string; location: string }
+  | { type: 'birth-data'; date: string; time?: string; location: string; lat?: number; lon?: number }
   | { type: 'none' };
 
 export interface TarotCard {
@@ -65,6 +65,7 @@ export interface GenerateReadingRequest {
   dayOfWeek: string;
   season: string;
   timeOfDay: string;
+  userContext?: string; // optional situational context from the user
 }
 
 export interface SpreadDefinition {

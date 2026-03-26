@@ -67,32 +67,90 @@ export function getSeason(date: Date): string {
   return 'Winter (stillness, introspection, Yule energy)';
 }
 
+function getPlanetSign(body: Astronomy.Body, time: ReturnType<typeof Astronomy.MakeTime>): string {
+  const lon = Astronomy.EclipticLongitude(body, time);
+  return ZODIAC_SIGNS[Math.floor(((lon % 360) + 360) % 360 / 30)];
+}
+
+function getAscendant(birthTime: ReturnType<typeof Astronomy.MakeTime>, lat: number, lon: number): string {
+  // Greenwich Apparent Sidereal Time in hours
+  const gast = Astronomy.SiderealTime(birthTime);
+  // Local Sidereal Time (hours)
+  const lst = ((gast + lon / 15) % 24 + 24) % 24;
+  // Right Ascension of Midheaven in radians
+  const ramc = (lst * 15 * Math.PI) / 180;
+  // Obliquity of ecliptic in radians (~23.44 degrees)
+  const eps = (23.4397 * Math.PI) / 180;
+  const latRad = (lat * Math.PI) / 180;
+  // Ascendant formula
+  let ascLon = Math.atan2(
+    -Math.cos(ramc),
+    Math.sin(eps) * Math.tan(latRad) + Math.cos(eps) * Math.sin(ramc)
+  ) * (180 / Math.PI);
+  ascLon = ((ascLon % 360) + 360) % 360;
+  return ZODIAC_SIGNS[Math.floor(ascLon / 30)];
+}
+
 export function formatAstrologyContext(input: AstrologyInput, date: Date): string {
   if (input.type === 'none') return '';
 
   if (input.type === 'sun-sign') {
-    return `Sun sign: ${input.sign}. Current solar transit influences ${input.sign} themes.`;
+    const nowTime = Astronomy.MakeTime(date);
+    const currentSun = getPlanetSign(Astronomy.Body.Sun, nowTime);
+    const currentMoon = getPlanetSign(Astronomy.Body.Moon, nowTime);
+    const currentVenus = getPlanetSign(Astronomy.Body.Venus, nowTime);
+    return `Sun sign: ${input.sign}.\nCurrent transits: Sun in ${currentSun}, Moon in ${currentMoon}, Venus in ${currentVenus}.`;
   }
 
-  // birth-data: calculate sun/moon/rising from astronomy-engine
+  // birth-data: full natal chart
   try {
     const birthDate = new Date(input.date + 'T' + (input.time || '12:00') + ':00');
     const birthTime = Astronomy.MakeTime(birthDate);
-    const sunLon = Astronomy.EclipticLongitude(Astronomy.Body.Sun, birthTime);
-    const sunSignIndex = Math.floor(sunLon / 30) % 12;
-    const sunSign = ZODIAC_SIGNS[sunSignIndex];
+    const nowTime = Astronomy.MakeTime(date);
 
-    // Moon position
-    const moonLon = Astronomy.EclipticLongitude(Astronomy.Body.Moon, birthTime);
-    const moonSignIndex = Math.floor(moonLon / 30) % 12;
-    const moonSign = ZODIAC_SIGNS[moonSignIndex];
+    const planets = [
+      { name: 'Sun', body: Astronomy.Body.Sun },
+      { name: 'Moon', body: Astronomy.Body.Moon },
+      { name: 'Mercury', body: Astronomy.Body.Mercury },
+      { name: 'Venus', body: Astronomy.Body.Venus },
+      { name: 'Mars', body: Astronomy.Body.Mars },
+      { name: 'Jupiter', body: Astronomy.Body.Jupiter },
+      { name: 'Saturn', body: Astronomy.Body.Saturn },
+    ];
 
-    // Today's transits
-    const now = Astronomy.MakeTime(date);
-    const currentSunLon = Astronomy.EclipticLongitude(Astronomy.Body.Sun, now);
-    const currentSunSign = ZODIAC_SIGNS[Math.floor(currentSunLon / 30) % 12];
+    const natalPositions = planets.map(p => `${p.name} in ${getPlanetSign(p.body, birthTime)}`);
 
-    return `Natal: Sun in ${sunSign}, Moon in ${moonSign}. Current transit: Sun in ${currentSunSign}.`;
+    // Rising sign if lat/lon available
+    const rising =
+      input.lat != null && input.lon != null
+        ? getAscendant(birthTime, input.lat, input.lon)
+        : null;
+
+    // Current transits (today)
+    const currentTransits = planets.map(p => `${p.name} in ${getPlanetSign(p.body, nowTime)}`);
+
+    // Build the formatted string
+    let result = `NATAL CHART:\n`;
+    result += natalPositions.join(', ');
+    if (rising) result += `, Rising in ${rising}`;
+    result += `\n\nCURRENT TRANSITS (today):\n`;
+    result += currentTransits.join(', ');
+    result += `\n\nKEY NATAL INFLUENCES:\n`;
+
+    // Interpretive layer for Sun/Moon/Rising
+    const sunSign = getPlanetSign(Astronomy.Body.Sun, birthTime);
+    const moonSign = getPlanetSign(Astronomy.Body.Moon, birthTime);
+    result += `Sun in ${sunSign} (core identity, ego, life force). `;
+    result += `Moon in ${moonSign} (emotional nature, instincts, subconscious). `;
+    if (rising) result += `Rising in ${rising} (outward persona, first impressions, how the world sees you). `;
+
+    // Venus and Mars
+    const venusSign = getPlanetSign(Astronomy.Body.Venus, birthTime);
+    const marsSign = getPlanetSign(Astronomy.Body.Mars, birthTime);
+    result += `Venus in ${venusSign} (love language, values, attraction). `;
+    result += `Mars in ${marsSign} (drive, passion, how you take action).`;
+
+    return result;
   } catch {
     return input.type === 'birth-data' ? `Birth date: ${input.date}` : '';
   }
