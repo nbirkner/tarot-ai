@@ -247,7 +247,7 @@ export default function Home() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                Your Personal Oracle
+                Your Personal Oracle (No Liability)
               </p>
             </div>
           </div>
@@ -269,7 +269,8 @@ export default function Home() {
               }}
             >
               AI-generated card art, woven from the stars,
-              the moon, and the moment you ask.
+              the moon, and the moment you ask. It's not therapy.
+              It's better.
             </p>
           </div>
 
@@ -353,7 +354,7 @@ export default function Home() {
                   letterSpacing: '0.04em',
                 }}
               >
-                Powered by Together AI · Every card uniquely generated · Readings influenced by the stars
+                Powered by Together AI · Every card uniquely generated · Mercury's behavior not guaranteed
               </p>
             </div>
           </div>

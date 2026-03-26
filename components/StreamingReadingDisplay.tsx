@@ -135,6 +135,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
           border: `1px solid ${borderGold}`,
           borderRadius: 3,
           padding: 'clamp(18px,4vw,28px) clamp(18px,5vw,32px)',
+          boxShadow: isDark ? 'none' : '0 2px 20px rgba(42,28,14,0.07), 0 1px 4px rgba(42,28,14,0.04)',
         }}
       >
         <OrnamentDivider isDark={isDark} />
@@ -198,6 +199,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
               borderRadius: 3,
               padding: 'clamp(16px,3.5vw,22px) clamp(16px,4.5vw,26px)',
               position: 'relative',
+              boxShadow: isDark ? 'none' : '0 2px 16px rgba(42,28,14,0.06), 0 1px 3px rgba(42,28,14,0.04)',
             }}
           >
             {/* Roman numeral — top right */}
@@ -298,6 +300,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
             borderRadius: 3,
             padding: 'clamp(18px,4vw,28px) clamp(18px,5vw,32px)',
             position: 'relative',
+            boxShadow: isDark ? 'none' : '0 2px 20px rgba(42,28,14,0.07), 0 1px 4px rgba(42,28,14,0.04)',
           }}
         >
           {/* Large background ✦ */}

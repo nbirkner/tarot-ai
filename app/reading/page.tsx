@@ -628,7 +628,7 @@ export default function ReadingPage() {
   }, [step, isSetupStep]);
 
   // Background styles
-  const lightBg = 'radial-gradient(ellipse at 30% 15%, rgba(196,146,42,0.06) 0%, transparent 50%), radial-gradient(ellipse at 72% 85%, rgba(150,130,200,0.07) 0%, transparent 50%), #EAE6F2';
+  const lightBg = 'var(--cream)';
   const darkBg =
     'radial-gradient(ellipse at 50% 0%, #0D1535 0%, #060C22 60%, #030710 100%)';
   const candleGlow =
@@ -642,33 +642,6 @@ export default function ReadingPage() {
         transition: 'background 0.8s ease',
       }}
     >
-      {/* Subtle star field — visible on light background */}
-      {!isDark && (
-        <svg
-          className="absolute inset-0 w-full h-full pointer-events-none"
-          xmlns="http://www.w3.org/2000/svg"
-          style={{ opacity: 0.13 }}
-        >
-          {([
-            [8, 12], [15, 45], [22, 8], [35, 72], [42, 28], [55, 88], [62, 15],
-            [70, 55], [78, 30], [85, 78], [92, 18], [5, 65], [48, 5], [88, 92],
-            [30, 90], [72, 8], [18, 80], [95, 45], [40, 50], [65, 70],
-            [12, 30], [25, 60], [38, 18], [50, 82], [60, 40],
-          ] as [number, number][]).map(([x, y], i) => (
-            <circle
-              key={i}
-              cx={`${x}%`}
-              cy={`${y}%`}
-              r={i % 5 === 0 ? 2 : i % 3 === 0 ? 1.5 : 1}
-              fill="#C4922A"
-              style={{
-                animation: `star-twinkle ${3 + (i % 7) * 1.1}s ease-in-out infinite`,
-                animationDelay: `${(i * 0.6) % 5}s`,
-              }}
-            />
-          ))}
-        </svg>
-      )}
       <div className="max-w-3xl mx-auto px-6">
         <AnimatePresence mode="wait">
           <motion.div
