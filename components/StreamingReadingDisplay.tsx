@@ -163,7 +163,19 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
             {!state.overallEnergyDone && <StreamCursor />}
           </p>
         ) : (
-          <SkeletonBlock lines={2} isDark={isDark} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 4 }}>
+            <SkeletonBlock lines={2} isDark={isDark} />
+            <p style={{
+              fontFamily: 'var(--font-spectral), Spectral, serif',
+              fontSize: 13,
+              fontStyle: 'italic',
+              color: isDark ? 'rgba(196,146,42,0.5)' : 'var(--gold-muted)',
+              letterSpacing: '0.03em',
+              lineHeight: 1.6,
+            }}>
+              The synthesis appears once the card readings below finish — scroll down to follow along.
+            </p>
+          </div>
         )}
       </motion.div>
 
