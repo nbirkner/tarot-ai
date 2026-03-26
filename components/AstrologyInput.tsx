@@ -60,7 +60,7 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
             </p>
             <p
               style={{
-                fontFamily: 'EB Garamond, serif',
+                fontFamily: 'Spectral, serif',
                 fontSize: 13,
                 fontStyle: 'italic',
                 color: 'var(--brown-light)',
@@ -76,7 +76,7 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
         <div>
           <p
             style={{
-              fontFamily: 'EB Garamond, serif',
+              fontFamily: 'Spectral, serif',
               fontSize: 14,
               fontStyle: 'italic',
               color: 'var(--brown-light)',
@@ -104,7 +104,7 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
         <div className="space-y-3">
           <p
             style={{
-              fontFamily: 'EB Garamond, serif',
+              fontFamily: 'Spectral, serif',
               fontSize: 14,
               fontStyle: 'italic',
               color: 'var(--brown-light)',
@@ -166,7 +166,7 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
           />
           <p
             style={{
-              fontFamily: 'EB Garamond, serif',
+              fontFamily: 'Spectral, serif',
               fontSize: 12,
               fontStyle: 'italic',
               color: 'var(--brown-light)',

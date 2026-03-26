@@ -355,12 +355,12 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
               {drawn.card.name}
             </p>
             {drawn.reversed && (
-              <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 12, color: '#B5706E', fontStyle: 'italic' }}>
+              <p style={{ fontFamily: 'Spectral, serif', fontSize: 12, color: '#B5706E', fontStyle: 'italic' }}>
                 reversed
               </p>
             )}
             {drawn.position && (
-              <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 13, color: '#A88C78', fontStyle: 'italic' }}>
+              <p style={{ fontFamily: 'Spectral, serif', fontSize: 13, color: '#A88C78', fontStyle: 'italic' }}>
                 {drawn.position}
               </p>
             )}
@@ -376,7 +376,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             style={{
-              fontFamily: 'EB Garamond, serif',
+              fontFamily: 'Spectral, serif',
               fontSize: 13,
               color: '#C4922A',
               fontStyle: 'italic',

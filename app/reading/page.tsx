@@ -86,7 +86,7 @@ function WitchyLoader() {
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.35 }}
             style={{
-              fontFamily: 'EB Garamond, serif',
+              fontFamily: 'Spectral, serif',
               fontSize: 20,
               fontStyle: 'italic',
               color: '#E8C96A',
@@ -456,7 +456,7 @@ export default function ReadingPage() {
                   {STEP_CONFIG[step as keyof typeof STEP_CONFIG]?.subtitle && (
                     <p
                       style={{
-                        fontFamily: 'EB Garamond, serif',
+                        fontFamily: 'Spectral, serif',
                         fontSize: 17,
                         color: 'var(--brown-mid)',
                         fontStyle: 'italic',
@@ -505,7 +505,7 @@ export default function ReadingPage() {
                   <p
                     style={{
                       color: 'var(--rose)',
-                      fontFamily: 'EB Garamond, serif',
+                      fontFamily: 'Spectral, serif',
                       fontStyle: 'italic',
                       textAlign: 'center',
                     }}
@@ -573,7 +573,7 @@ export default function ReadingPage() {
                   {question && (
                     <p
                       style={{
-                        fontFamily: 'EB Garamond, serif',
+                        fontFamily: 'Spectral, serif',
                         fontSize: 18,
                         fontStyle: 'italic',
                         color: isDark ? 'var(--gold-muted)' : 'var(--brown-mid)',
@@ -637,7 +637,7 @@ export default function ReadingPage() {
                 {/* Error state */}
                 {error && !isReadingReady && (
                   <div className="text-center py-10 space-y-4">
-                    <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 18, fontStyle: 'italic', color: isDark ? 'rgba(248,244,239,0.6)' : 'var(--brown-light)' }}>
+                    <p style={{ fontFamily: 'Spectral, serif', fontSize: 18, fontStyle: 'italic', color: isDark ? 'rgba(248,244,239,0.6)' : 'var(--brown-light)' }}>
                       {error}
                     </p>
                     <button onClick={startReading} className="btn-primary">Try Again</button>

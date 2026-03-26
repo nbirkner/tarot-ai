@@ -100,7 +100,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
           >
             <div style={{ position: 'absolute', top: -3, left: '50%', transform: 'translateX(-50%)', color: 'var(--gold)', fontSize: 7 }}>✦</div>
           </div>
-          <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 15, fontStyle: 'italic', color: isDark ? 'rgba(248,244,239,0.4)' : 'var(--brown-light)' }}>
+          <p style={{ fontFamily: 'Spectral, serif', fontSize: 15, fontStyle: 'italic', color: isDark ? 'rgba(248,244,239,0.4)' : 'var(--brown-light)' }}>
             consulting the oracle…
           </p>
         </div>
@@ -127,7 +127,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
           The Energy of This Reading
         </p>
         {state.overallEnergy ? (
-          <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 20, lineHeight: 1.75, fontStyle: 'italic', color: headingColor }}>
+          <p style={{ fontFamily: 'Spectral, serif', fontSize: 20, lineHeight: 1.75, fontStyle: 'italic', color: headingColor }}>
             {state.overallEnergy}
             {!state.overallEnergyDone && <StreamCursor />}
           </p>
@@ -166,7 +166,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
               <h4 style={{ fontFamily: 'Cinzel, serif', fontSize: 13, letterSpacing: '0.07em', color: headingColor, marginBottom: 2 }}>
                 {drawn.card.name}{drawn.reversed ? ' · Reversed' : ''}
               </h4>
-              <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 14, fontStyle: 'italic', color: isDark ? 'rgba(248,244,239,0.45)' : 'var(--brown-light)' }}>
+              <p style={{ fontFamily: 'Spectral, serif', fontSize: 14, fontStyle: 'italic', color: isDark ? 'rgba(248,244,239,0.45)' : 'var(--brown-light)' }}>
                 {drawn.position}
               </p>
             </div>
@@ -182,7 +182,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
                   <span
                     key={kw}
                     style={{
-                      fontFamily: 'EB Garamond, serif',
+                      fontFamily: 'Spectral, serif',
                       fontSize: 12,
                       color: 'var(--sage)',
                       border: '1px solid rgba(74,122,101,0.25)',
@@ -200,7 +200,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
 
             {/* Interpretation — skeleton until streaming starts for this card */}
             {hasInterpretation ? (
-              <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 18, lineHeight: 1.72, color: bodyColor }}>
+              <p style={{ fontFamily: 'Spectral, serif', fontSize: 18, lineHeight: 1.72, color: bodyColor }}>
                 {cardData.interpretation}
                 {!cardData.interpretationDone && <StreamCursor />}
               </p>
@@ -231,7 +231,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
             What the Cards Say Together
           </p>
           {state.synthesis ? (
-            <p style={{ fontFamily: 'EB Garamond, serif', fontSize: 19, lineHeight: 1.72, color: isDark ? 'rgba(248,244,239,0.85)' : 'var(--brown-dark)' }}>
+            <p style={{ fontFamily: 'Spectral, serif', fontSize: 19, lineHeight: 1.72, color: isDark ? 'rgba(248,244,239,0.85)' : 'var(--brown-dark)' }}>
               {state.synthesis}
               {!state.synthesisDone && <StreamCursor />}
             </p>
@@ -255,7 +255,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="text-center"
-          style={{ fontFamily: 'EB Garamond, serif', fontSize: 16, fontStyle: 'italic', color: isDark ? 'rgba(248,244,239,0.45)' : 'var(--brown-light)' }}
+          style={{ fontFamily: 'Spectral, serif', fontSize: 16, fontStyle: 'italic', color: isDark ? 'rgba(248,244,239,0.45)' : 'var(--brown-light)' }}
         >
           ☽ {state.notableTiming}
         </motion.p>

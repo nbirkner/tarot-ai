@@ -79,7 +79,7 @@ export function PhotoUpload({ value, onChange }: PhotoUploadProps) {
   }
 
   return (
-    <div style={{ fontFamily: 'EB Garamond, serif' }}>
+    <div style={{ fontFamily: 'Spectral, serif' }}>
       <input
         ref={inputRef}
         type="file"
@@ -152,7 +152,7 @@ export function PhotoUpload({ value, onChange }: PhotoUploadProps) {
               border: 'none',
               cursor: 'pointer',
               color: 'var(--brown-light)',
-              fontFamily: 'EB Garamond, serif',
+              fontFamily: 'Spectral, serif',
               fontSize: 13,
               textDecoration: 'underline',
               fontStyle: 'italic',

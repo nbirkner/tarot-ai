@@ -35,7 +35,7 @@ export default function HistoryPage() {
           </h1>
           <p
             style={{
-              fontFamily: 'EB Garamond, serif',
+              fontFamily: 'Spectral, serif',
               fontSize: 16,
               fontStyle: 'italic',
               color: 'var(--brown-light)',
@@ -71,7 +71,7 @@ export default function HistoryPage() {
           <span style={{ color: 'var(--gold)', fontSize: 14, flexShrink: 0, marginTop: 1 }}>☽</span>
           <p
             style={{
-              fontFamily: 'EB Garamond, serif',
+              fontFamily: 'Spectral, serif',
               fontSize: 15,
               fontStyle: 'italic',
               color: 'var(--brown-mid)',
@@ -97,7 +97,7 @@ export default function HistoryPage() {
             </p>
             <p
               style={{
-                fontFamily: 'EB Garamond, serif',
+                fontFamily: 'Spectral, serif',
                 fontSize: 18,
                 fontStyle: 'italic',
                 color: 'var(--brown-light)',
@@ -109,7 +109,7 @@ export default function HistoryPage() {
             <Link
               href="/reading"
               style={{
-                fontFamily: 'EB Garamond, serif',
+                fontFamily: 'Spectral, serif',
                 fontSize: 16,
                 color: 'var(--gold)',
                 textDecoration: 'none',
@@ -163,7 +163,7 @@ export default function HistoryPage() {
                     {/* Spread + date */}
                     <p
                       style={{
-                        fontFamily: 'EB Garamond, serif',
+                        fontFamily: 'Spectral, serif',
                         fontSize: 14,
                         fontStyle: 'italic',
                         color: 'var(--brown-light)',
@@ -177,7 +177,7 @@ export default function HistoryPage() {
                     {r.synthesis && (
                       <p
                         style={{
-                          fontFamily: 'EB Garamond, serif',
+                          fontFamily: 'Spectral, serif',
                           fontSize: 16,
                           color: 'var(--brown-mid)',
                           lineHeight: 1.6,
@@ -197,7 +197,7 @@ export default function HistoryPage() {
                     {/* Cards */}
                     <p
                       style={{
-                        fontFamily: 'EB Garamond, serif',
+                        fontFamily: 'Spectral, serif',
                         fontSize: 12,
                         color: 'var(--brown-light)',
                       }}
