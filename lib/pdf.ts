@@ -7,16 +7,36 @@ const CREAM: [number, number, number] = [253, 250, 246];
 const PARCHMENT: [number, number, number] = [245, 237, 216];
 const PARCHMENT_DARK: [number, number, number] = [237, 229, 208];
 
+// Fetches an image and renders it to a canvas to produce a JPEG data URL.
+// jsPDF only supports JPEG and PNG; /_next/image returns WebP to modern browsers,
+// which jsPDF silently fails to render (blank placeholder).
 async function imageToBase64(url: string): Promise<string | null> {
   try {
-    const optimizedUrl = `/_next/image?url=${encodeURIComponent(url)}&w=512&q=80`;
-    const res = await fetch(optimizedUrl);
+    const proxyUrl = `/_next/image?url=${encodeURIComponent(url)}&w=512&q=80`;
+    const res = await fetch(proxyUrl);
     if (!res.ok) throw new Error('fetch failed');
     const blob = await res.blob();
-    return await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
+
+    // Render via canvas -> JPEG (jsPDF only supports JPEG/PNG; /_next/image returns WebP)
+    return await new Promise<string | null>((resolve) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(blob);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || 512;
+          canvas.height = img.naturalHeight || 768;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { resolve(null); return; }
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        } catch {
+          resolve(null);
+        }
+      };
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
+      img.src = objectUrl;
     });
   } catch {
     return null;
@@ -70,13 +90,13 @@ function sectionLabel(
   y: number,
   align: 'center' | 'left' = 'center',
 ) {
-  doc.setFont('times', 'normal');
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(...GOLD);
   doc.text(text, cx, y, { align, charSpace: 2.5 });
 }
 
-/** Full reading PDF — beautifully typeset, print-ready */
+/** Full reading PDF -- beautifully typeset, print-ready */
 export async function downloadReadingPDF(reading: ReadingResult): Promise<void> {
   const { jsPDF } = await import('jspdf');
 
@@ -90,34 +110,28 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   const margin = 52;
   const textW = pageW - margin * 2;
 
-  // ── PAGE 1: Cover spread ─────────────────────────────────
+  // -- PAGE 1: Cover spread -----------------------------------------
   drawPageChrome(doc, pageW, pageH);
   let y = margin + 6;
 
   // Wordmark
-  doc.setFont('times', 'normal');
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(...GOLD);
-  doc.text('T A R O T  ·  A I', pageW / 2, y, { align: 'center', charSpace: 3 });
+  doc.text('T A R O T  A I', pageW / 2, y, { align: 'center', charSpace: 3 });
   y += 14;
 
   const dateStr = new Date(reading.date).toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
+  doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(...MID_BROWN);
   doc.text(dateStr, pageW / 2, y, { align: 'center' });
   y += 18;
 
   goldRule(doc, margin, y, pageW - margin, 0.6);
-  y += 4;
-
-  // Corner ornaments
-  doc.setFontSize(8);
-  doc.setTextColor(...GOLD);
-  doc.text('✦', margin + 4, y + 4);
-  doc.text('✦', pageW - margin - 4, y + 4, { align: 'right' });
-  y += 14;
+  y += 16;
 
   // Spread label
   const spreadNames: Record<string, string> = {
@@ -134,7 +148,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
     doc.setFont('times', 'italic');
     doc.setFontSize(15);
     doc.setTextColor(...DARK_BROWN);
-    const qLines = doc.splitTextToSize(`\u201c${reading.question}\u201d`, textW - 40);
+    const qLines = doc.splitTextToSize(`"${reading.question}"`, textW - 40);
     doc.text(qLines, pageW / 2, y, { align: 'center' });
     y += qLines.length * 20 + 8;
   }
@@ -143,7 +157,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   goldRule(doc, margin + 40, y, pageW - margin - 40, 0.3);
   y += 18;
 
-  // ── Card images on cover page ─────────────────────────────
+  // -- Card images on cover page ------------------------------------
   const cardCount = reading.cards.length;
   const isCeltic = cardCount === 10;
 
@@ -175,7 +189,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
         doc.roundedRect(cx, y, cw, ch, 2, 2, 'S');
         // position label
         doc.setFont('times', 'italic'); doc.setFontSize(6); doc.setTextColor(...MID_BROWN);
-        const posLabel = reading.cards[i].position + (reading.cards[i].reversed ? ' ↻' : '');
+        const posLabel = reading.cards[i].position + (reading.cards[i].reversed ? ' (Rev.)' : '');
         const pLines = doc.splitTextToSize(posLabel, cw + 4);
         doc.text(pLines[0], cx + cw / 2, y + ch + 9, { align: 'center' });
         cx += cw + gap;
@@ -183,7 +197,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
       y += ch + 20;
     }
   } else {
-    // 1–5 cards: single row, proportional sizing
+    // 1-5 cards: single row, proportional sizing
     const maxCw = cardCount === 1 ? 170 : cardCount <= 3 ? 128 : 92;
     const cw = Math.min(maxCw, (textW - (cardCount - 1) * 14) / cardCount);
     const ch = cw * 1.575;
@@ -208,12 +222,12 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
       doc.roundedRect(cx, y, cw, ch, 3, 3, 'S');
 
       // Card name + reversed badge
-      doc.setFont('times', 'bold'); doc.setFontSize(7); doc.setTextColor(...DARK_BROWN);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(...DARK_BROWN);
       const nameLines = doc.splitTextToSize(reading.cards[i].card.name, cw + 8);
       doc.text(nameLines[0], cx + cw / 2, y + ch + 11, { align: 'center' });
 
-      doc.setFont('times', 'italic'); doc.setFontSize(6.5); doc.setTextColor(...MID_BROWN);
-      const posLabel = reading.cards[i].position + (reading.cards[i].reversed ? '  ↻ Rev.' : '');
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(...MID_BROWN);
+      const posLabel = reading.cards[i].position + (reading.cards[i].reversed ? '  Rev.' : '');
       const pLines = doc.splitTextToSize(posLabel, cw + 8);
       doc.text(pLines[0], cx + cw / 2, y + ch + 20, { align: 'center' });
 
@@ -239,7 +253,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   doc.text(oeLines, pageW / 2, y, { align: 'center' });
   y += oeLines.length * 15 + 20;
 
-  // ── CARD READINGS ────────────────────────────────────────
+  // -- CARD READINGS ------------------------------------------------
   const roman = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
   const thumbW = 96;
   const thumbH = thumbW * 1.575;
@@ -253,10 +267,10 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
 
     const sectionTop = y;
 
-    // Parchment background for entire card section
-    const estimatedH = thumbH + 20;
-    doc.setFillColor(...PARCHMENT);
-    doc.roundedRect(margin - 6, y - 6, textW + 12, estimatedH, 3, 3, 'F');
+    // Top border line for each card section (clean, no parchment background)
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.3);
+    doc.line(margin - 6, y - 4, margin + textW + 6, y - 4);
 
     // Thumbnail
     const img = cardImages[i];
@@ -276,11 +290,11 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
     let ry = y + 2;
 
     // Roman numeral + card name
-    doc.setFont('times', 'normal'); doc.setFontSize(8); doc.setTextColor(...GOLD);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...GOLD);
     doc.text(roman[i] ?? `${i + 1}`, textCol, ry);
 
-    doc.setFont('times', 'bold'); doc.setFontSize(12.5); doc.setTextColor(...DARK_BROWN);
-    const cardLabel = cr.card + (reading.cards[i]?.reversed ? '  ·  Reversed' : '');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5); doc.setTextColor(...DARK_BROWN);
+    const cardLabel = cr.card + (reading.cards[i]?.reversed ? '  -  Reversed' : '');
     doc.text(cardLabel, textCol + 14, ry);
     ry += 16;
 
@@ -291,8 +305,8 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
 
     // Keywords
     if (cr.keywords?.length) {
-      doc.setFont('times', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...GOLD);
-      doc.text(cr.keywords.join('  ·  '), textCol, ry);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...GOLD);
+      doc.text(cr.keywords.join('  -  '), textCol, ry);
       ry += 13;
     }
 
@@ -302,26 +316,18 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
     doc.line(textCol, ry, pageW - margin, ry);
     ry += 9;
 
-    // Interpretation — may overflow past thumbnail
+    // Interpretation -- may overflow past thumbnail
     doc.setFont('times', 'normal'); doc.setFontSize(10); doc.setTextColor(...DARK_BROWN);
     const interpLines = doc.splitTextToSize(cr.interpretation, textColW);
 
     for (const line of interpLines) {
       // If we're below the thumbnail, use full width
       const lineX = ry < sectionTop + thumbH + 8 ? textCol : margin;
-      const lineW = ry < sectionTop + thumbH + 8 ? textColW : textW;
-
-      if (ry > sectionTop + thumbH + 8 && lineX === margin) {
-        // Re-flow text at full width if we've passed the thumbnail
-        // (handled by lineX already being margin)
-      }
 
       y = checkBreak(doc, ry, 13, pageW, pageH, margin);
       if (y !== ry) {
-        // Went to new page — redraw parchment bg and reset positions
+        // Went to new page -- reset positions
         ry = y;
-        doc.setFillColor(...PARCHMENT);
-        doc.roundedRect(margin - 6, ry - 6, textW + 12, 24, 3, 3, 'F');
       }
       ry = y;
 
@@ -342,16 +348,11 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
     }
   }
 
-  // ── SYNTHESIS ────────────────────────────────────────────
+  // -- SYNTHESIS ----------------------------------------------------
   y = checkBreak(doc, y, 160, pageW, pageH, margin);
   y += 8;
   goldRule(doc, margin, y, pageW - margin, 0.5);
-  y += 6;
-  // corner stars
-  doc.setFont('times', 'normal'); doc.setFontSize(8); doc.setTextColor(...GOLD);
-  doc.text('✦', margin + 4, y + 4);
-  doc.text('✦', pageW - margin - 4, y + 4, { align: 'right' });
-  y += 14;
+  y += 20;
 
   sectionLabel(doc, 'WHAT THE CARDS SAY TOGETHER', pageW / 2, y);
   y += 16;
@@ -365,11 +366,11 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   }
   y += 12;
 
-  // ── AFFIRMATION ──────────────────────────────────────────
+  // -- AFFIRMATION --------------------------------------------------
   y = checkBreak(doc, y, 60, pageW, pageH, margin);
 
   // Parchment pill for affirmation
-  const affText = `\u201c${reading.affirmation}\u201d`;
+  const affText = `"${reading.affirmation}"`;
   doc.setFont('times', 'italic'); doc.setFontSize(13.5); doc.setTextColor(...GOLD);
   const affLines = doc.splitTextToSize(affText, textW - 60);
   const affH = affLines.length * 19 + 20;
@@ -381,25 +382,25 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   doc.text(affLines, pageW / 2, y + 6, { align: 'center' });
   y += affH + 8;
 
-  // ── NOTABLE TIMING ───────────────────────────────────────
+  // -- NOTABLE TIMING -----------------------------------------------
   if (reading.notableTiming) {
     y = checkBreak(doc, y, 36, pageW, pageH, margin);
     y += 4;
     doc.setFont('times', 'italic'); doc.setFontSize(9); doc.setTextColor(...MID_BROWN);
-    const timingLines = doc.splitTextToSize(`\u2609  ${reading.notableTiming}`, textW - 40);
+    const timingLines = doc.splitTextToSize(reading.notableTiming, textW - 40);
     doc.text(timingLines, pageW / 2, y, { align: 'center' });
     y += timingLines.length * 13 + 8;
   }
 
-  // ── FOOTER ON EVERY PAGE ─────────────────────────────────
+  // -- FOOTER ON EVERY PAGE -----------------------------------------
   const pageCount = doc.getNumberOfPages();
   for (let p = 1; p <= pageCount; p++) {
     doc.setPage(p);
-    doc.setFont('times', 'normal'); doc.setFontSize(7); doc.setTextColor(...GOLD);
-    doc.text('\u2736  TAROT \u00b7 AI  \u2736', pageW / 2, pageH - 24, { align: 'center' });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...GOLD);
+    doc.text('TAROT  AI', pageW / 2, pageH - 24, { align: 'center' });
     if (pageCount > 1) {
       doc.setFontSize(6.5); doc.setTextColor(...MID_BROWN);
-      doc.text(`${p} \u2F2F ${pageCount}`, pageW - margin + 4, pageH - 24, { align: 'right' });
+      doc.text(`${p} of ${pageCount}`, pageW - margin + 4, pageH - 24, { align: 'right' });
     }
   }
 
@@ -407,7 +408,7 @@ export async function downloadReadingPDF(reading: ReadingResult): Promise<void> 
   doc.save(filename);
 }
 
-/** Print-ready cards PDF — tarot size 2.75" × 4.75" */
+/** Print-ready cards PDF -- tarot size 2.75" x 4.75" */
 export async function downloadCardsPDF(reading: ReadingResult): Promise<void> {
   const { jsPDF } = await import('jspdf');
 
@@ -439,10 +440,10 @@ export async function downloadCardsPDF(reading: ReadingResult): Promise<void> {
 
   initPage();
 
-  doc.setFont('times', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...GOLD);
-  doc.text('\u2736  TAROT \u00b7 AI  \u2014  PRINT & CUT', pageW / 2, 26, { align: 'center', charSpace: 1.5 });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...GOLD);
+  doc.text('TAROT  AI  -  PRINT & CUT', pageW / 2, 26, { align: 'center', charSpace: 1.5 });
   doc.setFontSize(6.5); doc.setTextColor(...MID_BROWN);
-  doc.text('Standard tarot size \u00b7 2.75\u2033 \u00d7 4.75\u2033 \u00b7 Cut along gold borders', pageW / 2, 35, { align: 'center' });
+  doc.text('Standard tarot size - 2.75" x 4.75" - Cut along gold borders', pageW / 2, 35, { align: 'center' });
 
   let col = 0;
   let row = 0;
@@ -479,11 +480,11 @@ export async function downloadCardsPDF(reading: ReadingResult): Promise<void> {
     doc.roundedRect(x, y, cardW, cardH, 3, 3, 'S');
 
     // Labels
-    doc.setFont('times', 'bold'); doc.setFontSize(9); doc.setTextColor(...DARK_BROWN);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...DARK_BROWN);
     doc.text(reading.cards[i].card.name, x + cardW / 2, y + cardH + 12, { align: 'center' });
 
     doc.setFont('times', 'italic'); doc.setFontSize(7.5); doc.setTextColor(...MID_BROWN);
-    const posLabel = reading.cards[i].position + (reading.cards[i].reversed ? '  ·  Reversed' : '');
+    const posLabel = reading.cards[i].position + (reading.cards[i].reversed ? '  -  Reversed' : '');
     doc.text(posLabel, x + cardW / 2, y + cardH + 22, { align: 'center' });
 
     col++;
@@ -494,11 +495,11 @@ export async function downloadCardsPDF(reading: ReadingResult): Promise<void> {
   const pageCount = doc.getNumberOfPages();
   for (let p = 1; p <= pageCount; p++) {
     doc.setPage(p);
-    doc.setFont('times', 'normal'); doc.setFontSize(7); doc.setTextColor(...GOLD);
-    doc.text('\u2736  TAROT \u00b7 AI  \u2736', pageW / 2, pageH - 22, { align: 'center' });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(...GOLD);
+    doc.text('TAROT  AI', pageW / 2, pageH - 22, { align: 'center' });
     if (pageCount > 1) {
       doc.setFontSize(6.5); doc.setTextColor(...MID_BROWN);
-      doc.text(`${p} / ${pageCount}`, pageW - margin, pageH - 22, { align: 'right' });
+      doc.text(`${p} of ${pageCount}`, pageW - margin, pageH - 22, { align: 'right' });
     }
   }
 
