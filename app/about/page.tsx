@@ -110,7 +110,7 @@ export default function AboutPage() {
           </p>
           <p>
             But I kept thinking: what would it actually look like to merge them? Not in a
-            corporate &ldquo;AI-powered wellness&rdquo; kind of way. Just — what if I used the
+            corporate &ldquo;AI-powered wellness&rdquo; kind of way. Just, what if I used the
             models I work with every day to build something I actually believed in?
           </p>
           <p>
