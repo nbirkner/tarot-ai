@@ -144,49 +144,70 @@ function unescapeJson(s: string): string {
   return s.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
 }
 
-// Extract progressively readable fields from a partial JSON buffer
-function extractStreamingFields(buf: string, cardCount: number): Partial<StreamingState> {
-  const u: Partial<StreamingState> = {};
+function cleanJson(raw: string): string {
+  return raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+}
 
-  // overallEnergy — streams character by character
-  const oe = buf.match(/"overallEnergy"\s*:\s*"((?:[^"\\]|\\.)*)(")?/);
-  if (oe?.[1] !== undefined) {
-    u.overallEnergy = unescapeJson(oe[1]);
-    u.overallEnergyDone = oe[2] === '"';
-  }
-
-  // Card keywords (only when the full array is present) + interpretations (stream)
-  const kwAll = [...buf.matchAll(/"keywords"\s*:\s*(\[[^\]]*\])/g)];
-  const intAll = [...buf.matchAll(/"interpretation"\s*:\s*"((?:[^"\\]|\\.)*)(")?/g)];
-  if (kwAll.length > 0 || intAll.length > 0) {
-    u.cards = Array.from({ length: cardCount }, (_, i) => {
-      let keywords: string[] = [];
-      let interpretation = '';
-      let interpretationDone = false;
-      if (kwAll[i]) { try { keywords = JSON.parse(kwAll[i][1]); } catch {} }
-      if (intAll[i]) {
-        interpretation = unescapeJson(intAll[i][1]);
-        interpretationDone = intAll[i][2] === '"';
+// Read a Together AI SSE stream to completion, calling onToken on each partial accumulation
+async function readSseStream(
+  res: Response,
+  onPartial: (accumulated: string) => void,
+): Promise<string> {
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let sseBuffer = '';
+  let accumulated = '';
+  try {
+    outer: while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      sseBuffer += decoder.decode(value, { stream: true });
+      const lines = sseBuffer.split('\n');
+      sseBuffer = lines.pop() ?? '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') break outer;
+        try {
+          const event = JSON.parse(data);
+          const token: string = event.choices?.[0]?.delta?.content ?? '';
+          if (token) {
+            accumulated += token;
+            onPartial(accumulated);
+          }
+        } catch {}
       }
-      return { keywords, interpretation, interpretationDone };
-    });
+    }
+  } finally {
+    reader.releaseLock();
   }
+  return cleanJson(accumulated);
+}
 
-  // synthesis — streams
+// Extract interpretation + keywords from a partial single-card JSON buffer
+function extractCardFields(buf: string): Partial<{ keywords: string[]; interpretation: string; interpretationDone: boolean }> {
+  const u: Partial<{ keywords: string[]; interpretation: string; interpretationDone: boolean }> = {};
+  const interp = buf.match(/"interpretation"\s*:\s*"((?:[^"\\]|\\.)*)(")?/);
+  if (interp?.[1] !== undefined) {
+    u.interpretation = unescapeJson(interp[1]);
+    u.interpretationDone = interp[2] === '"';
+  }
+  const kw = buf.match(/"keywords"\s*:\s*(\[[^\]]*\])/);
+  if (kw?.[1]) { try { u.keywords = JSON.parse(kw[1]); } catch {} }
+  return u;
+}
+
+// Extract synthesis fields from a partial synthesis JSON buffer
+function extractSynthesisFields(buf: string): Partial<StreamingState> {
+  const u: Partial<StreamingState> = {};
+  const oe = buf.match(/"overallEnergy"\s*:\s*"((?:[^"\\]|\\.)*)(")?/);
+  if (oe?.[1] !== undefined) { u.overallEnergy = unescapeJson(oe[1]); u.overallEnergyDone = oe[2] === '"'; }
   const syn = buf.match(/"synthesis"\s*:\s*"((?:[^"\\]|\\.)*)(")?/);
-  if (syn?.[1] !== undefined) {
-    u.synthesis = unescapeJson(syn[1]);
-    u.synthesisDone = syn[2] === '"';
-  }
-
-  // affirmation — only when the closing quote is visible
+  if (syn?.[1] !== undefined) { u.synthesis = unescapeJson(syn[1]); u.synthesisDone = syn[2] === '"'; }
   const aff = buf.match(/"affirmation"\s*:\s*"((?:[^"\\]|\\.)*)"(?=\s*[,}\n])/);
   if (aff) u.affirmation = unescapeJson(aff[1]);
-
-  // notableTiming — only when the closing quote is visible
   const timing = buf.match(/"notableTiming"\s*:\s*"((?:[^"\\]|\\.)*)"(?=\s*[,}\n])/);
   if (timing) u.notableTiming = unescapeJson(timing[1]);
-
   return u;
 }
 
@@ -285,80 +306,93 @@ export default function ReadingPage() {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 28000);
+      // Each card call + synthesis, give generous budget
+      setTimeout(() => controller.abort(), 55000);
 
-      let readingRes: Response;
-      try {
-        readingRes = await fetch('/api/generate-reading', {
+      const sharedBody = {
+        question,
+        formattedAstrology,
+        userContext: userContext || undefined,
+        spreadPositions: spread.positions,
+        ...context,
+      };
+
+      // ── Fire all card reading calls in parallel ────────────
+      const cardReadingPromises = initialDrawn.map(async (drawn, i) => {
+        const res = await fetch('/api/generate-card-reading', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           signal: controller.signal,
           body: JSON.stringify({
-            question,
-            spreadType,
-            cards: initialDrawn.map((d) => ({
-              name: d.card.name,
-              position: d.position,
-              reversed: d.reversed,
-            })),
-            astrology,
-            formattedAstrology,
-            userContext: userContext || undefined,
-            ...context,
+            ...sharedBody,
+            card: drawn.card.name,
+            position: drawn.position,
+            reversed: drawn.reversed,
+            otherCards: initialDrawn
+              .filter((_, j) => j !== i)
+              .map(d => `${d.card.name} (${d.position})`),
           }),
         });
-      } finally {
-        clearTimeout(timeoutId);
-      }
 
-      if (!readingRes.ok) {
-        const errText = await readingRes.text().catch(() => '');
-        console.error('Reading API error:', readingRes.status, errText);
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          console.error(`Card ${i} API error:`, res.status, errText);
+          throw new Error(`Card reading failed (${res.status})`);
+        }
+
+        const json = await readSseStream(res, (partial) => {
+          const fields = extractCardFields(partial);
+          if (Object.keys(fields).length > 0) {
+            setStreamingState(prev => {
+              if (!prev) return prev;
+              const cards = [...prev.cards];
+              cards[i] = { ...cards[i], ...fields };
+              return { ...prev, cards };
+            });
+          }
+        });
+
+        const parsed = JSON.parse(json);
+        return {
+          card: drawn.card.name,
+          position: drawn.position,
+          reversed: drawn.reversed,
+          keywords: parsed.keywords ?? [],
+          interpretation: parsed.interpretation ?? '',
+        };
+      });
+
+      // Wait for all cards (they stream in parallel — first tokens visible within ~1s)
+      const cardReadings = await Promise.all(cardReadingPromises);
+
+      // ── Fire synthesis call ────────────────────────────────
+      const synthRes = await fetch('/api/generate-synthesis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          ...sharedBody,
+          spreadType,
+          cardReadings,
+        }),
+      });
+
+      if (!synthRes.ok) {
+        const errText = await synthRes.text().catch(() => '');
+        console.error('Synthesis API error:', synthRes.status, errText);
         setStreamingState(null);
-        setError(`The oracle fell silent (${readingRes.status}). Please try again.`);
+        setError(`The oracle fell silent (${synthRes.status}). Please try again.`);
         return;
       }
 
-      // Read the SSE stream and fill in skeleton blocks as tokens arrive
-      const reader = readingRes.body!.getReader();
-      const decoder = new TextDecoder();
-      let sseBuffer = '';
-      let accumulatedJson = '';
-      const cardCount = initialDrawn.length;
-
-      try {
-        outer: while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          sseBuffer += decoder.decode(value, { stream: true });
-          const lines = sseBuffer.split('\n');
-          sseBuffer = lines.pop() ?? '';
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            const data = line.slice(6).trim();
-            if (data === '[DONE]') break outer;
-            try {
-              const event = JSON.parse(data);
-              const token: string = event.choices?.[0]?.delta?.content ?? '';
-              if (token) {
-                accumulatedJson += token;
-                const fields = extractStreamingFields(accumulatedJson, cardCount);
-                if (Object.keys(fields).length > 0) {
-                  setStreamingState(prev => prev ? { ...prev, ...fields } : prev);
-                }
-              }
-            } catch {}
-          }
+      const synthJson = await readSseStream(synthRes, (partial) => {
+        const fields = extractSynthesisFields(partial);
+        if (Object.keys(fields).length > 0) {
+          setStreamingState(prev => prev ? { ...prev, ...fields } : prev);
         }
-      } finally {
-        reader.releaseLock();
-      }
+      });
 
-      const cleanContent = accumulatedJson
-        .replace(/^```(?:json)?\s*/i, '')
-        .replace(/\s*```$/, '')
-        .trim();
-      const readingData = JSON.parse(cleanContent);
+      const synthData = JSON.parse(synthJson);
 
       const result: ReadingResult = {
         id: crypto.randomUUID(),
@@ -367,16 +401,21 @@ export default function ReadingPage() {
         spreadType,
         deckStyle,
         cards: initialDrawn.map((d, i) => ({ ...d, imageUrl: resolvedImagesRef.current[i] })),
-        overallEnergy: readingData.overallEnergy || '',
-        cardReadings: readingData.cardReadings || [],
-        synthesis: readingData.synthesis || '',
-        affirmation: readingData.affirmation || '',
-        notableTiming: readingData.notableTiming || '',
+        overallEnergy: synthData.overallEnergy ?? '',
+        cardReadings: cardReadings.map(cr => ({
+          card: cr.card,
+          position: cr.position,
+          keywords: cr.keywords,
+          interpretation: cr.interpretation,
+        })),
+        synthesis: synthData.synthesis ?? '',
+        affirmation: synthData.affirmation ?? '',
+        notableTiming: synthData.notableTiming ?? '',
       };
 
       saveReading(result);
       setReading(result);
-      setIsReadingReady(true); // Cards now glow and are clickable — images may still be loading
+      setIsReadingReady(true);
     } catch (err) {
       console.error('Reading error:', err);
       setStreamingState(null);
