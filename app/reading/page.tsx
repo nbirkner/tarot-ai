@@ -142,8 +142,8 @@ const STEP_CONFIG: Record<
 const SETUP_STEPS: Array<Exclude<Step, 'generating' | 'reveal' | 'reading'>> = [
   'question',
   'context',
-  'spread',
   'deck',
+  'spread',
   'photo',
   'astrology',
 ];
