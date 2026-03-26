@@ -546,9 +546,9 @@ export default function ReadingPage() {
   // Background styles
   const lightBg = 'var(--cream)';
   const darkBg =
-    'radial-gradient(ellipse at 50% 0%, #2A1A0A 0%, #0F0805 60%, #080504 100%)';
+    'radial-gradient(ellipse at 50% 0%, #0D1535 0%, #060C22 60%, #030710 100%)';
   const candleGlow =
-    'radial-gradient(ellipse at 50% 80%, rgba(196,146,42,0.15) 0%, transparent 60%)';
+    'radial-gradient(ellipse at 50% 80%, rgba(120,100,200,0.12) 0%, transparent 60%)';
 
   return (
     <main

@@ -192,14 +192,9 @@ function CardBackSVG({ cardName, position, reversed }: { cardName?: string; posi
           >
             {cardName.toUpperCase()}
           </text>
-          {reversed && (
-            <text x="100" y="283" textAnchor="middle" fontFamily="Georgia, serif" fontSize="6.5" fill="#B5706E" opacity="0.85" fontStyle="italic">
-              reversed
-            </text>
-          )}
-          {position && !reversed && (
+          {position && (
             <text x="100" y="283" textAnchor="middle" fontFamily="Georgia, serif" fontSize="6.5" fill="#D4B483" opacity="0.75" fontStyle="italic">
-              {position}
+              {position}{reversed ? ' · Rev.' : ''}
             </text>
           )}
         </g>
@@ -354,14 +349,14 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
             >
               {drawn.card.name}
             </p>
-            {drawn.reversed && (
-              <p style={{ fontFamily: 'Spectral, serif', fontSize: 12, color: '#B5706E', fontStyle: 'italic' }}>
-                reversed
-              </p>
-            )}
             {drawn.position && (
               <p style={{ fontFamily: 'Spectral, serif', fontSize: 13, color: '#A88C78', fontStyle: 'italic' }}>
                 {drawn.position}
+              </p>
+            )}
+            {drawn.reversed && (
+              <p style={{ fontFamily: 'Spectral, serif', fontSize: 11, color: '#C4922A', fontStyle: 'italic' }}>
+                ↻ Rev.
               </p>
             )}
           </motion.div>
