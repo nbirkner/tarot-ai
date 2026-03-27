@@ -22,7 +22,8 @@ export async function POST(req: NextRequest) {
     }
 
     const styleModifier = STYLE_MODIFIERS[deckStyle];
-    const safetyPrefix = 'Safe, tasteful, fully clothed, family-friendly tarot illustration. ';
+    const safetyPrefix = 'Safe for work, family-friendly tarot illustration. All figures fully clothed in robes, garments, or costumes. No exposed skin below the neck. No nudity, no bare chests, no cleavage, no suggestive poses. ';
+    const NEGATIVE_PROMPT = 'nudity, nude, naked, bare skin, exposed chest, breasts, cleavage, topless, shirtless, underwear, lingerie, sexual, suggestive, nsfw, explicit, revealing clothing';
     const borderStyle = deckStyle === 'osho-zen'
       ? 'Simple elegant border with subtle geometric accents.'
       : 'Ornate decorative tarot card border with corner flourishes.';
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             model: IMAGE_MODEL_KONTEXT,
             prompt: fullPrompt,
+            negative_prompt: NEGATIVE_PROMPT,
             image_url: userPhotoBase64,
             width: 512,
             height: 768,
@@ -80,6 +82,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: IMAGE_MODEL_SCHNELL,
         prompt: fullPrompt,
+        negative_prompt: NEGATIVE_PROMPT,
         width: 512,
         height: 768,
         steps: 4,
