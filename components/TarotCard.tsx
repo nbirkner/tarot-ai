@@ -293,7 +293,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
             style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
           >
             {drawn.imageUrl && drawn.imageUrl !== 'failed' ? (
-              <div className={`w-full h-full ${drawn.reversed ? 'rotate-180' : ''}`}>
+              <div className={`relative w-full h-full ${drawn.reversed ? 'rotate-180' : ''}`}>
                 <Image
                   src={drawn.imageUrl}
                   alt={drawn.card.name}
@@ -301,6 +301,29 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
                   height={height * 2}
                   className="w-full h-full object-cover"
                 />
+                {/* Card name overlay */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  background: 'linear-gradient(to top, rgba(10,6,2,0.82) 0%, rgba(10,6,2,0.4) 70%, transparent 100%)',
+                  padding: '18px 8px 7px',
+                  textAlign: 'center',
+                }}>
+                  <span style={{
+                    fontFamily: 'var(--font-cinzel), Cinzel, serif',
+                    fontSize: Math.max(6, Math.round(width * 0.062)),
+                    letterSpacing: '0.12em',
+                    color: 'rgba(245,233,204,0.95)',
+                    textTransform: 'uppercase',
+                    textShadow: '0 1px 4px rgba(0,0,0,0.7)',
+                    display: 'block',
+                    lineHeight: 1.2,
+                  }}>
+                    {drawn.card.name}
+                  </span>
+                </div>
               </div>
             ) : drawn.imageUrl === 'failed' ? (
               // Image generation failed — show a styled placeholder

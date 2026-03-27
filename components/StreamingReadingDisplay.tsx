@@ -274,6 +274,32 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
               </p>
             </div>
 
+            {/* Arcana + suit tags */}
+            {(() => {
+              const card = drawn.card;
+              const arcanaLabel = card.arcana === 'major' ? 'Major Arcana' : 'Minor Arcana';
+              const suitLabel = card.suit
+                ? card.suit.charAt(0).toUpperCase() + card.suit.slice(1)
+                : null;
+              const tagStyle = {
+                fontFamily: 'var(--font-cinzel), Cinzel, serif',
+                fontSize: 9,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase' as const,
+                color: isDark ? 'rgba(196,146,42,0.75)' : 'rgba(139,89,40,0.8)',
+                border: `1px solid ${isDark ? 'rgba(196,146,42,0.18)' : 'rgba(196,146,42,0.28)'}`,
+                borderRadius: 1,
+                padding: '2px 8px',
+                background: isDark ? 'rgba(196,146,42,0.06)' : 'rgba(196,146,42,0.07)',
+              };
+              return (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
+                  <span style={tagStyle}>{arcanaLabel}</span>
+                  {suitLabel && <span style={tagStyle}>{suitLabel}</span>}
+                </div>
+              );
+            })()}
+
             {/* Keywords */}
             {hasKeywords && (
               <motion.div
