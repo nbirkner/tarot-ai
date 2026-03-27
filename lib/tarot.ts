@@ -38,9 +38,11 @@ export const FULL_DECK: TarotCard[] = [...MAJOR_ARCANA, ...MINOR_ARCANA];
 
 // ── Osho Zen Tarot ─────────────────────────────────────────────────────────────
 
+// Cards use their named titles (e.g. "Maturity", "The Source") — this is how
+// Osho Zen Tarot works. The Fool stays as The Fool (card 0).
 export const OSHO_MAJOR_ARCANA: TarotCard[] = [
-  { name: 'Existence', arcana: 'major', number: 0 },
-  { name: 'Consciousness', arcana: 'major', number: 1 },
+  { name: 'The Fool', arcana: 'major', number: 0 },
+  { name: 'Existence', arcana: 'major', number: 1 },
   { name: 'Inner Voice', arcana: 'major', number: 2 },
   { name: 'Creativity', arcana: 'major', number: 3 },
   { name: 'The Rebel', arcana: 'major', number: 4 },
@@ -64,24 +66,73 @@ export const OSHO_MAJOR_ARCANA: TarotCard[] = [
   { name: 'The Master', arcana: 'major', number: 22 },
 ];
 
-const OSHO_SUITS = ['fire', 'water', 'clouds', 'rainbows'] as const;
-const OSHO_COURT = ['Princess', 'Prince', 'Queen', 'King'];
-const OSHO_PIPS = ['Ace', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+// Minor Arcana use their named titles. Court cards are Page / Knight (not Princess/Prince).
+// Rainbows has no 10 pip — 13 cards in that suit; others have 14.
+export const OSHO_MINOR_ARCANA: TarotCard[] = [
+  // ── Fire ──────────────────────────────────────────────────────────────────
+  { name: 'The Source',     arcana: 'minor', suit: 'fire', number: 1 },
+  { name: 'Possibilities',  arcana: 'minor', suit: 'fire', number: 2 },
+  { name: 'Experiencing',   arcana: 'minor', suit: 'fire', number: 3 },
+  { name: 'Participation',  arcana: 'minor', suit: 'fire', number: 4 },
+  { name: 'Totality',       arcana: 'minor', suit: 'fire', number: 5 },
+  { name: 'Success',        arcana: 'minor', suit: 'fire', number: 6 },
+  { name: 'Stress',         arcana: 'minor', suit: 'fire', number: 7 },
+  { name: 'Traveling',      arcana: 'minor', suit: 'fire', number: 8 },
+  { name: 'Exhaustion',     arcana: 'minor', suit: 'fire', number: 9 },
+  { name: 'Suppression',    arcana: 'minor', suit: 'fire', number: 10 },
+  { name: 'Playfulness',    arcana: 'minor', suit: 'fire', number: 11 }, // Page
+  { name: 'Intensity',      arcana: 'minor', suit: 'fire', number: 12 }, // Knight
+  { name: 'Sharing',        arcana: 'minor', suit: 'fire', number: 13 }, // Queen
+  { name: 'The Creator',    arcana: 'minor', suit: 'fire', number: 14 }, // King
 
-export const OSHO_MINOR_ARCANA: TarotCard[] = OSHO_SUITS.flatMap((suit) => [
-  ...OSHO_PIPS.map((pip, i) => ({
-    name: `${pip} of ${suit.charAt(0).toUpperCase() + suit.slice(1)}`,
-    arcana: 'minor' as const,
-    suit,
-    number: i + 1,
-  })),
-  ...OSHO_COURT.map((court, i) => ({
-    name: `${court} of ${suit.charAt(0).toUpperCase() + suit.slice(1)}`,
-    arcana: 'minor' as const,
-    suit,
-    number: i + 11,
-  })),
-]);
+  // ── Water ─────────────────────────────────────────────────────────────────
+  { name: 'Going With the Flow',  arcana: 'minor', suit: 'water', number: 1 },
+  { name: 'Friendliness',         arcana: 'minor', suit: 'water', number: 2 },
+  { name: 'Celebration',          arcana: 'minor', suit: 'water', number: 3 },
+  { name: 'Turning In',           arcana: 'minor', suit: 'water', number: 4 },
+  { name: 'Clinging to the Past', arcana: 'minor', suit: 'water', number: 5 },
+  { name: 'The Dream',            arcana: 'minor', suit: 'water', number: 6 },
+  { name: 'Projections',          arcana: 'minor', suit: 'water', number: 7 },
+  { name: 'Letting Go',           arcana: 'minor', suit: 'water', number: 8 },
+  { name: 'Laziness',             arcana: 'minor', suit: 'water', number: 9 },
+  { name: 'Harmony',              arcana: 'minor', suit: 'water', number: 10 },
+  { name: 'Understanding',        arcana: 'minor', suit: 'water', number: 11 }, // Page
+  { name: 'Trust',                arcana: 'minor', suit: 'water', number: 12 }, // Knight
+  { name: 'Receptivity',          arcana: 'minor', suit: 'water', number: 13 }, // Queen
+  { name: 'Healing',              arcana: 'minor', suit: 'water', number: 14 }, // King
+
+  // ── Clouds ────────────────────────────────────────────────────────────────
+  { name: 'Consciousness',  arcana: 'minor', suit: 'clouds', number: 1 },
+  { name: 'Schizophrenia',  arcana: 'minor', suit: 'clouds', number: 2 },
+  { name: 'Ice-olation',    arcana: 'minor', suit: 'clouds', number: 3 },
+  { name: 'Postponement',   arcana: 'minor', suit: 'clouds', number: 4 },
+  { name: 'Comparison',     arcana: 'minor', suit: 'clouds', number: 5 },
+  { name: 'The Burden',     arcana: 'minor', suit: 'clouds', number: 6 },
+  { name: 'Politics',       arcana: 'minor', suit: 'clouds', number: 7 },
+  { name: 'Guilt',          arcana: 'minor', suit: 'clouds', number: 8 },
+  { name: 'Sorrow',         arcana: 'minor', suit: 'clouds', number: 9 },
+  { name: 'Rebirth',        arcana: 'minor', suit: 'clouds', number: 10 },
+  { name: 'Mind',           arcana: 'minor', suit: 'clouds', number: 11 }, // Page
+  { name: 'Fighting',       arcana: 'minor', suit: 'clouds', number: 12 }, // Knight
+  { name: 'Morality',       arcana: 'minor', suit: 'clouds', number: 13 }, // Queen
+  { name: 'Control',        arcana: 'minor', suit: 'clouds', number: 14 }, // King
+
+  // ── Rainbows ──────────────────────────────────────────────────────────────
+  { name: 'Maturity',         arcana: 'minor', suit: 'rainbows', number: 1 },
+  { name: 'Moment to Moment', arcana: 'minor', suit: 'rainbows', number: 2 },
+  { name: 'Guidance',         arcana: 'minor', suit: 'rainbows', number: 3 },
+  { name: 'The Miser',        arcana: 'minor', suit: 'rainbows', number: 4 },
+  { name: 'The Outsider',     arcana: 'minor', suit: 'rainbows', number: 5 },
+  { name: 'Compromise',       arcana: 'minor', suit: 'rainbows', number: 6 },
+  { name: 'Patience',         arcana: 'minor', suit: 'rainbows', number: 7 },
+  { name: 'Ordinariness',     arcana: 'minor', suit: 'rainbows', number: 8 },
+  { name: 'Ripeness',         arcana: 'minor', suit: 'rainbows', number: 9 },
+  // No pip 10 in Rainbows
+  { name: 'Adventure',        arcana: 'minor', suit: 'rainbows', number: 11 }, // Page
+  { name: 'Slowing Down',     arcana: 'minor', suit: 'rainbows', number: 12 }, // Knight
+  { name: 'Flowering',        arcana: 'minor', suit: 'rainbows', number: 13 }, // Queen
+  { name: 'Abundance',        arcana: 'minor', suit: 'rainbows', number: 14 }, // King
+];
 
 export const OSHO_FULL_DECK: TarotCard[] = [...OSHO_MAJOR_ARCANA, ...OSHO_MINOR_ARCANA];
 
