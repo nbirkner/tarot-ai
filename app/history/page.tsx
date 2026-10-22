@@ -15,7 +15,7 @@ export default function HistoryPage() {
 
   return (
     <main
-      className="min-h-screen pt-20 pb-16"
+      className="min-h-screen pt-8 pb-16"
       style={{ background: 'var(--cream)' }}
     >
       <div className="max-w-2xl mx-auto px-4">
@@ -23,11 +23,11 @@ export default function HistoryPage() {
         <div className="mb-6">
           <h1
             style={{
-              fontFamily: 'Cinzel, serif',
-              fontSize: 28,
-              letterSpacing: '0.08em',
-              color: 'var(--brown-dark)',
-              fontWeight: 400,
+              fontFamily: 'var(--font-sans), sans-serif',
+              fontSize: 24,
+              letterSpacing: '-0.02em',
+              color: 'var(--fg)',
+              fontWeight: 600,
               marginBottom: 6,
             }}
           >
@@ -35,10 +35,9 @@ export default function HistoryPage() {
           </h1>
           <p
             style={{
-              fontFamily: 'Spectral, serif',
-              fontSize: 16,
-              fontStyle: 'italic',
-              color: 'var(--brown-light)',
+              fontFamily: 'var(--font-sans), sans-serif',
+              fontSize: 15,
+              color: 'var(--muted)',
             }}
           >
             {readings.length} reading{readings.length !== 1 ? 's' : ''}
@@ -71,7 +70,7 @@ export default function HistoryPage() {
           <span style={{ color: 'var(--gold)', fontSize: 14, flexShrink: 0, marginTop: 1 }}>☽</span>
           <p
             style={{
-              fontFamily: 'Spectral, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 15,
               fontStyle: 'italic',
               color: 'var(--brown-mid)',
@@ -97,7 +96,7 @@ export default function HistoryPage() {
             </p>
             <p
               style={{
-                fontFamily: 'Spectral, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 18,
                 fontStyle: 'italic',
                 color: 'var(--brown-light)',
@@ -109,7 +108,7 @@ export default function HistoryPage() {
             <Link
               href="/reading"
               style={{
-                fontFamily: 'Spectral, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 16,
                 color: 'var(--gold)',
                 textDecoration: 'none',
@@ -137,7 +136,7 @@ export default function HistoryPage() {
                       const el = e.currentTarget as HTMLDivElement;
                       el.style.borderColor = 'var(--gold)';
                       el.style.transform = 'translateY(-1px)';
-                      el.style.boxShadow = '0 4px 20px rgba(196, 146, 42, 0.1)';
+                      el.style.boxShadow = '0 4px 20px color-mix(in srgb, var(--accent) 10%, transparent)';
                     }}
                     onMouseLeave={(e) => {
                       const el = e.currentTarget as HTMLDivElement;
@@ -149,7 +148,7 @@ export default function HistoryPage() {
                     {/* Question */}
                     <p
                       style={{
-                        fontFamily: 'Cinzel, serif',
+                        fontFamily: 'var(--font-sans), sans-serif',
                         fontSize: 14,
                         letterSpacing: '0.06em',
                         color: 'var(--brown-dark)',
@@ -163,7 +162,7 @@ export default function HistoryPage() {
                     {/* Spread + date */}
                     <p
                       style={{
-                        fontFamily: 'Spectral, serif',
+                        fontFamily: 'var(--font-sans), sans-serif',
                         fontSize: 14,
                         fontStyle: 'italic',
                         color: 'var(--brown-light)',
@@ -177,11 +176,11 @@ export default function HistoryPage() {
                     {r.synthesis && (
                       <p
                         style={{
-                          fontFamily: 'Spectral, serif',
+                          fontFamily: 'var(--font-sans), sans-serif',
                           fontSize: 16,
                           color: 'var(--brown-mid)',
                           lineHeight: 1.6,
-                          borderLeft: '3px solid var(--border-gold)',
+                          borderLeft: '1px solid var(--hairline)',
                           paddingLeft: 12,
                           marginBottom: 12,
                           display: '-webkit-box',
@@ -197,7 +196,7 @@ export default function HistoryPage() {
                     {/* Cards */}
                     <p
                       style={{
-                        fontFamily: 'Spectral, serif',
+                        fontFamily: 'var(--font-sans), sans-serif',
                         fontSize: 12,
                         color: 'var(--brown-light)',
                       }}

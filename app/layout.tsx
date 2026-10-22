@@ -1,37 +1,24 @@
 import type { Metadata } from 'next';
-import { Spectral, Cinzel, Playfair_Display, Pinyon_Script } from 'next/font/google';
+import Script from 'next/script';
+import { Fragment_Mono, Schibsted_Grotesk } from 'next/font/google';
 import { Navigation } from '../components/Navigation';
 import './globals.css';
 
-const spectral = Spectral({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  style: ['normal', 'italic'],
-  variable: '--font-spectral',
-  display: 'swap',
-});
-
-const cinzel = Cinzel({
+const sans = Schibsted_Grotesk({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-cinzel',
+  variable: '--font-schibsted',
   display: 'swap',
 });
 
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  weight: ['400', '500', '700'],
-  style: ['normal', 'italic'],
-  variable: '--font-playfair',
-  display: 'swap',
-});
-
-const pinyon = Pinyon_Script({
+const mono = Fragment_Mono({
   subsets: ['latin'],
   weight: ['400'],
-  variable: '--font-pinyon',
+  variable: '--font-fragment',
   display: 'swap',
 });
+
+const themeBoot = `try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}`;
 
 export const metadata: Metadata = {
   title: 'tarot-ai — Your Personal Oracle',
@@ -40,11 +27,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${spectral.variable} ${cinzel.variable} ${playfair.variable} ${pinyon.variable}`}>
+    <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBoot }} />
+      </head>
       <body>
-        <Navigation />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          {children}
+        <Script id="theme-boot" strategy="beforeInteractive">
+          {themeBoot}
+        </Script>
+        <div className="app-shell">
+          <Navigation />
+          <div className="app-main">{children}</div>
         </div>
       </body>
     </html>

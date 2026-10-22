@@ -31,11 +31,11 @@ export function QuestionInput({ value, onChange, onSkip }: QuestionInputProps) {
       <div>
         <p
           style={{
-            fontFamily: 'Spectral, serif',
+            fontFamily: 'var(--font-sans), sans-serif',
             fontSize: 13,
             color: 'var(--brown-light)',
             fontStyle: 'italic',
-            letterSpacing: '0.08em',
+            letterSpacing: '0.01em',
             textTransform: 'uppercase',
             marginBottom: 10,
           }}
@@ -48,7 +48,7 @@ export function QuestionInput({ value, onChange, onSkip }: QuestionInputProps) {
               key={s}
               onClick={() => onChange(s)}
               style={{
-                fontFamily: 'Spectral, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 14,
                 fontStyle: 'italic',
                 color: 'var(--brown-mid)',
@@ -77,7 +77,7 @@ export function QuestionInput({ value, onChange, onSkip }: QuestionInputProps) {
       <button
         onClick={onSkip}
         style={{
-          fontFamily: 'Spectral, serif',
+          fontFamily: 'var(--font-sans), sans-serif',
           fontSize: 15,
           color: 'var(--brown-light)',
           fontStyle: 'italic',

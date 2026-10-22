@@ -38,9 +38,9 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
         </div>
         <p
           style={{
-            fontFamily: 'Cinzel, serif',
+            fontFamily: 'var(--font-sans), sans-serif',
             fontSize: 10,
-            letterSpacing: '0.2em',
+            letterSpacing: '0.01em',
             color: 'var(--gold)',
             textTransform: 'uppercase' as const,
             marginBottom: 14,
@@ -50,7 +50,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
         </p>
         <p
           style={{
-            fontFamily: 'Spectral, serif',
+            fontFamily: 'var(--font-sans), sans-serif',
             fontSize: 22,
             lineHeight: 1.7,
             color: 'var(--brown-dark)',
@@ -72,7 +72,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
             style={{
               background: 'var(--cream-card)',
               border: '1px solid var(--border-brown)',
-              borderLeft: '3px solid var(--border-gold)',
+              borderLeft: '1px solid var(--hairline)',
               borderRadius: 4,
               padding: 'clamp(14px, 3.5vw, 22px) clamp(14px, 4.5vw, 28px)',
               position: 'relative' as const,
@@ -84,7 +84,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
                 position: 'absolute',
                 top: 12,
                 right: 14,
-                fontFamily: 'Cinzel, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 11,
                 color: 'var(--border-gold)',
                 letterSpacing: '0.05em',
@@ -97,7 +97,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
               <div>
                 <h4
                   style={{
-                    fontFamily: 'Cinzel, serif',
+                    fontFamily: 'var(--font-sans), sans-serif',
                     fontSize: 13,
                     letterSpacing: '0.07em',
                     color: 'var(--brown-dark)',
@@ -108,7 +108,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
                 </h4>
                 <p
                   style={{
-                    fontFamily: 'Spectral, serif',
+                    fontFamily: 'var(--font-sans), sans-serif',
                     fontSize: 14,
                     fontStyle: 'italic',
                     color: 'var(--brown-light)',
@@ -122,10 +122,10 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
                   <span
                     key={kw}
                     style={{
-                      fontFamily: 'Spectral, serif',
+                      fontFamily: 'var(--font-sans), sans-serif',
                       fontSize: 12,
                       color: 'var(--sage)',
-                      border: '1px solid rgba(74,122,101,0.25)',
+                      border: '1px solid color-mix(in srgb, var(--live) 25%, transparent)',
                       borderRadius: 2,
                       padding: '2px 8px',
                       background: 'var(--sage-pale)',
@@ -139,7 +139,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
             </div>
             <p
               style={{
-                fontFamily: 'Spectral, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 19,
                 lineHeight: 1.7,
                 color: 'var(--brown-mid)',
@@ -158,7 +158,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
         transition={{ delay: 0.5, duration: 0.5 }}
         style={{
           background: 'linear-gradient(135deg, var(--gold-pale) 0%, var(--cream-card) 100%)',
-          border: '1px solid rgba(196,146,42,0.3)',
+          border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)',
           borderRadius: 4,
           padding: 'clamp(16px, 4vw, 28px) clamp(16px, 5vw, 32px)',
           position: 'relative' as const,
@@ -171,7 +171,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
             top: 16,
             right: 20,
             fontSize: 40,
-            color: 'rgba(196,146,42,0.15)',
+            color: 'color-mix(in srgb, var(--accent) 15%, transparent)',
             lineHeight: 1,
             userSelect: 'none',
             pointerEvents: 'none',
@@ -182,9 +182,9 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
         </span>
         <p
           style={{
-            fontFamily: 'Cinzel, serif',
+            fontFamily: 'var(--font-sans), sans-serif',
             fontSize: 10,
-            letterSpacing: '0.2em',
+            letterSpacing: '0.01em',
             color: 'var(--gold)',
             textTransform: 'uppercase' as const,
             marginBottom: 16,
@@ -194,7 +194,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
         </p>
         <p
           style={{
-            fontFamily: 'Spectral, serif',
+            fontFamily: 'var(--font-sans), sans-serif',
             fontSize: 20,
             lineHeight: 1.7,
             color: 'var(--brown-dark)',
@@ -206,19 +206,19 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
         {/* Affirmation */}
         <div
           style={{
-            borderTop: '1px solid rgba(196,146,42,0.2)',
+            borderTop: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
             marginTop: 20,
             paddingTop: 20,
           }}
         >
           <p
             style={{
-              fontFamily: 'Pinyon Script, cursive',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 'clamp(24px, 4vw, 32px)',
               color: 'var(--gold)',
               textAlign: 'center' as const,
               lineHeight: 1.3,
-              textShadow: '0 0 30px rgba(196,146,42,0.25)',
+              textShadow: '0 0 30px color-mix(in srgb, var(--accent) 25%, transparent)',
             }}
           >
             &ldquo;{reading.affirmation}&rdquo;
@@ -236,7 +236,7 @@ export function ReadingDisplay({ reading }: ReadingDisplayProps) {
         >
           <p
             style={{
-              fontFamily: 'Spectral, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 16,
               fontStyle: 'italic',
               color: 'var(--brown-light)',

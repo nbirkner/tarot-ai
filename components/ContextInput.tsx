@@ -54,9 +54,9 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
       <div>
         <label
           style={{
-            fontFamily: 'Cinzel, serif',
+            fontFamily: 'var(--font-sans), sans-serif',
             fontSize: 11,
-            letterSpacing: '0.15em',
+            letterSpacing: '0.01em',
             color: 'var(--brown-mid)',
             display: 'block',
             marginBottom: 8,
@@ -74,7 +74,7 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
         />
         <p
           style={{
-            fontFamily: 'Spectral, serif',
+            fontFamily: 'var(--font-sans), sans-serif',
             fontSize: 13,
             fontStyle: 'italic',
             color: 'var(--brown-light)',
@@ -92,7 +92,7 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
             <div style={{ flex: 1, height: 1, background: 'var(--border-gold)' }} />
             <span
               style={{
-                fontFamily: 'Spectral, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 13,
                 color: 'var(--brown-light)',
                 fontStyle: 'italic',
@@ -118,7 +118,7 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
                 <div key={i}>
                   <label
                     style={{
-                      fontFamily: 'Spectral, serif',
+                      fontFamily: 'var(--font-sans), sans-serif',
                       fontSize: 16,
                       fontStyle: 'italic',
                       color: 'var(--brown-dark)',

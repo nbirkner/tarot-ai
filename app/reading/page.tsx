@@ -67,21 +67,21 @@ function WitchyLoader() {
       {/* Orbiting stars */}
       <div className="relative w-16 h-16 mx-auto mb-6">
         <div
-          className="absolute inset-0 rounded-full border border-[rgba(196,146,42,0.3)]"
+          className="absolute inset-0 rounded-full border border-[color-mix(in srgb, var(--accent) 30%, transparent)]"
           style={{ animation: 'rotate-slow 8s linear infinite' }}
         >
-          <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[#C4922A] text-xs">
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[var(--accent)] text-xs">
             ✦
           </div>
         </div>
         <div
-          className="absolute inset-2 rounded-full border border-[rgba(196,146,42,0.2)]"
+          className="absolute inset-2 rounded-full border border-[color-mix(in srgb, var(--accent) 20%, transparent)]"
           style={{ animation: 'rotate-slow 5s linear infinite reverse' }}
         >
-          <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[#C4922A] text-xs opacity-60">✦</div>
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[var(--accent)] text-xs opacity-60">✦</div>
         </div>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[#C4922A] text-lg">☽</span>
+          <span className="text-[var(--accent)] text-lg">☽</span>
         </div>
       </div>
 
@@ -94,10 +94,10 @@ function WitchyLoader() {
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.35 }}
             style={{
-              fontFamily: 'Spectral, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 20,
               fontStyle: 'italic',
-              color: '#E8C96A',
+              color: 'var(--g2)',
               letterSpacing: '0.02em',
             }}
           >
@@ -674,7 +674,7 @@ export default function ReadingPage() {
 
   return (
     <main
-      className="min-h-screen pt-20 pb-20 relative"
+      className="min-h-screen pt-8 pb-20 relative"
       style={{
         background: isDark ? `${candleGlow}, ${darkBg}` : lightBg,
         transition: 'background 0.8s ease',
@@ -694,24 +694,20 @@ export default function ReadingPage() {
               <div className="max-w-xl mx-auto space-y-8">
                 {/* Step header */}
                 <div className="text-center pt-6" style={{ paddingBottom: 4 }}>
-                  <p style={{
-                    fontFamily: 'Spectral, serif',
-                    fontSize: 11,
-                    letterSpacing: '0.28em',
-                    color: 'var(--gold)',
-                    textTransform: 'uppercase',
+                  <p className="mono" style={{
+                    fontSize: 12,
+                    color: 'var(--muted)',
                     marginBottom: 10,
-                    opacity: 0.7,
                   }}>
                     ✦ {SETUP_STEPS.indexOf(step as (typeof SETUP_STEPS)[number]) + 1} of {SETUP_STEPS.length}
                   </p>
                   <h2
                     style={{
-                      fontFamily: 'Cinzel, serif',
-                      fontSize: 'clamp(18px, 3vw, 24px)',
-                      color: 'var(--brown-dark)',
-                      letterSpacing: '0.07em',
-                      fontWeight: 400,
+                      fontFamily: 'var(--font-sans), sans-serif',
+                      fontSize: 'clamp(20px, 3vw, 24px)',
+                      color: 'var(--fg)',
+                      letterSpacing: '-0.02em',
+                      fontWeight: 600,
                       marginBottom: 8,
                     }}
                   >
@@ -720,11 +716,10 @@ export default function ReadingPage() {
                   {STEP_CONFIG[step as keyof typeof STEP_CONFIG]?.subtitle && (
                     <p
                       style={{
-                        fontFamily: 'Spectral, serif',
-                        fontSize: 16,
-                        color: 'var(--brown-light)',
-                        fontStyle: 'italic',
-                        lineHeight: 1.4,
+                        fontFamily: 'var(--font-sans), sans-serif',
+                        fontSize: 15,
+                        color: 'var(--muted)',
+                        lineHeight: 1.6,
                       }}
                     >
                       {STEP_CONFIG[step as keyof typeof STEP_CONFIG]?.subtitle}
@@ -774,7 +769,7 @@ export default function ReadingPage() {
                   <p
                     style={{
                       color: 'var(--rose)',
-                      fontFamily: 'Spectral, serif',
+                      fontFamily: 'var(--font-sans), sans-serif',
                       fontStyle: 'italic',
                       textAlign: 'center',
                     }}
@@ -792,7 +787,7 @@ export default function ReadingPage() {
                         if (i > 0) setStep(SETUP_STEPS[i - 1]);
                       }}
                       className="btn-secondary"
-                      style={{ fontSize: 12, letterSpacing: '0.14em' }}
+                      style={{ fontSize: 12, letterSpacing: '0.01em' }}
                     >
                       ← Back
                     </button>
@@ -801,7 +796,7 @@ export default function ReadingPage() {
                   )}
 
                   {step === 'astrology' ? (
-                    <button onClick={startReading} className="btn-primary" style={{ fontSize: 11, letterSpacing: '0.22em' }}>
+                    <button onClick={startReading} className="btn-primary" style={{ fontSize: 11, letterSpacing: '0.01em' }}>
                       Draw the Cards
                     </button>
                   ) : (
@@ -811,7 +806,7 @@ export default function ReadingPage() {
                         setStep(SETUP_STEPS[i + 1]);
                       }}
                       className="btn-primary"
-                      style={{ fontSize: 11, letterSpacing: '0.22em' }}
+                      style={{ fontSize: 11, letterSpacing: '0.01em' }}
                     >
                       Continue →
                     </button>
@@ -859,15 +854,15 @@ export default function ReadingPage() {
                     style={{
                       background: 'transparent',
                       border: 'none',
-                      color: 'rgba(196,146,42,0.5)',
-                      fontFamily: 'Cinzel, serif',
+                      color: 'color-mix(in srgb, var(--accent) 50%, transparent)',
+                      fontFamily: 'var(--font-sans), sans-serif',
                       fontSize: 11,
-                      letterSpacing: '0.12em',
+                      letterSpacing: '0.01em',
                       cursor: 'pointer',
                       padding: '4px 0',
                     }}
                     onMouseEnter={e => { (e.target as HTMLElement).style.color = 'var(--gold)'; }}
-                    onMouseLeave={e => { (e.target as HTMLElement).style.color = 'rgba(196,146,42,0.5)'; }}
+                    onMouseLeave={e => { (e.target as HTMLElement).style.color = 'color-mix(in srgb, var(--accent) 50%, transparent)'; }}
                   >
                     ← Back
                   </button>
@@ -879,13 +874,13 @@ export default function ReadingPage() {
                     const canDownload = allImagesLoaded && !isPdfGenerating;
                     const topBtnStyle = (active: boolean): React.CSSProperties => ({
                       background: 'transparent',
-                      color: active ? 'var(--gold)' : 'rgba(196,146,42,0.3)',
-                      fontFamily: 'Cinzel, serif',
+                      color: active ? 'var(--gold)' : 'color-mix(in srgb, var(--accent) 30%, transparent)',
+                      fontFamily: 'var(--font-sans), sans-serif',
                       fontSize: 10,
-                      letterSpacing: '0.12em',
+                      letterSpacing: '0.01em',
                       padding: '6px 14px',
                       borderRadius: 2,
-                      border: `1px solid ${active ? 'rgba(196,146,42,0.4)' : 'rgba(196,146,42,0.15)'}`,
+                      border: `1px solid ${active ? 'color-mix(in srgb, var(--accent) 40%, transparent)' : 'color-mix(in srgb, var(--accent) 15%, transparent)'}`,
                       cursor: active ? 'pointer' : 'not-allowed',
                       transition: 'all 0.2s ease',
                       textTransform: 'uppercase',
@@ -927,8 +922,8 @@ export default function ReadingPage() {
                           }}
                           style={{
                             ...topBtnStyle(canDownload),
-                            color: canDownload ? 'var(--brown-mid)' : 'rgba(122,92,69,0.3)',
-                            border: `1px solid ${canDownload ? 'var(--border-brown)' : 'rgba(122,92,69,0.15)'}`,
+                            color: canDownload ? 'var(--brown-mid)' : 'color-mix(in srgb, var(--fg) 30%, transparent)',
+                            border: `1px solid ${canDownload ? 'var(--border-brown)' : 'color-mix(in srgb, var(--fg) 15%, transparent)'}`,
                           }}
                         >
                           {isPdfGenerating ? '⋯' : '↓ Cards'}
@@ -943,7 +938,7 @@ export default function ReadingPage() {
                   {question && (
                     <p
                       style={{
-                        fontFamily: 'Spectral, serif',
+                        fontFamily: 'var(--font-sans), sans-serif',
                         fontSize: 18,
                         fontStyle: 'italic',
                         color: isDark ? 'var(--gold-muted)' : 'var(--brown-mid)',
@@ -961,9 +956,9 @@ export default function ReadingPage() {
                       className="flex flex-col items-center gap-3"
                     >
                       <p style={{
-                        fontFamily: 'Cinzel, serif',
+                        fontFamily: 'var(--font-sans), sans-serif',
                         fontSize: 14,
-                        letterSpacing: '0.12em',
+                        letterSpacing: '0.01em',
                         color: 'var(--gold)',
                       }}>
                         YOUR FATE IS SEALED — CLICK EACH TO UNSEAL IT
@@ -973,11 +968,11 @@ export default function ReadingPage() {
                           onClick={flipAll}
                           style={{
                             background: 'transparent',
-                            border: '1px solid rgba(196,146,42,0.35)',
+                            border: '1px solid color-mix(in srgb, var(--accent) 35%, transparent)',
                             color: 'var(--gold)',
-                            fontFamily: 'Cinzel, serif',
+                            fontFamily: 'var(--font-sans), sans-serif',
                             fontSize: 10,
-                            letterSpacing: '0.18em',
+                            letterSpacing: '0.01em',
                             padding: '7px 20px',
                             borderRadius: 2,
                             cursor: 'pointer',
@@ -985,12 +980,12 @@ export default function ReadingPage() {
                             transition: 'all 0.2s ease',
                           }}
                           onMouseEnter={e => {
-                            (e.currentTarget as HTMLElement).style.background = 'rgba(196,146,42,0.08)';
+                            (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--accent) 8%, transparent)';
                             (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)';
                           }}
                           onMouseLeave={e => {
                             (e.currentTarget as HTMLElement).style.background = 'transparent';
-                            (e.currentTarget as HTMLElement).style.borderColor = 'rgba(196,146,42,0.35)';
+                            (e.currentTarget as HTMLElement).style.borderColor = 'color-mix(in srgb, var(--accent) 35%, transparent)';
                           }}
                         >
                           Reveal All
@@ -1028,9 +1023,9 @@ export default function ReadingPage() {
                 {/* Ornamental divider — appears as soon as cards are drawn */}
                 {drawnCards.length > 0 && (
                   <div className="flex items-center gap-4">
-                    <div className="flex-1 h-px" style={{ background: isDark ? 'rgba(196,146,42,0.3)' : 'var(--border-gold)' }} />
+                    <div className="flex-1 h-px" style={{ background: isDark ? 'color-mix(in srgb, var(--accent) 30%, transparent)' : 'var(--border-gold)' }} />
                     <span style={{ color: 'var(--gold)', fontSize: 14 }}>✦ ✦ ✦</span>
-                    <div className="flex-1 h-px" style={{ background: isDark ? 'rgba(196,146,42,0.3)' : 'var(--border-gold)' }} />
+                    <div className="flex-1 h-px" style={{ background: isDark ? 'color-mix(in srgb, var(--accent) 30%, transparent)' : 'var(--border-gold)' }} />
                   </div>
                 )}
 
@@ -1041,9 +1036,9 @@ export default function ReadingPage() {
                       <>
                         <div style={{ fontSize: 32, opacity: 0.6, marginBottom: 4 }}>☽</div>
                         <p style={{
-                          fontFamily: 'var(--font-cinzel), Cinzel, serif',
+                          fontFamily: 'var(--font-sans), sans-serif',
                           fontSize: 12,
-                          letterSpacing: '0.2em',
+                          letterSpacing: '0.01em',
                           color: 'var(--gold)',
                           textTransform: 'uppercase',
                           opacity: 0.8,
@@ -1051,7 +1046,7 @@ export default function ReadingPage() {
                           The Oracle is Unreachable
                         </p>
                         <p style={{
-                          fontFamily: 'var(--font-spectral), Spectral, serif',
+                          fontFamily: 'var(--font-sans), sans-serif',
                           fontSize: 16,
                           fontStyle: 'italic',
                           color: 'var(--brown-light)',
@@ -1063,7 +1058,7 @@ export default function ReadingPage() {
                         </p>
                       </>
                     ) : (
-                      <p style={{ fontFamily: 'Spectral, serif', fontSize: 18, fontStyle: 'italic', color: 'var(--brown-light)' }}>
+                      <p style={{ fontFamily: 'var(--font-sans), sans-serif', fontSize: 18, fontStyle: 'italic', color: 'var(--brown-light)' }}>
                         {error}
                       </p>
                     )}
@@ -1101,12 +1096,12 @@ export default function ReadingPage() {
                             ? {
                                 background: 'transparent',
                                 color: 'var(--gold-light)',
-                                fontFamily: 'Cinzel, serif',
+                                fontFamily: 'var(--font-sans), sans-serif',
                                 fontSize: 12,
                                 letterSpacing: '0.1em',
                                 padding: '12px 28px',
                                 borderRadius: 2,
-                                border: '1px solid rgba(196,146,42,0.45)',
+                                border: '1px solid color-mix(in srgb, var(--accent) 45%, transparent)',
                                 cursor: 'pointer',
                                 transition: 'all 0.25s ease',
                                 textTransform: 'uppercase' as const,

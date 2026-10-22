@@ -74,7 +74,7 @@ export function SpreadSelector({ value, onChange, deckType = 'rider-waite' }: Sp
             onMouseEnter={e => {
               if (!isSelected) {
                 (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 16px rgba(196,146,42,0.1)';
+                (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 16px color-mix(in srgb, var(--accent) 10%, transparent)';
               }
             }}
             onMouseLeave={e => {
@@ -106,7 +106,7 @@ export function SpreadSelector({ value, onChange, deckType = 'rider-waite' }: Sp
 
             <p
               style={{
-                fontFamily: 'var(--font-cinzel), serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 12,
                 letterSpacing: '0.1em',
                 color: isSelected ? 'var(--brown-dark)' : 'var(--brown-mid)',
@@ -119,7 +119,7 @@ export function SpreadSelector({ value, onChange, deckType = 'rider-waite' }: Sp
             </p>
             <p
               style={{
-                fontFamily: 'var(--font-spectral), serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 14,
                 fontStyle: 'italic',
                 color: 'var(--brown-light)',
@@ -131,7 +131,7 @@ export function SpreadSelector({ value, onChange, deckType = 'rider-waite' }: Sp
             </p>
             <p
               style={{
-                fontFamily: 'var(--font-spectral), serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 12,
                 color: isSelected ? 'var(--gold)' : 'var(--gold-muted)',
                 letterSpacing: '0.04em',

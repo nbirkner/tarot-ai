@@ -2,149 +2,99 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+const links = [
+  { href: '/reading', label: 'Oracle' },
+  { href: '/history', label: 'History' },
+  { href: '/about', label: 'About' },
+];
+
+function themeIsDark() {
+  const root = document.documentElement;
+  if (root.dataset.theme) return root.dataset.theme === 'dark';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
 
 export function Navigation() {
   const path = usePathname();
-  const [isOpen, setIsOpen] = useState(false);
+  const [label, setLabel] = useState('Toggle color theme');
 
-  const isDarkPage = false; // reading page is now always light
+  useEffect(() => {
+    const sync = () => {
+      setLabel(themeIsDark() ? 'Switch to light theme' : 'Switch to dark theme');
+    };
+    sync();
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
 
-  const links = [
-    { href: '/reading', label: 'Oracle' },
-    { href: '/history', label: 'History' },
-    { href: '/about', label: 'About' },
-  ];
-
-  const navBg = isDarkPage
-    ? 'rgba(6, 12, 34, 0.82)'
-    : 'rgba(248, 244, 239, 0.88)';
-  const navBorder = isDarkPage
-    ? 'rgba(196, 146, 42, 0.12)'
-    : 'rgba(196, 146, 42, 0.14)';
-  const logoColor = isDarkPage ? 'rgba(248,244,239,0.75)' : 'var(--brown-dark)';
-  const linkColor = isDarkPage ? 'rgba(248,244,239,0.5)' : 'var(--brown-mid)';
-  const linkActive = 'var(--gold)';
+  function toggleTheme() {
+    const next = themeIsDark() ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    try {
+      localStorage.setItem('theme', next);
+    } catch {
+      /* private mode */
+    }
+    setLabel(next === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+  }
 
   return (
-    <>
-      <nav
-        className="fixed top-0 left-0 right-0 z-50"
-        style={{
-          background: navBg,
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          borderBottom: `1px solid ${navBorder}`,
-          transition: 'background 0.6s ease, border-color 0.6s ease',
-        }}
-      >
-        <div className="w-full px-6 sm:px-10 flex items-center justify-between h-14">
-
-          {/* Wordmark */}
-          <Link href="/" onClick={() => setIsOpen(false)}>
-            <span
-              style={{
-                fontFamily: 'var(--font-cinzel), serif',
-                fontSize: 12,
-                letterSpacing: '0.26em',
-                color: logoColor,
-                transition: 'color 0.4s ease',
-                textTransform: 'uppercase',
-              }}
-            >
-              ✦ TAROT · AI
-            </span>
-          </Link>
-
-          {/* Desktop nav */}
-          <div className="hidden sm:flex items-center gap-8">
-            {links.map((l) => {
-              const isActive = path === l.href;
-              return (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  style={{
-                    fontFamily: 'var(--font-spectral), serif',
-                    fontSize: 15,
-                    letterSpacing: '0.06em',
-                    color: isActive ? linkActive : linkColor,
-                    borderBottom: isActive ? '1px solid var(--gold)' : '1px solid transparent',
-                    paddingBottom: 2,
-                    transition: 'color 0.2s ease, border-color 0.2s ease',
-                    fontStyle: isActive ? 'italic' : 'normal',
-                    textDecoration: 'none',
-                  }}
-                  onMouseEnter={e => {
-                    if (!isActive) (e.currentTarget as HTMLElement).style.color = isDarkPage ? 'rgba(248,244,239,0.85)' : 'var(--brown-dark)';
-                  }}
-                  onMouseLeave={e => {
-                    if (!isActive) (e.currentTarget as HTMLElement).style.color = linkColor;
-                  }}
-                >
-                  {l.label}
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Mobile hamburger */}
-          <button
-            className="flex sm:hidden items-center justify-center"
-            onClick={() => setIsOpen((prev) => !prev)}
-            aria-label="Toggle menu"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: isDarkPage ? 'rgba(248,244,239,0.65)' : 'var(--brown-dark)',
-              fontSize: 18,
-              lineHeight: 1,
-              padding: '8px',
-              minHeight: 44,
-              minWidth: 44,
-              transition: 'color 0.4s ease',
-            }}
-          >
-            {isOpen ? '✕' : '☰'}
-          </button>
-        </div>
-      </nav>
-
-      {/* Mobile dropdown */}
-      {isOpen && (
-        <div
-          className="sm:hidden fixed left-0 right-0"
-          style={{
-            top: 56,
-            zIndex: 49,
-            background: isDarkPage ? 'rgba(6,12,34,0.96)' : 'rgba(248,244,239,0.97)',
-            backdropFilter: 'blur(16px)',
-            borderBottom: `1px solid ${navBorder}`,
-          }}
+    <header className="site-header">
+      <div className="site-header-top">
+        <a className="back-link" href="https://www.nikibirkner.com">
+          <span className="arrow" aria-hidden="true">←</span>
+          {' '}
+          nikibirkner.com
+        </a>
+        <Link href="/" className="app-mark">
+          tarot · ai
+        </Link>
+        <button
+          type="button"
+          className="icon-btn"
+          data-theme-toggle
+          onClick={toggleTheme}
+          aria-label={label}
+          title={label}
         >
-          {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              onClick={() => setIsOpen(false)}
-              style={{
-                display: 'block',
-                padding: '16px 24px',
-                fontFamily: 'var(--font-spectral), serif',
-                fontSize: 18,
-                letterSpacing: '0.05em',
-                color: path === l.href ? 'var(--gold)' : (isDarkPage ? 'rgba(248,244,239,0.65)' : 'var(--brown-mid)'),
-                fontStyle: path === l.href ? 'italic' : 'normal',
-                borderBottom: `1px solid ${isDarkPage ? 'rgba(196,146,42,0.1)' : 'var(--border-gold)'}`,
-                textDecoration: 'none',
-              }}
-            >
-              {l.label}
-            </Link>
-          ))}
-        </div>
-      )}
-    </>
+          <svg className="icon-moon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path
+              d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <svg className="icon-sun" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+            <path
+              d="M12 2.5v2.2M12 19.3v2.2M4.8 4.8l1.6 1.6M17.6 17.6l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.8 19.2l1.6-1.6M17.6 6.4l1.6-1.6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      </div>
+      <nav className="top-nav" aria-label="Primary">
+        {links.map((link) => (
+          <Link key={link.href} href={link.href} aria-current={path === link.href ? 'page' : undefined}>
+            {link.label}
+          </Link>
+        ))}
+      </nav>
+      <nav className="tabbar" aria-label="Primary">
+        {links.map((link) => (
+          <Link key={link.href} href={link.href} aria-current={path === link.href ? 'page' : undefined}>
+            {link.label}
+          </Link>
+        ))}
+      </nav>
+    </header>
   );
 }
