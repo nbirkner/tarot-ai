@@ -230,6 +230,11 @@ const SPARKLE_POSITIONS: [string, string, number][] = [
 export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading, onClick, size = 'md', showPosition = true }: TarotCardProps) {
   const { width, height } = SIZES[size];
   const [showSparkle, setShowSparkle] = useState(false);
+  const [artFailed, setArtFailed] = useState(false);
+
+  useEffect(() => {
+    setArtFailed(false);
+  }, [drawn.imageUrl]);
 
   useEffect(() => {
     if (isFlipped) {
@@ -292,7 +297,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
             className="absolute inset-0 rounded-lg overflow-hidden shadow-lg border border-[color-mix(in srgb, var(--accent) 30%, transparent)]"
             style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
           >
-            {drawn.imageUrl && drawn.imageUrl !== 'failed' ? (
+            {drawn.imageUrl && drawn.imageUrl !== 'failed' && !artFailed ? (
               <div className={`relative w-full h-full ${drawn.reversed ? 'rotate-180' : ''}`}>
                 <Image
                   src={drawn.imageUrl}
@@ -300,6 +305,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
                   width={width * 2}
                   height={height * 2}
                   className="w-full h-full object-cover"
+                  onError={() => setArtFailed(true)}
                 />
                 {/* Card name overlay */}
                 <div style={{
@@ -325,21 +331,11 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
                   </span>
                 </div>
               </div>
-            ) : drawn.imageUrl === 'failed' ? (
-              // Image generation failed — show a styled placeholder
-              <div className="w-full h-full flex flex-col items-center justify-center gap-3" style={{
-                background: 'radial-gradient(ellipse at 50% 30%, #1A1020 0%, #080510 100%)',
-              }}>
-                <div style={{ color: 'color-mix(in srgb, var(--accent) 30%, transparent)', fontSize: 24 }}>✦</div>
-                <span style={{
-                  fontFamily: 'var(--font-sans), sans-serif',
-                  fontSize: 6,
-                  letterSpacing: '0.01em',
-                  color: 'color-mix(in srgb, var(--accent) 30%, transparent)',
-                  textAlign: 'center',
-                  textTransform: 'uppercase',
-                  padding: '0 12px',
-                }}>
+            ) : drawn.imageUrl === 'failed' || artFailed ? (
+              <div className="card-art-placeholder" role="img" aria-label={`${drawn.card.name} art unavailable`}>
+                <div className="mark" aria-hidden="true">✦</div>
+                <span className="label">Card art</span>
+                <span className="name" style={{ fontSize: Math.max(12, Math.round(width * 0.09)) }}>
                   {drawn.card.name}
                 </span>
               </div>

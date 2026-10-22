@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readingLimitResponse } from '../../../lib/reading-quota';
 import {
   SYNTHESIS_MAX_TOKENS,
   chatCompletionBody,
@@ -15,6 +16,9 @@ const SYSTEM_STANDARD = `You are Celeste — an exceptionally gifted tarot reade
 const SYSTEM_OSHO = `You are a Zen oracle rooted in Osho's teachings. You synthesize Osho Zen Tarot readings into a unified reflection — not prediction, but recognition. You illuminate what is already present. You always respond in valid JSON. No markdown, no text outside JSON.`;
 
 export async function POST(req: NextRequest) {
+  const limited = await readingLimitResponse(req);
+  if (limited) return limited;
+
   if (!TOGETHER_API_KEY) {
     return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
   }

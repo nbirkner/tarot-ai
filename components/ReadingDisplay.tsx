@@ -17,234 +17,62 @@ interface ReadingDisplayProps {
 
 export function ReadingDisplay({ reading }: ReadingDisplayProps) {
   return (
-    <div className="space-y-8 max-w-2xl mx-auto">
-      {/* Overall energy */}
+    <div className="stack">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        style={{
-          background: 'var(--cream-card)',
-          border: '1px solid var(--border-gold)',
-          borderRadius: 4,
-          padding: 'clamp(16px, 4vw, 28px) clamp(16px, 5vw, 32px)',
-        }}
+        className="model"
       >
-        {/* Ornamental divider */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-          <div style={{ flex: 1, height: 1, background: 'var(--border-gold)' }} />
-          <span style={{ color: 'var(--gold)', fontSize: 14, opacity: 0.7 }}>✦</span>
-          <div style={{ flex: 1, height: 1, background: 'var(--border-gold)' }} />
-        </div>
-        <p
-          style={{
-            fontFamily: 'var(--font-sans), sans-serif',
-            fontSize: 10,
-            letterSpacing: '0.01em',
-            color: 'var(--gold)',
-            textTransform: 'uppercase' as const,
-            marginBottom: 14,
-          }}
-        >
-          The Energy of This Reading
-        </p>
-        <p
-          style={{
-            fontFamily: 'var(--font-sans), sans-serif',
-            fontSize: 22,
-            lineHeight: 1.7,
-            color: 'var(--brown-dark)',
-            fontStyle: 'italic',
-          }}
-        >
-          {reading.overallEnergy}
-        </p>
+        <p className="label">The Energy of This Reading</p>
+        <p className="body">{reading.overallEnergy}</p>
       </motion.div>
 
-      {/* Per-card readings */}
-      <div className="space-y-4">
+      <div className="stack">
         {reading.cardReadings.map((cr, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 + i * 0.1, duration: 0.4 }}
-            style={{
-              background: 'var(--cream-card)',
-              border: '1px solid var(--border-brown)',
-              borderLeft: '1px solid var(--hairline)',
-              borderRadius: 4,
-              padding: 'clamp(14px, 3.5vw, 22px) clamp(14px, 4.5vw, 28px)',
-              position: 'relative' as const,
-            }}
+            className="model"
           >
-            {/* Roman numeral decorative */}
-            <span
-              style={{
-                position: 'absolute',
-                top: 12,
-                right: 14,
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 11,
-                color: 'var(--border-gold)',
-                letterSpacing: '0.05em',
-                userSelect: 'none',
-              }}
-            >
-              {toRoman(i + 1)}
-            </span>
-            <div className="flex flex-wrap items-start justify-between gap-4 mb-3">
-              <div>
-                <h4
-                  style={{
-                    fontFamily: 'var(--font-sans), sans-serif',
-                    fontSize: 13,
-                    letterSpacing: '0.07em',
-                    color: 'var(--brown-dark)',
-                    marginBottom: 2,
-                  }}
-                >
-                  {cr.card}
-                </h4>
-                <p
-                  style={{
-                    fontFamily: 'var(--font-sans), sans-serif',
-                    fontSize: 14,
-                    fontStyle: 'italic',
-                    color: 'var(--brown-light)',
-                  }}
-                >
-                  {cr.position}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-1 justify-end max-w-[55%]">
-                {cr.keywords.map((kw) => (
-                  <span
-                    key={kw}
-                    style={{
-                      fontFamily: 'var(--font-sans), sans-serif',
-                      fontSize: 12,
-                      color: 'var(--sage)',
-                      border: '1px solid color-mix(in srgb, var(--live) 25%, transparent)',
-                      borderRadius: 2,
-                      padding: '2px 8px',
-                      background: 'var(--sage-pale)',
-                      fontStyle: 'italic',
-                    }}
-                  >
-                    {kw}
-                  </span>
-                ))}
-              </div>
+            <p className="label">{toRoman(i + 1)} · {cr.position}</p>
+            <h2>{cr.card}</h2>
+            <div className="flex flex-wrap gap-2" style={{ marginTop: 10 }}>
+              {cr.keywords.map((kw) => (
+                <span key={kw} className="label" style={{ margin: 0 }}>
+                  {kw}
+                </span>
+              ))}
             </div>
-            <p
-              style={{
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 19,
-                lineHeight: 1.7,
-                color: 'var(--brown-mid)',
-              }}
-            >
-              {cr.interpretation}
-            </p>
+            <p className="body">{cr.interpretation}</p>
           </motion.div>
         ))}
       </div>
 
-      {/* Synthesis */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.5 }}
-        style={{
-          background: 'linear-gradient(135deg, var(--gold-pale) 0%, var(--cream-card) 100%)',
-          border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)',
-          borderRadius: 4,
-          padding: 'clamp(16px, 4vw, 28px) clamp(16px, 5vw, 32px)',
-          position: 'relative' as const,
-        }}
+        className="model"
       >
-        {/* Decorative large ✦ top-right */}
-        <span
-          style={{
-            position: 'absolute',
-            top: 16,
-            right: 20,
-            fontSize: 40,
-            color: 'color-mix(in srgb, var(--accent) 15%, transparent)',
-            lineHeight: 1,
-            userSelect: 'none',
-            pointerEvents: 'none',
-          }}
-          aria-hidden="true"
-        >
-          ✦
-        </span>
-        <p
-          style={{
-            fontFamily: 'var(--font-sans), sans-serif',
-            fontSize: 10,
-            letterSpacing: '0.01em',
-            color: 'var(--gold)',
-            textTransform: 'uppercase' as const,
-            marginBottom: 16,
-          }}
-        >
-          What the Cards Say Together
-        </p>
-        <p
-          style={{
-            fontFamily: 'var(--font-sans), sans-serif',
-            fontSize: 20,
-            lineHeight: 1.7,
-            color: 'var(--brown-dark)',
-          }}
-        >
-          {reading.synthesis}
-        </p>
-
-        {/* Affirmation */}
-        <div
-          style={{
-            borderTop: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)',
-            marginTop: 20,
-            paddingTop: 20,
-          }}
-        >
-          <p
-            style={{
-              fontFamily: 'var(--font-sans), sans-serif',
-              fontSize: 'clamp(24px, 4vw, 32px)',
-              color: 'var(--gold)',
-              textAlign: 'center' as const,
-              lineHeight: 1.3,
-              textShadow: '0 0 30px color-mix(in srgb, var(--accent) 25%, transparent)',
-            }}
-          >
-            &ldquo;{reading.affirmation}&rdquo;
-          </p>
-        </div>
+        <p className="label">What the Cards Say Together</p>
+        <p className="body">{reading.synthesis}</p>
+        <blockquote className="quote" style={{ marginTop: 20 }}>
+          <p>&ldquo;{reading.affirmation}&rdquo;</p>
+        </blockquote>
       </motion.div>
 
-      {/* Timing */}
       {reading.notableTiming && (
-        <motion.div
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
-          className="text-center"
+          className="label"
         >
-          <p
-            style={{
-              fontFamily: 'var(--font-sans), sans-serif',
-              fontSize: 16,
-              fontStyle: 'italic',
-              color: 'var(--brown-light)',
-            }}
-          >
-            ☽ {reading.notableTiming}
-          </p>
-        </motion.div>
+          {reading.notableTiming}
+        </motion.p>
       )}
     </div>
   );

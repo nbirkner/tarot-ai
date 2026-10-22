@@ -13,7 +13,7 @@ interface SpreadSelectorProps {
 function SpreadDots({ count, isSelected }: { count: number; isSelected: boolean }) {
   const size = 5;
   const gap = 4;
-  const color = isSelected ? 'var(--gold)' : 'var(--gold-muted)';
+  const color = isSelected ? 'var(--accent)' : 'var(--muted)';
 
   if (count === 10) {
     return (
@@ -59,85 +59,22 @@ export function SpreadSelector({ value, onChange, deckType = 'rider-waite' }: Sp
         return (
           <button
             key={spread.type}
+            type="button"
             onClick={() => onChange(spread.type)}
-            style={{
-              background: isSelected ? 'var(--gold-pale)' : 'var(--cream-card)',
-              border: `1px solid ${isSelected ? 'var(--gold)' : 'var(--border-gold)'}`,
-              borderRadius: 3,
-              padding: '16px 18px',
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'all 0.2s ease',
-              position: 'relative',
-              outline: 'none',
-            }}
-            onMouseEnter={e => {
-              if (!isSelected) {
-                (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)';
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 16px color-mix(in srgb, var(--accent) 10%, transparent)';
-              }
-            }}
-            onMouseLeave={e => {
-              if (!isSelected) {
-                (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-gold)';
-                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-              }
-            }}
+            className={`select-card${isSelected ? ' selected' : ''}`}
+            aria-pressed={isSelected}
           >
-            {/* Selected checkmark */}
-            {isSelected && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: 12,
-                  right: 14,
-                  color: 'var(--gold)',
-                  fontSize: 10,
-                  opacity: 0.8,
-                }}
-              >
-                ✦
-              </span>
-            )}
-
             <div style={{ marginBottom: 12 }}>
               <SpreadDots count={spread.cardCount} isSelected={isSelected} />
             </div>
 
-            <p
-              style={{
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 12,
-                letterSpacing: '0.1em',
-                color: isSelected ? 'var(--brown-dark)' : 'var(--brown-mid)',
-                marginBottom: 5,
-                transition: 'color 0.2s ease',
-                textTransform: 'uppercase',
-              }}
-            >
+            <p style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.4, marginBottom: 4, color: 'var(--fg)' }}>
               {spread.label}
             </p>
-            <p
-              style={{
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 14,
-                fontStyle: 'italic',
-                color: 'var(--brown-light)',
-                lineHeight: 1.35,
-                marginBottom: 6,
-              }}
-            >
+            <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.5, marginBottom: 6 }}>
               {spread.description}
             </p>
-            <p
-              style={{
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 12,
-                color: isSelected ? 'var(--gold)' : 'var(--gold-muted)',
-                letterSpacing: '0.04em',
-                transition: 'color 0.2s ease',
-              }}
-            >
+            <p className="label" style={{ margin: 0 }}>
               {spread.cardCount} card{spread.cardCount > 1 ? 's' : ''}
             </p>
           </button>

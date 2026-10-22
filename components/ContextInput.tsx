@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { apiUrl } from '../lib/base-path';
 
 interface ContextInputProps {
   question: string;
@@ -34,7 +35,7 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
   async function handleGenerateFollowUps() {
     setIsLoadingFollowUps(true);
     try {
-      const res = await fetch('/api/generate-follow-ups', {
+      const res = await fetch(apiUrl('/api/generate-follow-ups'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question }),
@@ -52,17 +53,8 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
     <div className="space-y-6">
       {/* Situation textarea */}
       <div>
-        <label
-          style={{
-            fontFamily: 'var(--font-sans), sans-serif',
-            fontSize: 11,
-            letterSpacing: '0.01em',
-            color: 'var(--brown-mid)',
-            display: 'block',
-            marginBottom: 8,
-          }}
-        >
-          WHAT IS HAPPENING IN YOUR LIFE RIGHT NOW?
+        <label className="label" style={{ display: 'block' }}>
+          What is happening in your life right now?
         </label>
         <textarea
           className="input-field"
@@ -72,15 +64,7 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
           onChange={(e) => setSituationText(e.target.value)}
           style={{ width: '100%', resize: 'vertical', minHeight: 100 }}
         />
-        <p
-          style={{
-            fontFamily: 'var(--font-sans), sans-serif',
-            fontSize: 13,
-            fontStyle: 'italic',
-            color: 'var(--brown-light)',
-            marginTop: 6,
-          }}
-        >
+        <p className="label" style={{ marginTop: 8 }}>
           Optional. Nothing you write here is stored or saved.
         </p>
       </div>
@@ -88,29 +72,15 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
       {/* Follow-up questions section — only show if question exists */}
       {question.trim() && (
         <div>
-          <div className="flex items-center gap-4 mb-4">
-            <div style={{ flex: 1, height: 1, background: 'var(--border-gold)' }} />
-            <span
-              style={{
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 13,
-                color: 'var(--brown-light)',
-                fontStyle: 'italic',
-              }}
-            >
-              or let the oracle ask you
-            </span>
-            <div style={{ flex: 1, height: 1, background: 'var(--border-gold)' }} />
-          </div>
+          <p className="label">Or let the oracle ask you</p>
 
           {followUpQuestions.length === 0 ? (
             <button
               onClick={handleGenerateFollowUps}
               disabled={isLoadingFollowUps}
               className="btn-secondary w-full"
-              style={{ fontSize: 12 }}
             >
-              {isLoadingFollowUps ? '✦ Reading your question...' : '✦ Generate follow-up questions'}
+              {isLoadingFollowUps ? 'Reading your question...' : 'Generate follow-up questions'}
             </button>
           ) : (
             <div className="space-y-4">
@@ -118,12 +88,11 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
                 <div key={i}>
                   <label
                     style={{
-                      fontFamily: 'var(--font-sans), sans-serif',
-                      fontSize: 16,
-                      fontStyle: 'italic',
-                      color: 'var(--brown-dark)',
+                      fontSize: 15,
+                      color: 'var(--fg)',
                       display: 'block',
                       marginBottom: 6,
+                      lineHeight: 1.5,
                     }}
                   >
                     {q}
