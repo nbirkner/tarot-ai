@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GenerateReadingRequest } from '../../../lib/types';
+import { readingLimitResponse } from '../../../lib/reading-quota';
 import {
   CARD_READING_MAX_TOKENS,
   chatCompletionBody,
@@ -62,6 +63,9 @@ function getDominantSuit(cards: Array<{ name: string }>): string {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = await readingLimitResponse(req);
+  if (limited) return limited;
+
   if (!TOGETHER_API_KEY) {
     console.error('TOGETHER_API_KEY is not set');
     return NextResponse.json({ error: 'API key not configured' }, { status: 500 });

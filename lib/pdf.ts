@@ -1,3 +1,4 @@
+import { apiUrl } from './base-path';
 import { ReadingResult } from './types';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -32,7 +33,7 @@ function sanitize(text: string): string {
 // then converts to JPEG via canvas so jsPDF can embed it.
 async function fetchImageAsJpeg(imageUrl: string): Promise<string | null> {
   try {
-    const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+    const proxyUrl = apiUrl(`/api/proxy-image?url=${encodeURIComponent(imageUrl)}`);
     const res = await fetch(proxyUrl);
     if (!res.ok) {
       console.warn('proxy-image failed:', res.status, imageUrl);

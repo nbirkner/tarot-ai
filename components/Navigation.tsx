@@ -1,8 +1,9 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { AppLink } from './BasePath';
+import { stripBasePath } from '../lib/base-path';
 
 const links = [
   { href: '/reading', label: 'Oracle' },
@@ -17,7 +18,7 @@ function themeIsDark() {
 }
 
 export function Navigation() {
-  const path = usePathname();
+  const path = stripBasePath(usePathname() || '/');
   const [label, setLabel] = useState('Toggle color theme');
 
   useEffect(() => {
@@ -49,9 +50,9 @@ export function Navigation() {
           {' '}
           nikibirkner.com
         </a>
-        <Link href="/" className="app-mark">
+        <AppLink href="/" className="app-mark">
           tarot · ai
-        </Link>
+        </AppLink>
         <button
           type="button"
           className="icon-btn"
@@ -83,16 +84,16 @@ export function Navigation() {
       </div>
       <nav className="top-nav" aria-label="Primary">
         {links.map((link) => (
-          <Link key={link.href} href={link.href} aria-current={path === link.href ? 'page' : undefined}>
+          <AppLink key={link.href} href={link.href} aria-current={path === link.href ? 'page' : undefined}>
             {link.label}
-          </Link>
+          </AppLink>
         ))}
       </nav>
       <nav className="tabbar" aria-label="Primary">
         {links.map((link) => (
-          <Link key={link.href} href={link.href} aria-current={path === link.href ? 'page' : undefined}>
+          <AppLink key={link.href} href={link.href} aria-current={path === link.href ? 'page' : undefined}>
             {link.label}
-          </Link>
+          </AppLink>
         ))}
       </nav>
     </header>

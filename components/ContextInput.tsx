@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { apiUrl } from '../lib/base-path';
 
 interface ContextInputProps {
   question: string;
@@ -34,7 +35,7 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
   async function handleGenerateFollowUps() {
     setIsLoadingFollowUps(true);
     try {
-      const res = await fetch('/api/generate-follow-ups', {
+      const res = await fetch(apiUrl('/api/generate-follow-ups'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question }),

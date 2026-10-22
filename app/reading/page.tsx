@@ -20,6 +20,8 @@ import {
 } from '../../lib/types';
 import { drawCards, drawOshoZenCards, isReversed, getSpread } from '../../lib/tarot';
 import { buildReadingContext, formatAstrologyContext } from '../../lib/astronomy';
+import { apiUrl } from '../../lib/base-path';
+import { RATE_LIMIT_MESSAGE } from '../../lib/rate-limit-shared';
 import { getUserId, saveReading } from '../../lib/storage';
 
 type Step = 'question' | 'context' | 'spread' | 'deck' | 'photo' | 'astrology' | 'generating' | 'reveal' | 'reading';
@@ -156,7 +158,24 @@ function cleanJson(raw: string): string {
   return raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
 }
 
-// Run `fn` over `items` with at most `concurrency` in-flight at once.
+class RateLimitError extends Error {
+  constructor() {
+    super(RATE_LIMIT_MESSAGE);
+    this.name = 'RateLimitError';
+  }
+}
+
+function isRateLimit(err: unknown): boolean {
+  return err instanceof Error && err.name === 'RateLimitError';
+}
+
+async function throwIfRateLimited(res: Response) {
+  if (res.status !== 429) return;
+  const text = await res.clone().text().catch(() => '');
+  if (text.includes('"rate_limited"') || text.includes(RATE_LIMIT_MESSAGE)) {
+    throw new RateLimitError();
+  }
+}
 // Returns results in the same order, matching Promise.allSettled semantics.
 async function pooledAllSettled<T, R>(
   items: T[],
@@ -184,7 +203,12 @@ async function withRetry<T>(fn: () => Promise<T>, maxAttempts: number, delayMs =
   let lastError: unknown;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     if (attempt > 0) await new Promise(r => setTimeout(r, delayMs));
-    try { return await fn(); } catch (e) { lastError = e; }
+    try {
+      return await fn();
+    } catch (e) {
+      lastError = e;
+      if (isRateLimit(e) || (e instanceof Error && e.name === 'PermanentHttpError')) throw e;
+    }
   }
   throw lastError;
 }
@@ -335,6 +359,12 @@ export default function ReadingPage() {
       setError('hang');
     }, 45000);
 
+    const readingId = crypto.randomUUID();
+    const apiHeaders = {
+      'Content-Type': 'application/json',
+      'x-reading-id': readingId,
+    };
+
     const spread = getSpread(spreadType);
     const cards = isOshoZen ? drawOshoZenCards(spread.cardCount) : drawCards(spread.cardCount);
     const now = new Date();
@@ -380,19 +410,24 @@ export default function ReadingPage() {
 
         const data = await withRetry(async () => {
           const res = await withTimeout(
-            fetch('/api/generate-card', {
+            fetch(apiUrl('/api/generate-card'), {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: apiHeaders,
               body,
             }),
             IMAGE_TIMEOUT_MS,
             `image gen ${i}`,
           );
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          await throwIfRateLimited(res);
+          if (!res.ok) {
+            const err = new Error(`HTTP ${res.status}`);
+            if (res.status >= 400 && res.status < 500) err.name = 'PermanentHttpError';
+            throw err;
+          }
           const json = await res.json();
           if (!json.imageUrl) throw new Error('No imageUrl in response');
           return json;
-        }, 5, 1500);
+        }, 2, 1500);
 
         resolvedImagesRef.current[i] = data.imageUrl;
         setDrawnCards((prev) =>
@@ -442,9 +477,9 @@ export default function ReadingPage() {
 
         return withRetry(async () => {
           const res = await withTimeout(
-            fetch('/api/generate-card-reading', {
+            fetch(apiUrl('/api/generate-card-reading'), {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: apiHeaders,
               signal: controller.signal,
               body,
             }),
@@ -452,6 +487,7 @@ export default function ReadingPage() {
             `card ${i} fetch`,
           );
 
+          await throwIfRateLimited(res);
           if (!res.ok) {
             const errText = await res.text().catch(() => '');
             console.error(`Card ${i} API error:`, res.status, errText);
@@ -528,6 +564,12 @@ export default function ReadingPage() {
 
       // If every single card failed, abort — there's nothing to synthesize.
       const successCount = cardResults.filter(r => r.status === 'fulfilled').length;
+      if (cardResults.some(r => r.status === 'rejected' && isRateLimit(r.reason))) {
+        if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
+        setStreamingState(null);
+        setError(RATE_LIMIT_MESSAGE);
+        return;
+      }
       if (successCount === 0) {
         setStreamingState(null);
         setError('The oracle could not read any of your cards. Please try again.');
@@ -541,9 +583,9 @@ export default function ReadingPage() {
       try {
         synthJson = await withRetry(async () => {
           const synthRes = await withTimeout(
-            fetch('/api/generate-synthesis', {
+            fetch(apiUrl('/api/generate-synthesis'), {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: apiHeaders,
               signal: controller.signal,
               body: JSON.stringify({
                 ...sharedBody,
@@ -555,6 +597,7 @@ export default function ReadingPage() {
             'synthesis fetch',
           );
 
+          await throwIfRateLimited(synthRes);
           if (!synthRes.ok) {
             const errText = await synthRes.text().catch(() => '');
             console.error('Synthesis API error:', synthRes.status, errText);
@@ -574,8 +617,11 @@ export default function ReadingPage() {
         }, 2, 2000);
       } catch (synthErr) {
         console.error('Synthesis failed after retries:', synthErr);
+        if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
         setStreamingState(null);
-        setError('The oracle fell silent during synthesis. Please try again.');
+        setError(isRateLimit(synthErr)
+          ? RATE_LIMIT_MESSAGE
+          : 'The oracle fell silent during synthesis. Please try again.');
         return;
       }
 
@@ -605,8 +651,11 @@ export default function ReadingPage() {
       setIsReadingReady(true);
     } catch (err) {
       console.error('Reading error:', err);
+      if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
       setStreamingState(null);
-      if (err instanceof Error && err.name === 'AbortError') {
+      if (isRateLimit(err)) {
+        setError(RATE_LIMIT_MESSAGE);
+      } else if (err instanceof Error && err.name === 'AbortError') {
         setError('The oracle is taking too long to respond. Please try again.');
       } else {
         setError(`Reading failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -1059,13 +1108,32 @@ export default function ReadingPage() {
                           The crystal ball is buffering... Perhaps Mercury is in retrograde. The spirits will realign — try summoning them again.
                         </p>
                       </>
+                    ) : error === RATE_LIMIT_MESSAGE ? (
+                      <>
+                        <p className="kicker">The oracle is resting</p>
+                        <p style={{
+                          fontFamily: 'var(--font-sans), sans-serif',
+                          fontSize: 18,
+                          fontStyle: 'italic',
+                          color: 'var(--muted)',
+                          maxWidth: 360,
+                          margin: '12px auto 0',
+                          lineHeight: 1.6,
+                        }}>
+                          {RATE_LIMIT_MESSAGE}
+                        </p>
+                      </>
                     ) : (
                       <p style={{ fontFamily: 'var(--font-sans), sans-serif', fontSize: 18, fontStyle: 'italic', color: 'var(--brown-light)' }}>
                         {error}
                       </p>
                     )}
                     <div style={{ marginTop: 28 }}>
-                      <button onClick={startReading} className="btn-primary">Try Again</button>
+                      {error === RATE_LIMIT_MESSAGE ? (
+                        <button onClick={reset} className="btn-secondary">Back</button>
+                      ) : (
+                        <button onClick={startReading} className="btn-primary">Try Again</button>
+                      )}
                     </div>
                   </div>
                 )}

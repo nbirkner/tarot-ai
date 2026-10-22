@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { AppLink } from '../components/BasePath';
 
 export default function Home() {
   return (
@@ -19,9 +19,9 @@ export default function Home() {
         <span>☽ Unsolicited advice</span>
       </div>
       <div className="actions">
-        <Link href="/reading" className="btn-primary">
+        <AppLink href="/reading" className="btn-primary">
           BEGIN YOUR READING
-        </Link>
+        </AppLink>
         <p className="fine">no account · the void doesn&apos;t need your email</p>
       </div>
       <hr className="rule" />
@@ -29,9 +29,9 @@ export default function Home() {
         Powered by Together AI · Centuries of symbolism, generated in seconds · The oracle is not liable for epiphanies
       </p>
       <p>
-        <Link href="/about" className="fine">
+        <AppLink href="/about" className="fine">
           about this →
-        </Link>
+        </AppLink>
       </p>
     </main>
   );

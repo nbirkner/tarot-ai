@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
+import { headers } from 'next/headers';
 import { Fragment_Mono, Schibsted_Grotesk } from 'next/font/google';
 import { Navigation } from '../components/Navigation';
+import { BasePathProvider } from '../components/BasePath';
+import { BASE_PATH } from '../lib/base-path';
 import './globals.css';
 
 const sans = Schibsted_Grotesk({
@@ -25,9 +28,12 @@ export const metadata: Metadata = {
   description: 'Personalized tarot readings with AI-generated card art. Powered by Together AI.',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const headerStore = await headers();
+  const base = headerStore.get('x-tarot-base') === BASE_PATH ? BASE_PATH : '';
+
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${sans.variable} ${mono.variable}`} data-base-path={base || undefined} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBoot }} />
       </head>
@@ -35,10 +41,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script id="theme-boot" strategy="beforeInteractive">
           {themeBoot}
         </Script>
-        <div className="app-shell">
-          <Navigation />
-          <div className="app-main">{children}</div>
-        </div>
+        <BasePathProvider base={base}>
+          <div className="app-shell">
+            <Navigation />
+            <div className="app-main">{children}</div>
+          </div>
+        </BasePathProvider>
       </body>
     </html>
   );

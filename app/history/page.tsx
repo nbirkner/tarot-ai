@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { AppLink } from '../../components/BasePath';
 import { ReadingResult } from '../../lib/types';
 import { getReadings } from '../../lib/storage';
 import { SPREADS } from '../../lib/tarot';
@@ -105,7 +105,7 @@ export default function HistoryPage() {
             >
               The void stares back. It has opinions.
             </p>
-            <Link
+            <AppLink
               href="/reading"
               style={{
                 fontFamily: 'var(--font-sans), sans-serif',
@@ -115,7 +115,7 @@ export default function HistoryPage() {
               }}
             >
               Ask it something →
-            </Link>
+            </AppLink>
           </div>
         ) : (
           <>
@@ -214,9 +214,9 @@ export default function HistoryPage() {
 
             {/* CTA */}
             <div className="text-center mt-10">
-              <Link href="/reading" className="btn-primary" style={{ textDecoration: 'none', display: 'inline-block' }}>
+              <AppLink href="/reading" className="btn-primary" style={{ textDecoration: 'none', display: 'inline-block' }}>
                 Begin a New Reading
-              </Link>
+              </AppLink>
             </div>
           </>
         )}

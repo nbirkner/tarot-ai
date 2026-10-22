@@ -6,9 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test lib/together.test.ts"
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test lib/*.test.ts"
   },
   "dependencies": {
+    "@upstash/ratelimit": "^2.2.0",
     "astronomy-engine": "^2.1.19",
     "framer-motion": "^12.38.0",
     "jspdf": "^4.2.1",
