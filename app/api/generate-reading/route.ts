@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GenerateReadingRequest } from '../../../lib/types';
+import {
+  CARD_READING_MAX_TOKENS,
+  chatCompletionBody,
+  describeTogetherFailure,
+  logTogetherFailure,
+} from '../../../lib/together';
 
 export const maxDuration = 60;
 
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
-const READING_MODEL = 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8';
 
 const SYSTEM_PROMPT = `You are Celeste — an exceptionally gifted tarot reader and astrologer who has studied the cards and stars for twenty years. You are the user's most trusted, brilliant witch friend. You speak with warmth, precision, and occasional sharp honesty.
 
@@ -111,7 +116,16 @@ Respond with JSON:
 }`;
 
     const togetherAbort = new AbortController();
-    const togetherTimeout = setTimeout(() => togetherAbort.abort(), 25000);
+    const togetherTimeout = setTimeout(() => togetherAbort.abort(), 45000);
+    const chatBody = chatCompletionBody({
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userPrompt },
+      ],
+      temperature: 0.85,
+      maxTokens: Math.min(CARD_READING_MAX_TOKENS + body.cards.length * 300, 4000),
+      stream: true,
+    });
 
     const response = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
@@ -120,22 +134,26 @@ Respond with JSON:
         'Content-Type': 'application/json',
       },
       signal: togetherAbort.signal,
-      body: JSON.stringify({
-        model: READING_MODEL,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.85,
-        max_tokens: Math.min(500 + body.cards.length * 300, 2000),
-        stream: true,
-      }),
+      body: JSON.stringify(chatBody),
     }).finally(() => clearTimeout(togetherTimeout));
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('Together chat error:', error);
-      return NextResponse.json({ error: 'Reading generation failed' }, { status: 500 });
+      const failure = describeTogetherFailure(
+        'generate-reading',
+        chatBody.model,
+        response.status,
+        error,
+      );
+      logTogetherFailure(failure);
+      return NextResponse.json(
+        {
+          error: 'Reading generation failed',
+          providerStatus: failure.status,
+          providerCode: failure.providerCode,
+        },
+        { status: 500 },
+      );
     }
 
     // Forward the SSE stream directly to the client
