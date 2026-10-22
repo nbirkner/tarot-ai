@@ -46,7 +46,9 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
     <div className="flex flex-col gap-4">
       {/* Standard Tarot section */}
       <div>
-        <p className="label">Standard Tarot</p>
+        <p className="label" style={{ marginBottom: 12 }}>
+          Standard Tarot
+        </p>
         <div className="flex flex-col gap-2">
           {STANDARD_DECKS.map((deck) => {
             const isSelected = value === deck.style;
@@ -99,7 +101,9 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
 
       {/* Osho Zen section */}
       <div>
-        <p className="label">Osho Zen Tarot</p>
+        <p className="label" style={{ marginBottom: 12 }}>
+          Osho Zen Tarot
+        </p>
         <button
           type="button"
           onClick={() => onChange('osho-zen')}

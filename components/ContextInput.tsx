@@ -72,7 +72,9 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
       {/* Follow-up questions section — only show if question exists */}
       {question.trim() && (
         <div>
-          <p className="label">Or let the oracle ask you</p>
+          <p className="label" style={{ marginBottom: 12 }}>
+            Or let the oracle ask you
+          </p>
 
           {followUpQuestions.length === 0 ? (
             <button
