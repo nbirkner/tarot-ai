@@ -325,13 +325,15 @@ export default function ReadingPage() {
     setFlippedCards(new Set());
     setStreamingState(null);
 
-    // If nothing streams within 30s, the oracle is stuck — show a friendly error.
-    // Cleared as soon as the first card chunk arrives.
+    // If nothing streams within 45s, the oracle is stuck — show a friendly error.
+    // Cleared as soon as the first card chunk arrives. Muse emits reasoning
+    // tokens before the visible JSON, so the first content chunk is later
+    // than it was with the old non-reasoning model.
     if (hangTimerRef.current) clearTimeout(hangTimerRef.current);
     hangTimerRef.current = setTimeout(() => {
       setStreamingState(null);
       setError('hang');
-    }, 30000);
+    }, 45000);
 
     const spread = getSpread(spreadType);
     const cards = isOshoZen ? drawOshoZenCards(spread.cardCount) : drawCards(spread.cardCount);
@@ -409,8 +411,8 @@ export default function ReadingPage() {
 
     try {
       const controller = new AbortController();
-      // Global budget: concurrency=3 means ceil(10/3)=4 rounds × ~15s + synthesis ~10s ≈ 70s
-      setTimeout(() => controller.abort(), 90000);
+      // Global budget: concurrency=3 means ceil(10/3)=4 rounds × ~20s + synthesis ~15s.
+      setTimeout(() => controller.abort(), 120000);
 
       const sharedBody = {
         question,
@@ -421,9 +423,9 @@ export default function ReadingPage() {
         ...context,
       };
 
-      // Per-card timeout: 22s is enough for one LLM call + stream; keeps one stuck card
-      // from blocking all of Promise.allSettled forever.
-      const PER_CARD_TIMEOUT_MS = 22000;
+      // Per-card timeout: one Muse call plus stream. Kept under the route's 45s
+      // upstream abort so a stuck card cannot block the whole spread.
+      const PER_CARD_TIMEOUT_MS = 40000;
 
       // Helper: fetch one card reading with retry on any failure (up to 2 attempts,
       // 2s back-off between), plus a hard per-card timeout.
@@ -534,7 +536,7 @@ export default function ReadingPage() {
 
       // ── Fire synthesis call (with whatever cards succeeded) ────────────────────────────────
       // Retry once after 2s on any failure (network blip, 5xx, etc.)
-      const SYNTH_TIMEOUT_MS = 30000;
+      const SYNTH_TIMEOUT_MS = 45000;
       let synthJson = '';
       try {
         synthJson = await withRetry(async () => {

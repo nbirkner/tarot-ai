@@ -3,6 +3,7 @@ import { CARD_PROMPTS } from '../../../data/card-prompts';
 import { OSHO_ZEN_PROMPTS } from '../../../data/osho-zen-prompts';
 import { STYLE_MODIFIERS } from '../../../data/style-modifiers';
 import { GenerateCardRequest } from '../../../lib/types';
+import { describeTogetherFailure, logTogetherFailure } from '../../../lib/together';
 
 export const maxDuration = 60;
 
@@ -63,7 +64,14 @@ export async function POST(req: NextRequest) {
           }
         } else {
           const errText = await kontextResponse.text();
-          console.error('Kontext API error, falling back to schnell:', errText);
+          logTogetherFailure(
+            describeTogetherFailure(
+              'generate-card:kontext',
+              IMAGE_MODEL_KONTEXT,
+              kontextResponse.status,
+              errText,
+            ),
+          );
         }
       } catch (kontextErr) {
         console.error('Kontext request failed, falling back to schnell:', kontextErr);
@@ -92,8 +100,21 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('Together API error:', error);
-      return NextResponse.json({ error: 'Image generation failed' }, { status: 500 });
+      const failure = describeTogetherFailure(
+        'generate-card',
+        IMAGE_MODEL_SCHNELL,
+        response.status,
+        error,
+      );
+      logTogetherFailure(failure);
+      return NextResponse.json(
+        {
+          error: 'Image generation failed',
+          providerStatus: failure.status,
+          providerCode: failure.providerCode,
+        },
+        { status: 500 },
+      );
     }
 
     const data = await response.json();

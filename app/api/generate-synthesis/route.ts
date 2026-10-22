@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  SYNTHESIS_MAX_TOKENS,
+  chatCompletionBody,
+  describeTogetherFailure,
+  logTogetherFailure,
+} from '../../../lib/together';
 
 export const maxDuration = 60;
 
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
-const MODEL = 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8';
 
 const SYSTEM_STANDARD = `You are Celeste — an exceptionally gifted tarot reader who synthesizes card readings into a coherent narrative. You always respond in valid JSON. No markdown, no text outside JSON.`;
 
@@ -106,7 +111,16 @@ Respond with JSON only:
 }`;
 
     const togetherAbort = new AbortController();
-    const togetherTimeout = setTimeout(() => togetherAbort.abort(), 25000);
+    const togetherTimeout = setTimeout(() => togetherAbort.abort(), 45000);
+    const chatBody = chatCompletionBody({
+      messages: [
+        { role: 'system', content: SYSTEM },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.85,
+      maxTokens: SYNTHESIS_MAX_TOKENS,
+      stream: true,
+    });
 
     const response = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
@@ -115,22 +129,26 @@ Respond with JSON only:
         'Content-Type': 'application/json',
       },
       signal: togetherAbort.signal,
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: 'system', content: SYSTEM },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.85,
-        max_tokens: 700,
-        stream: true,
-      }),
+      body: JSON.stringify(chatBody),
     }).finally(() => clearTimeout(togetherTimeout));
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('Together synthesis error:', error);
-      return NextResponse.json({ error: 'Synthesis failed' }, { status: 500 });
+      const failure = describeTogetherFailure(
+        'generate-synthesis',
+        chatBody.model,
+        response.status,
+        error,
+      );
+      logTogetherFailure(failure);
+      return NextResponse.json(
+        {
+          error: 'Synthesis failed',
+          providerStatus: failure.status,
+          providerCode: failure.providerCode,
+        },
+        { status: 500 },
+      );
     }
 
     return new Response(response.body, {

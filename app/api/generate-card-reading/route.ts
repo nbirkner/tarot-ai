@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  CARD_READING_MAX_TOKENS,
+  chatCompletionBody,
+  describeTogetherFailure,
+  logTogetherFailure,
+} from '../../../lib/together';
 
 export const maxDuration = 60;
 
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
-const MODEL = 'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8';
 
 const SYSTEM_STANDARD = `You are Celeste — an exceptionally gifted tarot reader who has studied the cards for twenty years. You are warm, precise, and occasionally sharply honest. You always respond in valid JSON. No markdown, no text outside JSON.`;
 
@@ -93,10 +98,19 @@ Respond with JSON only:
   "interpretation": "4-6 sentences"
 }`;
 
-    // Timeout the Together AI fetch itself at 25s so we get a clean error
+    // Timeout the Together AI fetch itself at 45s so we get a clean error
     // before Vercel's 60s function limit kills us silently.
     const togetherAbort = new AbortController();
-    const togetherTimeout = setTimeout(() => togetherAbort.abort(), 25000);
+    const togetherTimeout = setTimeout(() => togetherAbort.abort(), 45000);
+    const chatBody = chatCompletionBody({
+      messages: [
+        { role: 'system', content: SYSTEM },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.85,
+      maxTokens: CARD_READING_MAX_TOKENS,
+      stream: true,
+    });
 
     const response = await fetch('https://api.together.xyz/v1/chat/completions', {
       method: 'POST',
@@ -105,22 +119,26 @@ Respond with JSON only:
         'Content-Type': 'application/json',
       },
       signal: togetherAbort.signal,
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: 'system', content: SYSTEM },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.85,
-        max_tokens: 380,
-        stream: true,
-      }),
+      body: JSON.stringify(chatBody),
     }).finally(() => clearTimeout(togetherTimeout));
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('Together card-reading error:', error);
-      return NextResponse.json({ error: 'Card reading failed' }, { status: 500 });
+      const failure = describeTogetherFailure(
+        'generate-card-reading',
+        chatBody.model,
+        response.status,
+        error,
+      );
+      logTogetherFailure(failure);
+      return NextResponse.json(
+        {
+          error: 'Card reading failed',
+          providerStatus: failure.status,
+          providerCode: failure.providerCode,
+        },
+        { status: 500 },
+      );
     }
 
     return new Response(response.body, {
