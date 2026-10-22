@@ -81,8 +81,8 @@ function SkeletonBlock({ lines = 3, isDark }: { lines?: number; isDark: boolean 
             borderRadius: 1,
             width: i === lines - 1 ? '52%' : i % 2 === 0 ? '100%' : '86%',
             backgroundImage: isDark
-              ? 'linear-gradient(90deg, rgba(196,146,42,0.04) 0%, rgba(196,146,42,0.1) 50%, rgba(196,146,42,0.04) 100%)'
-              : 'linear-gradient(90deg, rgba(196,146,42,0.06) 0%, rgba(196,146,42,0.13) 50%, rgba(196,146,42,0.06) 100%)',
+              ? 'linear-gradient(90deg, color-mix(in srgb, var(--accent) 4%, transparent) 0%, color-mix(in srgb, var(--accent) 10%, transparent) 50%, color-mix(in srgb, var(--accent) 4%, transparent) 100%)'
+              : 'linear-gradient(90deg, color-mix(in srgb, var(--accent) 6%, transparent) 0%, color-mix(in srgb, var(--accent) 13%, transparent) 50%, color-mix(in srgb, var(--accent) 6%, transparent) 100%)',
             backgroundSize: '300% 100%',
             animation: `shimmer 2.4s ease-in-out ${i * 0.25}s infinite`,
           }}
@@ -94,7 +94,7 @@ function SkeletonBlock({ lines = 3, isDark }: { lines?: number; isDark: boolean 
 
 // Ornamental section divider
 function OrnamentDivider({ isDark }: { isDark: boolean }) {
-  const color = isDark ? 'rgba(196,146,42,0.25)' : 'var(--border-gold)';
+  const color = isDark ? 'color-mix(in srgb, var(--accent) 25%, transparent)' : 'var(--border-gold)';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '4px 0' }}>
       <div style={{ flex: 1, height: 1, background: color }} />
@@ -112,10 +112,10 @@ interface Props {
 
 export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
   const oraclePhrase = useRotatingPhrase(ORACLE_PHRASES);
-  const bodyColor = isDark ? 'rgba(248,244,239,0.8)' : 'var(--brown-mid)';
-  const headingColor = isDark ? 'rgba(248,244,239,0.92)' : 'var(--brown-dark)';
+  const bodyColor = isDark ? 'color-mix(in srgb, var(--fg) 80%, transparent)' : 'var(--brown-mid)';
+  const headingColor = isDark ? 'color-mix(in srgb, var(--fg) 92%, transparent)' : 'var(--brown-dark)';
   const borderSubtle = isDark ? 'rgba(255,255,255,0.05)' : 'var(--border-brown)';
-  const borderGold = isDark ? 'rgba(196,146,42,0.2)' : 'var(--border-gold)';
+  const borderGold = isDark ? 'color-mix(in srgb, var(--accent) 20%, transparent)' : 'var(--border-gold)';
 
   // Show synthesis section once any card interpretation has completed
   const showSynthesis = state.synthesis || state.cards.some(c => c.interpretationDone);
@@ -133,7 +133,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
               width: 18,
               height: 18,
               borderRadius: '50%',
-              border: `1px solid rgba(196,146,42,${isDark ? '0.35' : '0.28'})`,
+              border: '1px solid color-mix(in srgb, var(--accent) 40%, transparent)',
               animation: 'rotate-slow 5s linear infinite',
               position: 'relative',
               flexShrink: 0,
@@ -148,10 +148,10 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.35 }}
             style={{
-              fontFamily: 'var(--font-spectral), Spectral, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 15,
               fontStyle: 'italic',
-              color: isDark ? 'rgba(248,244,239,0.38)' : 'var(--brown-light)',
+              color: isDark ? 'color-mix(in srgb, var(--fg) 38%, transparent)' : 'var(--brown-light)',
               letterSpacing: '0.04em',
             }}
           >
@@ -170,14 +170,14 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
           border: `1px solid ${borderGold}`,
           borderRadius: 3,
           padding: 'clamp(18px,4vw,28px) clamp(18px,5vw,32px)',
-          boxShadow: isDark ? 'none' : '0 2px 20px rgba(42,28,14,0.07), 0 1px 4px rgba(42,28,14,0.04)',
+          boxShadow: isDark ? 'none' : '0 2px 20px color-mix(in srgb, var(--fg) 7%, transparent), 0 1px 4px color-mix(in srgb, var(--fg) 4%, transparent)',
         }}
       >
         <OrnamentDivider isDark={isDark} />
         <p style={{
-          fontFamily: 'var(--font-cinzel), Cinzel, serif',
+          fontFamily: 'var(--font-sans), sans-serif',
           fontSize: 9,
-          letterSpacing: '0.25em',
+          letterSpacing: '0.01em',
           color: 'var(--gold)',
           textTransform: 'uppercase',
           marginTop: 14,
@@ -188,7 +188,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
         </p>
         {state.overallEnergy ? (
           <p style={{
-            fontFamily: 'var(--font-spectral), Spectral, serif',
+            fontFamily: 'var(--font-sans), sans-serif',
             fontSize: 'clamp(18px,2.2vw,22px)',
             lineHeight: 1.72,
             fontStyle: 'italic',
@@ -202,10 +202,10 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 4 }}>
             <SkeletonBlock lines={2} isDark={isDark} />
             <p style={{
-              fontFamily: 'var(--font-spectral), Spectral, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 13,
               fontStyle: 'italic',
-              color: isDark ? 'rgba(196,146,42,0.5)' : 'var(--gold-muted)',
+              color: isDark ? 'color-mix(in srgb, var(--accent) 50%, transparent)' : 'var(--gold-muted)',
               letterSpacing: '0.03em',
               lineHeight: 1.6,
             }}>
@@ -230,11 +230,11 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
             style={{
               background: isDark ? 'rgba(255,255,255,0.02)' : 'var(--cream-card)',
               border: `1px solid ${borderSubtle}`,
-              borderLeft: `2px solid rgba(196,146,42,${isDark ? '0.3' : '0.25'})`,
+              borderLeft: '1px solid var(--hairline)',
               borderRadius: 3,
               padding: 'clamp(16px,3.5vw,22px) clamp(16px,4.5vw,26px)',
               position: 'relative',
-              boxShadow: isDark ? 'none' : '0 2px 16px rgba(42,28,14,0.06), 0 1px 3px rgba(42,28,14,0.04)',
+              boxShadow: isDark ? 'none' : '0 2px 16px color-mix(in srgb, var(--fg) 6%, transparent), 0 1px 3px color-mix(in srgb, var(--fg) 4%, transparent)',
             }}
           >
             {/* Roman numeral — top right */}
@@ -242,10 +242,10 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
               position: 'absolute',
               top: 14,
               right: 16,
-              fontFamily: 'var(--font-cinzel), Cinzel, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 10,
-              color: isDark ? 'rgba(196,146,42,0.3)' : 'rgba(196,146,42,0.25)',
-              letterSpacing: '0.08em',
+              color: isDark ? 'color-mix(in srgb, var(--accent) 30%, transparent)' : 'color-mix(in srgb, var(--accent) 25%, transparent)',
+              letterSpacing: '0.01em',
               userSelect: 'none',
             }}>
               {toRoman(i + 1)}
@@ -254,7 +254,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
             {/* Card name + position */}
             <div style={{ marginBottom: 12 }}>
               <h4 style={{
-                fontFamily: 'var(--font-cinzel), Cinzel, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 12,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
@@ -264,10 +264,10 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
                 {drawn.card.name}{drawn.reversed ? ' · Reversed' : ''}
               </h4>
               <p style={{
-                fontFamily: 'var(--font-spectral), Spectral, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 13,
                 fontStyle: 'italic',
-                color: isDark ? 'rgba(248,244,239,0.38)' : 'var(--brown-light)',
+                color: isDark ? 'color-mix(in srgb, var(--fg) 38%, transparent)' : 'var(--brown-light)',
                 letterSpacing: '0.04em',
               }}>
                 {drawn.position}
@@ -282,15 +282,15 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
                 ? card.suit.charAt(0).toUpperCase() + card.suit.slice(1)
                 : null;
               const tagStyle = {
-                fontFamily: 'var(--font-cinzel), Cinzel, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 9,
-                letterSpacing: '0.12em',
+                letterSpacing: '0.01em',
                 textTransform: 'uppercase' as const,
-                color: isDark ? 'rgba(196,146,42,0.75)' : 'rgba(139,89,40,0.8)',
-                border: `1px solid ${isDark ? 'rgba(196,146,42,0.18)' : 'rgba(196,146,42,0.28)'}`,
+                color: isDark ? 'color-mix(in srgb, var(--accent) 75%, transparent)' : 'color-mix(in srgb, var(--accent) 80%, transparent)',
+                border: `1px solid ${isDark ? 'color-mix(in srgb, var(--accent) 18%, transparent)' : 'color-mix(in srgb, var(--accent) 28%, transparent)'}`,
                 borderRadius: 1,
                 padding: '2px 8px',
-                background: isDark ? 'rgba(196,146,42,0.06)' : 'rgba(196,146,42,0.07)',
+                background: isDark ? 'color-mix(in srgb, var(--accent) 6%, transparent)' : 'color-mix(in srgb, var(--accent) 7%, transparent)',
               };
               return (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
@@ -311,13 +311,13 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
                   <span
                     key={kw}
                     style={{
-                      fontFamily: 'var(--font-spectral), Spectral, serif',
+                      fontFamily: 'var(--font-sans), sans-serif',
                       fontSize: 11,
-                      color: isDark ? 'rgba(122,175,158,0.9)' : 'var(--sage)',
-                      border: `1px solid ${isDark ? 'rgba(74,122,101,0.2)' : 'rgba(74,122,101,0.22)'}`,
+                      color: isDark ? 'color-mix(in srgb, var(--live) 90%, transparent)' : 'var(--sage)',
+                      border: `1px solid ${isDark ? 'color-mix(in srgb, var(--live) 20%, transparent)' : 'color-mix(in srgb, var(--live) 22%, transparent)'}`,
                       borderRadius: 1,
                       padding: '2px 9px',
-                      background: isDark ? 'rgba(74,122,101,0.08)' : 'var(--sage-pale)',
+                      background: isDark ? 'color-mix(in srgb, var(--live) 8%, transparent)' : 'var(--sage-pale)',
                       fontStyle: 'italic',
                       letterSpacing: '0.02em',
                     }}
@@ -332,7 +332,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
             <div style={{ minHeight: 130 }}>
               {hasInterpretation ? (
                 <p style={{
-                  fontFamily: 'var(--font-spectral), Spectral, serif',
+                  fontFamily: 'var(--font-sans), sans-serif',
                   fontSize: 'clamp(16px,2vw,19px)',
                   lineHeight: 1.75,
                   color: bodyColor,
@@ -355,13 +355,13 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
           animate={{ opacity: 1, y: 0 }}
           style={{
             background: isDark
-              ? 'linear-gradient(135deg, rgba(196,146,42,0.06) 0%, rgba(255,255,255,0.02) 100%)'
+              ? 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 6%, transparent) 0%, rgba(255,255,255,0.02) 100%)'
               : 'linear-gradient(135deg, var(--gold-pale) 0%, var(--cream-card) 100%)',
-            border: `1px solid rgba(196,146,42,${isDark ? '0.16' : '0.28'})`,
+            border: '1px solid var(--hairline)',
             borderRadius: 3,
             padding: 'clamp(18px,4vw,28px) clamp(18px,5vw,32px)',
             position: 'relative',
-            boxShadow: isDark ? 'none' : '0 2px 20px rgba(42,28,14,0.07), 0 1px 4px rgba(42,28,14,0.04)',
+            boxShadow: isDark ? 'none' : '0 2px 20px color-mix(in srgb, var(--fg) 7%, transparent), 0 1px 4px color-mix(in srgb, var(--fg) 4%, transparent)',
           }}
         >
           {/* Large background ✦ */}
@@ -370,7 +370,7 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
             top: 16,
             right: 20,
             fontSize: 40,
-            color: isDark ? 'rgba(196,146,42,0.08)' : 'rgba(196,146,42,0.1)',
+            color: isDark ? 'color-mix(in srgb, var(--accent) 8%, transparent)' : 'color-mix(in srgb, var(--accent) 10%, transparent)',
             lineHeight: 1,
             userSelect: 'none',
             pointerEvents: 'none',
@@ -378,9 +378,9 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
 
           <OrnamentDivider isDark={isDark} />
           <p style={{
-            fontFamily: 'var(--font-cinzel), Cinzel, serif',
+            fontFamily: 'var(--font-sans), sans-serif',
             fontSize: 9,
-            letterSpacing: '0.25em',
+            letterSpacing: '0.01em',
             color: 'var(--gold)',
             textTransform: 'uppercase',
             marginTop: 14,
@@ -392,10 +392,10 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
 
           {state.synthesis ? (
             <p style={{
-              fontFamily: 'var(--font-spectral), Spectral, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 'clamp(17px,2vw,20px)',
               lineHeight: 1.75,
-              color: isDark ? 'rgba(248,244,239,0.85)' : 'var(--brown-dark)',
+              color: isDark ? 'color-mix(in srgb, var(--fg) 85%, transparent)' : 'var(--brown-dark)',
             }}>
               {state.synthesis}
               {!state.synthesisDone && <StreamCursor />}
@@ -406,17 +406,17 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
 
           {state.affirmation && (
             <div style={{
-              borderTop: `1px solid rgba(196,146,42,${isDark ? '0.14' : '0.18'})`,
+              borderTop: '1px solid var(--hairline)',
               marginTop: 24,
               paddingTop: 22,
             }}>
               <p style={{
-                fontFamily: 'var(--font-pinyon), Pinyon Script, cursive',
+                fontFamily: 'var(--font-sans), var(--font-sans), sans-serif',
                 fontSize: 'clamp(26px,4vw,36px)',
                 color: 'var(--gold)',
                 textAlign: 'center',
                 lineHeight: 1.3,
-                textShadow: isDark ? '0 0 40px rgba(196,146,42,0.22)' : '0 0 20px rgba(196,146,42,0.15)',
+                textShadow: isDark ? '0 0 40px color-mix(in srgb, var(--accent) 22%, transparent)' : '0 0 20px color-mix(in srgb, var(--accent) 15%, transparent)',
               }}>
                 &ldquo;{state.affirmation}&rdquo;
               </p>
@@ -433,17 +433,17 @@ export function StreamingReadingDisplay({ state, drawnCards, isDark }: Props) {
           style={{ textAlign: 'center', padding: '4px 0' }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-            <div style={{ height: 1, width: 32, background: isDark ? 'rgba(196,146,42,0.2)' : 'var(--border-gold)' }} />
+            <div style={{ height: 1, width: 32, background: isDark ? 'color-mix(in srgb, var(--accent) 20%, transparent)' : 'var(--border-gold)' }} />
             <p style={{
-              fontFamily: 'var(--font-spectral), Spectral, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 14,
               fontStyle: 'italic',
-              color: isDark ? 'rgba(248,244,239,0.38)' : 'var(--brown-light)',
+              color: isDark ? 'color-mix(in srgb, var(--fg) 38%, transparent)' : 'var(--brown-light)',
               letterSpacing: '0.04em',
             }}>
               ☽ {state.notableTiming}
             </p>
-            <div style={{ height: 1, width: 32, background: isDark ? 'rgba(196,146,42,0.2)' : 'var(--border-gold)' }} />
+            <div style={{ height: 1, width: 32, background: isDark ? 'color-mix(in srgb, var(--accent) 20%, transparent)' : 'var(--border-gold)' }} />
           </div>
         </motion.div>
       )}

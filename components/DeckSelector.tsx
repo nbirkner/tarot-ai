@@ -15,7 +15,7 @@ const STANDARD_DECKS: DeckDef[] = [
     style: 'dark-gothic',
     label: 'Dark Gothic',
     description: 'Atmospheric, mysterious, celestial',
-    swatchColors: ['#1A0F2E', '#2E1065', '#C4922A'],
+    swatchColors: ['#1A0F2E', '#2E1065', 'var(--accent)'],
     mood: 'Midnight ritual energy',
   },
   {
@@ -48,9 +48,9 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
       <div>
         <p
           style={{
-            fontFamily: 'var(--font-cinzel), serif',
+            fontFamily: 'var(--font-sans), sans-serif',
             fontSize: 10,
-            letterSpacing: '0.22em',
+            letterSpacing: '0.01em',
             color: 'var(--gold)',
             textTransform: 'uppercase',
             marginBottom: 8,
@@ -80,7 +80,7 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
                 onMouseEnter={e => {
                   if (!isSelected) {
                     (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 16px rgba(196,146,42,0.1)';
+                    (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 16px color-mix(in srgb, var(--accent) 10%, transparent)';
                   }
                 }}
                 onMouseLeave={e => {
@@ -126,7 +126,7 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
                   <div style={{ flex: 1 }}>
                     <p
                       style={{
-                        fontFamily: 'var(--font-cinzel), serif',
+                        fontFamily: 'var(--font-sans), sans-serif',
                         fontSize: 12,
                         letterSpacing: '0.1em',
                         textTransform: 'uppercase',
@@ -139,7 +139,7 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
                     </p>
                     <p
                       style={{
-                        fontFamily: 'var(--font-spectral), serif',
+                        fontFamily: 'var(--font-sans), sans-serif',
                         fontSize: 15,
                         fontStyle: 'italic',
                         color: 'var(--brown-light)',
@@ -151,7 +151,7 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
                     </p>
                     <p
                       style={{
-                        fontFamily: 'var(--font-spectral), serif',
+                        fontFamily: 'var(--font-sans), sans-serif',
                         fontSize: 12,
                         color: isSelected ? 'var(--gold)' : 'var(--gold-muted)',
                         letterSpacing: '0.04em',
@@ -179,9 +179,9 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
       <div>
         <p
           style={{
-            fontFamily: 'var(--font-cinzel), serif',
+            fontFamily: 'var(--font-sans), sans-serif',
             fontSize: 10,
-            letterSpacing: '0.22em',
+            letterSpacing: '0.01em',
             color: 'var(--sage, #7A8C6E)',
             textTransform: 'uppercase',
             marginBottom: 8,
@@ -235,7 +235,7 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
           <div className="flex items-center gap-5">
             {/* Zen color swatches */}
             <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
-              {['#4A6741', '#C4922A', '#8B5E3C', '#6B8E7A'].map((color, i) => (
+              {['#4A6741', 'var(--accent)', '#8B5E3C', '#6B8E7A'].map((color, i) => (
                 <div
                   key={i}
                   style={{
@@ -254,7 +254,7 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
             <div style={{ flex: 1 }}>
               <p
                 style={{
-                  fontFamily: 'var(--font-cinzel), serif',
+                  fontFamily: 'var(--font-sans), sans-serif',
                   fontSize: 12,
                   letterSpacing: '0.1em',
                   textTransform: 'uppercase',
@@ -267,7 +267,7 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
               </p>
               <p
                 style={{
-                  fontFamily: 'var(--font-spectral), serif',
+                  fontFamily: 'var(--font-sans), sans-serif',
                   fontSize: 15,
                   fontStyle: 'italic',
                   color: 'var(--brown-light)',
@@ -279,7 +279,7 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
               </p>
               <p
                 style={{
-                  fontFamily: 'var(--font-spectral), serif',
+                  fontFamily: 'var(--font-sans), sans-serif',
                   fontSize: 12,
                   color: isOshoSelected ? 'var(--sage, #7A8C6E)' : 'var(--gold-muted)',
                   letterSpacing: '0.04em',

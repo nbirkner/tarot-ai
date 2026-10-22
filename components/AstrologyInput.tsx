@@ -49,7 +49,7 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
           >
             <p
               style={{
-                fontFamily: 'Cinzel, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 11,
                 letterSpacing: '0.1em',
                 color: tab === t.id ? 'var(--brown-dark)' : 'var(--brown-light)',
@@ -60,7 +60,7 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
             </p>
             <p
               style={{
-                fontFamily: 'Spectral, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 13,
                 fontStyle: 'italic',
                 color: 'var(--brown-light)',
@@ -76,7 +76,7 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
         <div>
           <p
             style={{
-              fontFamily: 'Spectral, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 14,
               fontStyle: 'italic',
               color: 'var(--brown-light)',
@@ -104,7 +104,7 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
         <div className="space-y-3">
           <p
             style={{
-              fontFamily: 'Spectral, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 14,
               fontStyle: 'italic',
               color: 'var(--brown-light)',
@@ -166,7 +166,7 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
           />
           <p
             style={{
-              fontFamily: 'Spectral, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 12,
               fontStyle: 'italic',
               color: 'var(--brown-light)',

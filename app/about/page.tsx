@@ -47,18 +47,16 @@ const models = [
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen pt-20 pb-20" style={{ background: 'var(--cream)' }}>
+    <main className="min-h-screen pt-8 pb-20" style={{ background: 'var(--cream)' }}>
       <div className="max-w-2xl mx-auto px-4">
 
         {/* Header */}
         <div className="mb-8">
           <p
+            className="mono"
             style={{
-              fontFamily: 'Cinzel, serif',
-              fontSize: 11,
-              letterSpacing: '0.25em',
-              color: 'var(--gold)',
-              textTransform: 'uppercase',
+              fontSize: 12,
+              color: 'var(--muted)',
               marginBottom: 12,
             }}
           >
@@ -66,11 +64,11 @@ export default function AboutPage() {
           </p>
           <h1
             style={{
-              fontFamily: 'Cinzel, serif',
-              fontSize: 28,
-              letterSpacing: '0.06em',
-              color: 'var(--brown-dark)',
-              fontWeight: 400,
+              fontFamily: 'var(--font-sans), sans-serif',
+              fontSize: 24,
+              letterSpacing: '-0.02em',
+              color: 'var(--fg)',
+              fontWeight: 600,
               marginBottom: 12,
             }}
           >
@@ -89,7 +87,7 @@ export default function AboutPage() {
         <div
           className="space-y-5 mb-12"
           style={{
-            fontFamily: 'Spectral, serif',
+            fontFamily: 'var(--font-sans), sans-serif',
             fontSize: 18,
             lineHeight: 1.75,
             color: 'var(--brown-mid)',
@@ -122,14 +120,14 @@ export default function AboutPage() {
         {/* Readwise quote */}
         <div
           style={{
-            borderLeft: '3px solid var(--border-gold)',
+            borderLeft: '1px solid var(--hairline)',
             paddingLeft: 24,
             marginBottom: 48,
           }}
         >
           <p
             style={{
-              fontFamily: 'Spectral, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 17,
               fontStyle: 'italic',
               color: 'var(--brown-dark)',
@@ -143,7 +141,7 @@ export default function AboutPage() {
           </p>
           <p
             style={{
-              fontFamily: 'Spectral, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 13,
               color: 'var(--brown-light)',
               letterSpacing: '0.04em',
@@ -156,9 +154,9 @@ export default function AboutPage() {
         {/* Built with */}
         <p
           style={{
-            fontFamily: 'Cinzel, serif',
+            fontFamily: 'var(--font-sans), sans-serif',
             fontSize: 11,
-            letterSpacing: '0.25em',
+            letterSpacing: '0.01em',
             color: 'var(--gold)',
             textTransform: 'uppercase',
             marginBottom: 24,
@@ -169,7 +167,7 @@ export default function AboutPage() {
 
         <p
           style={{
-            fontFamily: 'Spectral, serif',
+            fontFamily: 'var(--font-sans), sans-serif',
             fontSize: 17,
             fontStyle: 'italic',
             color: 'var(--brown-mid)',
@@ -188,9 +186,8 @@ export default function AboutPage() {
               key={m.name}
               style={{
                 background: 'var(--cream-card)',
-                border: '1px solid var(--border-gold)',
-                borderLeft: `3px solid ${m.accent}`,
-                borderRadius: 4,
+                border: '1px solid var(--hairline)',
+                borderRadius: 10,
                 padding: 'clamp(18px, 4vw, 28px) clamp(18px, 5vw, 32px)',
               }}
             >
@@ -198,9 +195,9 @@ export default function AboutPage() {
                 <div>
                   <p
                     style={{
-                      fontFamily: 'Spectral, serif',
+                      fontFamily: 'var(--font-sans), sans-serif',
                       fontSize: 12,
-                      letterSpacing: '0.15em',
+                      letterSpacing: '0.01em',
                       color: m.accent,
                       textTransform: 'uppercase',
                       marginBottom: 4,
@@ -210,7 +207,7 @@ export default function AboutPage() {
                   </p>
                   <h2
                     style={{
-                      fontFamily: 'Cinzel, serif',
+                      fontFamily: 'var(--font-sans), sans-serif',
                       fontSize: 15,
                       letterSpacing: '0.06em',
                       color: 'var(--brown-dark)',
@@ -222,7 +219,7 @@ export default function AboutPage() {
                   </h2>
                   <p
                     style={{
-                      fontFamily: 'Spectral, serif',
+                      fontFamily: 'var(--font-sans), sans-serif',
                       fontSize: 13,
                       fontStyle: 'italic',
                       color: 'var(--brown-light)',
@@ -247,7 +244,7 @@ export default function AboutPage() {
 
               <p
                 style={{
-                  fontFamily: 'Spectral, serif',
+                  fontFamily: 'var(--font-sans), sans-serif',
                   fontSize: 17,
                   lineHeight: 1.65,
                   color: 'var(--brown-mid)',
@@ -259,7 +256,7 @@ export default function AboutPage() {
 
               <p
                 style={{
-                  fontFamily: 'Spectral, serif',
+                  fontFamily: 'var(--font-sans), sans-serif',
                   fontSize: 14,
                   fontStyle: 'italic',
                   color: 'var(--brown-light)',
@@ -275,7 +272,7 @@ export default function AboutPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    fontFamily: 'Spectral, serif',
+                    fontFamily: 'var(--font-sans), sans-serif',
                     fontSize: 14,
                     color: m.accent,
                     textDecoration: 'none',
@@ -291,7 +288,7 @@ export default function AboutPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    fontFamily: 'Spectral, serif',
+                    fontFamily: 'var(--font-sans), sans-serif',
                     fontSize: 14,
                     color: 'var(--brown-light)',
                     textDecoration: 'none',
@@ -318,9 +315,9 @@ export default function AboutPage() {
         >
           <p
             style={{
-              fontFamily: 'Cinzel, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 11,
-              letterSpacing: '0.2em',
+              letterSpacing: '0.01em',
               color: 'var(--gold)',
               textTransform: 'uppercase',
               marginBottom: 10,
@@ -330,7 +327,7 @@ export default function AboutPage() {
           </p>
           <p
             style={{
-              fontFamily: 'Spectral, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 16,
               lineHeight: 1.65,
               color: 'var(--brown-mid)',
@@ -346,7 +343,7 @@ export default function AboutPage() {
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                fontFamily: 'Spectral, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 14,
                 color: 'var(--gold)',
                 textDecoration: 'none',
@@ -361,7 +358,7 @@ export default function AboutPage() {
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                fontFamily: 'Spectral, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 14,
                 color: 'var(--brown-light)',
                 textDecoration: 'none',

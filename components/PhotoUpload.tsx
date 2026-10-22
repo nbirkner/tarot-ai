@@ -79,7 +79,7 @@ export function PhotoUpload({ value, onChange }: PhotoUploadProps) {
   }
 
   return (
-    <div style={{ fontFamily: 'Spectral, serif' }}>
+    <div style={{ fontFamily: 'var(--font-sans), sans-serif' }}>
       <input
         ref={inputRef}
         type="file"
@@ -99,7 +99,7 @@ export function PhotoUpload({ value, onChange }: PhotoUploadProps) {
                 borderRadius: '50%',
                 overflow: 'hidden',
                 border: '2px solid var(--gold)',
-                boxShadow: '0 0 20px rgba(196, 146, 42, 0.2)',
+                boxShadow: '0 0 20px color-mix(in srgb, var(--accent) 20%, transparent)',
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -152,7 +152,7 @@ export function PhotoUpload({ value, onChange }: PhotoUploadProps) {
               border: 'none',
               cursor: 'pointer',
               color: 'var(--brown-light)',
-              fontFamily: 'Spectral, serif',
+              fontFamily: 'var(--font-sans), sans-serif',
               fontSize: 13,
               textDecoration: 'underline',
               fontStyle: 'italic',

@@ -28,12 +28,12 @@ function CardBackSVG({ cardName, position, reversed }: { cardName?: string; posi
     <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
       <defs>
         <radialGradient id="cbBg" cx="50%" cy="50%" r="70%">
-          <stop offset="0%" stopColor="#FDFAF6" />
-          <stop offset="60%" stopColor="#F8F1E4" />
-          <stop offset="100%" stopColor="#F0E6D0" />
+          <stop offset="0%" stopColor="var(--g0)" />
+          <stop offset="60%" stopColor="var(--g0)" />
+          <stop offset="100%" stopColor="var(--g0)" />
         </radialGradient>
         <pattern id="dotGrid" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
-          <circle cx="4" cy="4" r="0.7" fill="#C4922A" opacity="0.06" />
+          <circle cx="4" cy="4" r="0.7" fill="var(--accent)" opacity="0.06" />
         </pattern>
       </defs>
 
@@ -44,8 +44,8 @@ function CardBackSVG({ cardName, position, reversed }: { cardName?: string; posi
       <rect width="200" height="300" fill="url(#dotGrid)" rx="6" />
 
       {/* Outer double-line border */}
-      <rect x="5" y="5" width="190" height="290" fill="none" stroke="#C4922A" strokeWidth="2" rx="4" opacity="0.55" />
-      <rect x="11" y="11" width="178" height="278" fill="none" stroke="#C4922A" strokeWidth="1" rx="4" opacity="0.35" />
+      <rect x="5" y="5" width="190" height="290" fill="none" stroke="var(--accent)" strokeWidth="2" rx="4" opacity="0.55" />
+      <rect x="11" y="11" width="178" height="278" fill="none" stroke="var(--accent)" strokeWidth="1" rx="4" opacity="0.35" />
 
       {/* Corner ornaments — botanical flourish with rose petals */}
       {([
@@ -56,16 +56,16 @@ function CardBackSVG({ cardName, position, reversed }: { cardName?: string; posi
       ] as [number, number, number][]).map(([cx, cy, rot], i) => (
         <g key={i} transform={`translate(${cx},${cy}) rotate(${rot})`} opacity="0.7">
           {/* Radiating petals */}
-          <ellipse cx="0" cy="-8" rx="2.5" ry="5" fill="#C4922A" opacity="0.55" transform="rotate(0)" />
-          <ellipse cx="0" cy="-8" rx="2.5" ry="5" fill="#C4922A" opacity="0.45" transform="rotate(45)" />
-          <ellipse cx="0" cy="-8" rx="2.5" ry="5" fill="#C4922A" opacity="0.45" transform="rotate(90)" />
-          <ellipse cx="0" cy="-8" rx="2.5" ry="5" fill="#C4922A" opacity="0.35" transform="rotate(135)" />
+          <ellipse cx="0" cy="-8" rx="2.5" ry="5" fill="var(--accent)" opacity="0.55" transform="rotate(0)" />
+          <ellipse cx="0" cy="-8" rx="2.5" ry="5" fill="var(--accent)" opacity="0.45" transform="rotate(45)" />
+          <ellipse cx="0" cy="-8" rx="2.5" ry="5" fill="var(--accent)" opacity="0.45" transform="rotate(90)" />
+          <ellipse cx="0" cy="-8" rx="2.5" ry="5" fill="var(--accent)" opacity="0.35" transform="rotate(135)" />
           {/* Rose center */}
-          <circle cx="0" cy="0" r="3.5" fill="#B5706E" opacity="0.6" />
-          <circle cx="0" cy="0" r="1.8" fill="#C4922A" opacity="0.8" />
+          <circle cx="0" cy="0" r="3.5" fill="var(--g2)" opacity="0.6" />
+          <circle cx="0" cy="0" r="1.8" fill="var(--accent)" opacity="0.8" />
           {/* Tiny leaves extending outward */}
-          <path d="M4 0 C8 -3 12 -1 14 2 C11 0 8 2 4 0Z" fill="#4A7A65" opacity="0.45" />
-          <path d="M0 4 C-3 8 -1 12 2 14 C0 11 2 8 0 4Z" fill="#4A7A65" opacity="0.45" />
+          <path d="M4 0 C8 -3 12 -1 14 2 C11 0 8 2 4 0Z" fill="var(--live)" opacity="0.45" />
+          <path d="M0 4 C-3 8 -1 12 2 14 C0 11 2 8 0 4Z" fill="var(--live)" opacity="0.45" />
         </g>
       ))}
 
@@ -79,14 +79,14 @@ function CardBackSVG({ cardName, position, reversed }: { cardName?: string; posi
           <polygon
             key={i}
             points={`${x},${y - 4} ${x + 3},${y} ${x},${y + 4} ${x - 3},${y}`}
-            fill="#C4922A"
+            fill="var(--accent)"
             opacity={i % 3 === 0 ? 0.7 : 0.4}
           />
         );
       })}
 
       {/* Outer ring circle guide */}
-      <circle cx="100" cy="150" r="64" fill="none" stroke="#C4922A" strokeWidth="0.4" opacity="0.18" />
+      <circle cx="100" cy="150" r="64" fill="none" stroke="var(--accent)" strokeWidth="0.4" opacity="0.18" />
 
       {/* Middle ring — 8 curved lotus petals */}
       {Array.from({ length: 8 }).map((_, i) => {
@@ -101,9 +101,9 @@ function CardBackSVG({ cardName, position, reversed }: { cardName?: string; posi
           <path
             key={i}
             d={`M100,150 C${c1x},${c1y} ${px},${py} ${px},${py} C${px},${py} ${c2x},${c2y} 100,150`}
-            fill="#C4922A"
+            fill="var(--accent)"
             opacity="0.13"
-            stroke="#C4922A"
+            stroke="var(--accent)"
             strokeWidth="0.6"
             strokeOpacity="0.35"
           />
@@ -111,19 +111,19 @@ function CardBackSVG({ cardName, position, reversed }: { cardName?: string; posi
       })}
 
       {/* Inner mandala ring */}
-      <circle cx="100" cy="150" r="28" fill="none" stroke="#C4922A" strokeWidth="0.8" opacity="0.3" />
-      <circle cx="100" cy="150" r="20" fill="none" stroke="#B5706E" strokeWidth="0.6" opacity="0.25" />
+      <circle cx="100" cy="150" r="28" fill="none" stroke="var(--accent)" strokeWidth="0.8" opacity="0.3" />
+      <circle cx="100" cy="150" r="20" fill="none" stroke="var(--g2)" strokeWidth="0.6" opacity="0.25" />
 
       {/* Crescent moon in center */}
       <path
         d="M100 130 Q115 138 115 150 Q115 162 100 170 Q120 167 123 150 Q123 133 100 130Z"
-        fill="#C4922A"
+        fill="var(--accent)"
         opacity="0.35"
       />
       <path
         d="M100 132 Q113 140 113 150 Q113 160 100 168 Q118 165 121 150 Q121 135 100 132Z"
         fill="none"
-        stroke="#C4922A"
+        stroke="var(--accent)"
         strokeWidth="0.8"
         opacity="0.55"
       />
@@ -131,7 +131,7 @@ function CardBackSVG({ cardName, position, reversed }: { cardName?: string; posi
       {/* 5-pointed star emerging from moon tips */}
       <polygon
         points="88,133 90,139 96,139 91,143 93,149 88,145 83,149 85,143 80,139 86,139"
-        fill="#C4922A"
+        fill="var(--accent)"
         opacity="0.45"
         transform="scale(0.85) translate(14,17)"
       />
@@ -141,9 +141,9 @@ function CardBackSVG({ cardName, position, reversed }: { cardName?: string; posi
         {[-36, -24, -12, 0, 12, 24, 36].map((x, j) => (
           <g key={j} transform={`translate(${x}, 0)`}>
             {j % 2 === 0 ? (
-              <ellipse cx="0" cy="0" rx="3" ry="4.5" fill="#4A7A65" opacity="0.7" />
+              <ellipse cx="0" cy="0" rx="3" ry="4.5" fill="var(--live)" opacity="0.7" />
             ) : (
-              <circle cx="0" cy="0" r="1.5" fill="#C4922A" opacity="0.8" />
+              <circle cx="0" cy="0" r="1.5" fill="var(--accent)" opacity="0.8" />
             )}
           </g>
         ))}
@@ -154,9 +154,9 @@ function CardBackSVG({ cardName, position, reversed }: { cardName?: string; posi
         {[-36, -24, -12, 0, 12, 24, 36].map((x, j) => (
           <g key={j} transform={`translate(${x}, 0)`}>
             {j % 2 === 0 ? (
-              <ellipse cx="0" cy="0" rx="3" ry="4.5" fill="#4A7A65" opacity="0.7" />
+              <ellipse cx="0" cy="0" rx="3" ry="4.5" fill="var(--live)" opacity="0.7" />
             ) : (
-              <circle cx="0" cy="0" r="1.5" fill="#C4922A" opacity="0.8" />
+              <circle cx="0" cy="0" r="1.5" fill="var(--accent)" opacity="0.8" />
             )}
           </g>
         ))}
@@ -166,9 +166,9 @@ function CardBackSVG({ cardName, position, reversed }: { cardName?: string; posi
       <text
         x="100" y="20"
         textAnchor="middle"
-        fontFamily="Cinzel, Georgia, serif"
+        fontFamily="var(--font-mono), ui-monospace, monospace"
         fontSize="6"
-        fill="#C4922A"
+        fill="var(--accent)"
         opacity="0.6"
         letterSpacing="5"
       >
@@ -180,11 +180,11 @@ function CardBackSVG({ cardName, position, reversed }: { cardName?: string; posi
         <g>
           {/* Subtle frosted banner */}
           <rect x="14" y="258" width="172" height="34" rx="3" fill="#1A0F06" opacity="0.45" />
-          <rect x="14" y="258" width="172" height="34" rx="3" fill="none" stroke="#C4922A" strokeWidth="0.5" opacity="0.3" />
+          <rect x="14" y="258" width="172" height="34" rx="3" fill="none" stroke="var(--accent)" strokeWidth="0.5" opacity="0.3" />
           <text
             x="100" y="272"
             textAnchor="middle"
-            fontFamily="Cinzel, Georgia, serif"
+            fontFamily="var(--font-mono), ui-monospace, monospace"
             fontSize="8.5"
             fill="#F5E9CC"
             opacity="0.92"
@@ -193,24 +193,24 @@ function CardBackSVG({ cardName, position, reversed }: { cardName?: string; posi
             {cardName.toUpperCase()}
           </text>
           {position && (
-            <text x="100" y="283" textAnchor="middle" fontFamily="Georgia, serif" fontSize="6.5" fill="#D4B483" opacity="0.75" fontStyle="italic">
+            <text x="100" y="283" textAnchor="middle" fontFamily="var(--font-mono), ui-monospace, monospace" fontSize="6.5" fill="#D4B483" opacity="0.75" fontStyle="italic">
               {position}{reversed ? ' · Rev.' : ''}
             </text>
           )}
         </g>
       ) : (
-        <text x="100" y="288" textAnchor="middle" fontFamily="serif" fontSize="8" fill="#C4922A" opacity="0.5" letterSpacing="7">✦ ✦ ✦</text>
+        <text x="100" y="288" textAnchor="middle" fontFamily="serif" fontSize="8" fill="var(--accent)" opacity="0.5" letterSpacing="7">✦ ✦ ✦</text>
       )}
 
       {/* Side line accents */}
-      <line x1="17" y1="80" x2="17" y2="220" stroke="#C4922A" strokeWidth="0.5" opacity="0.18" />
-      <line x1="183" y1="80" x2="183" y2="220" stroke="#C4922A" strokeWidth="0.5" opacity="0.18" />
+      <line x1="17" y1="80" x2="17" y2="220" stroke="var(--accent)" strokeWidth="0.5" opacity="0.18" />
+      <line x1="183" y1="80" x2="183" y2="220" stroke="var(--accent)" strokeWidth="0.5" opacity="0.18" />
 
       {/* Small diamond accents along sides */}
       {[110, 140, 170].map((y, i) => (
         <g key={i}>
-          <polygon points={`17,${y - 4} 20,${y} 17,${y + 4} 14,${y}`} fill="#C4922A" opacity="0.3" />
-          <polygon points={`183,${y - 4} 186,${y} 183,${y + 4} 180,${y}`} fill="#C4922A" opacity="0.3" />
+          <polygon points={`17,${y - 4} 20,${y} 17,${y + 4} 14,${y}`} fill="var(--accent)" opacity="0.3" />
+          <polygon points={`183,${y - 4} 186,${y} 183,${y + 4} 180,${y}`} fill="var(--accent)" opacity="0.3" />
         </g>
       ))}
     </svg>
@@ -262,7 +262,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
               width: sz,
               height: sz,
               borderRadius: '50%',
-              background: '#C4922A',
+              background: 'var(--accent)',
               animation: 'drift-up 1s ease-out forwards',
               animationDelay: `${i * 0.07}s`,
               pointerEvents: 'none',
@@ -280,7 +280,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
           {/* CARD BACK — face down (shown first), shows card name */}
           <div
             className={`absolute inset-0 rounded-lg overflow-hidden shadow-lg transition-shadow duration-500 ${
-              isFlippable && !isFlipped ? 'card-glow shadow-[0_0_30px_rgba(196,146,42,0.2)]' : 'shadow-[0_4px_20px_rgba(42,31,20,0.12)]'
+              isFlippable && !isFlipped ? 'card-glow shadow-[0_0_30px_color-mix(in srgb, var(--accent) 20%, transparent)]' : 'shadow-[0_4px_20px_color-mix(in srgb, var(--fg) 12%, transparent)]'
             }`}
             style={{ backfaceVisibility: 'hidden' }}
           >
@@ -289,7 +289,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
 
           {/* CARD FRONT — revealed on flip (the AI art) */}
           <div
-            className="absolute inset-0 rounded-lg overflow-hidden shadow-lg border border-[rgba(196,146,42,0.3)]"
+            className="absolute inset-0 rounded-lg overflow-hidden shadow-lg border border-[color-mix(in srgb, var(--accent) 30%, transparent)]"
             style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
           >
             {drawn.imageUrl && drawn.imageUrl !== 'failed' ? (
@@ -312,9 +312,9 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
                   textAlign: 'center',
                 }}>
                   <span style={{
-                    fontFamily: 'var(--font-cinzel), Cinzel, serif',
+                    fontFamily: 'var(--font-sans), sans-serif',
                     fontSize: Math.max(6, Math.round(width * 0.062)),
-                    letterSpacing: '0.12em',
+                    letterSpacing: '0.01em',
                     color: 'rgba(245,233,204,0.95)',
                     textTransform: 'uppercase',
                     textShadow: '0 1px 4px rgba(0,0,0,0.7)',
@@ -330,12 +330,12 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
               <div className="w-full h-full flex flex-col items-center justify-center gap-3" style={{
                 background: 'radial-gradient(ellipse at 50% 30%, #1A1020 0%, #080510 100%)',
               }}>
-                <div style={{ color: 'rgba(196,146,42,0.3)', fontSize: 24 }}>✦</div>
+                <div style={{ color: 'color-mix(in srgb, var(--accent) 30%, transparent)', fontSize: 24 }}>✦</div>
                 <span style={{
-                  fontFamily: 'var(--font-cinzel), Cinzel, serif',
+                  fontFamily: 'var(--font-sans), sans-serif',
                   fontSize: 6,
-                  letterSpacing: '0.18em',
-                  color: 'rgba(196,146,42,0.3)',
+                  letterSpacing: '0.01em',
+                  color: 'color-mix(in srgb, var(--accent) 30%, transparent)',
                   textAlign: 'center',
                   textTransform: 'uppercase',
                   padding: '0 12px',
@@ -352,7 +352,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
                 {/* Slow shimmer sweep */}
                 <div style={{
                   position: 'absolute', inset: 0,
-                  backgroundImage: 'linear-gradient(110deg, transparent 35%, rgba(196,146,42,0.06) 50%, transparent 65%)',
+                  backgroundImage: 'linear-gradient(110deg, transparent 35%, color-mix(in srgb, var(--accent) 6%, transparent) 50%, transparent 65%)',
                   backgroundSize: '200% 100%',
                   animation: 'shimmer 3s ease-in-out infinite',
                 }} />
@@ -363,7 +363,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
                     left: `${x}%`, top: `${y}%`,
                     width: 1.5, height: 1.5,
                     borderRadius: '50%',
-                    background: '#C4922A',
+                    background: 'var(--accent)',
                     animation: `star-twinkle ${2.5 + i * 0.4}s ease-in-out ${i * 0.3}s infinite`,
                   }} />
                 ))}
@@ -371,26 +371,26 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
                 <div style={{ position: 'relative', width: 38, height: 38, flexShrink: 0 }}>
                   <div style={{
                     position: 'absolute', inset: 0, borderRadius: '50%',
-                    border: '1px solid rgba(196,146,42,0.3)',
+                    border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)',
                     animation: 'rotate-slow 6s linear infinite',
                   }}>
-                    <div style={{ position: 'absolute', top: -3, left: '50%', transform: 'translateX(-50%)', color: '#C4922A', fontSize: 6 }}>✦</div>
+                    <div style={{ position: 'absolute', top: -3, left: '50%', transform: 'translateX(-50%)', color: 'var(--accent)', fontSize: 6 }}>✦</div>
                   </div>
                   <div style={{
                     position: 'absolute', inset: 7, borderRadius: '50%',
-                    border: '1px solid rgba(196,146,42,0.18)',
+                    border: '1px solid color-mix(in srgb, var(--accent) 18%, transparent)',
                     animation: 'rotate-slow 4s linear infinite reverse',
                   }} />
                   <div style={{
                     position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'rgba(196,146,42,0.5)', fontSize: 11,
+                    color: 'color-mix(in srgb, var(--accent) 50%, transparent)', fontSize: 11,
                   }}>☽</div>
                 </div>
                 <span style={{
-                  fontFamily: 'var(--font-cinzel), Cinzel, serif',
+                  fontFamily: 'var(--font-sans), sans-serif',
                   fontSize: 6,
-                  letterSpacing: '0.2em',
-                  color: 'rgba(196,146,42,0.45)',
+                  letterSpacing: '0.01em',
+                  color: 'color-mix(in srgb, var(--accent) 45%, transparent)',
                   textAlign: 'center',
                   textTransform: 'uppercase',
                 }}>
@@ -413,10 +413,10 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
           >
             <p
               style={{
-                fontFamily: 'var(--font-cinzel), Cinzel, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 10,
-                letterSpacing: '0.14em',
-                color: 'rgba(196,146,42,0.9)',
+                letterSpacing: '0.01em',
+                color: 'color-mix(in srgb, var(--accent) 90%, transparent)',
                 textTransform: 'uppercase',
                 marginBottom: 2,
               }}
@@ -425,7 +425,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
             </p>
             {drawn.position && (
               <p style={{
-                fontFamily: 'var(--font-spectral), Spectral, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 12,
                 color: 'var(--brown-light)',
                 fontStyle: 'italic',
@@ -435,7 +435,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
             )}
             {drawn.reversed && (
               <p style={{
-                fontFamily: 'var(--font-spectral), Spectral, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 11,
                 color: 'var(--gold)',
                 fontStyle: 'italic',
@@ -461,7 +461,7 @@ export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading
           >
             <p
               style={{
-                fontFamily: 'var(--font-spectral), Spectral, serif',
+                fontFamily: 'var(--font-sans), sans-serif',
                 fontSize: 12,
                 color: 'var(--gold)',
                 fontStyle: 'italic',
