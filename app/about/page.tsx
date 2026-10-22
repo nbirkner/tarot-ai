@@ -1,13 +1,13 @@
-import Link from 'next/link';
+import { AppLink } from '../../components/BasePath';
 
 const models = [
   {
-    name: 'FLUX.1-schnell',
-    provider: 'Black Forest Labs',
+    name: 'Juggernaut Lightning Flux',
+    provider: 'RunDiffusion',
     role: 'Card art generation',
     description:
-      'Every tarot card you see is generated fresh for your reading. FLUX.1-schnell renders a unique 512×768 illustration for each card — styled to your chosen deck aesthetic — in under two seconds.',
-    detail: 'One image per card drawn. Each reading generates its own original art.',
+      'Every tarot card you see is generated fresh for your reading. Juggernaut Lightning Flux, a FLUX model on Together serverless, renders a unique 512×768 illustration for each card — styled to your chosen deck aesthetic.',
+    detail: 'One image per card drawn. If the picture cannot be made, the card keeps its name on a plain art placeholder and the reading continues.',
     docsUrl: 'https://docs.together.ai/docs/serverless-models',
     docsLabel: 'Serverless models',
     apiRef: 'https://docs.together.ai/reference/images',
@@ -16,14 +16,14 @@ const models = [
     symbol: '◈',
   },
   {
-    name: 'FLUX.1-kontext-pro',
-    provider: 'Black Forest Labs',
+    name: 'Reference photo',
+    provider: 'RunDiffusion',
     role: 'Personalized card faces',
     description:
-      'When you upload a photo, FLUX.1-kontext-pro uses image-to-image generation to weave your likeness into the human figures of each card. Your face appears in the Empress, the Hermit, the Lovers.',
-    detail: 'Optional. Falls back to FLUX.1-schnell if unavailable.',
-    docsUrl: 'https://docs.together.ai/docs/flux-kontext',
-    docsLabel: 'FLUX Kontext guide',
+      'When you upload a photo, the same image model is asked to use it as a reference for the figures on the card. If that request is refused, the card is drawn without the photo.',
+    detail: 'Optional. A failed picture never blocks the reading — the card shows a placeholder instead.',
+    docsUrl: 'https://docs.together.ai/docs/inference/images/reference-images',
+    docsLabel: 'Reference images',
     apiRef: 'https://docs.together.ai/reference/images',
     apiLabel: 'Images API reference',
     accent: 'var(--rose)',
@@ -373,13 +373,13 @@ export default function AboutPage() {
 
         {/* CTA */}
         <div className="text-center mt-12">
-          <Link
+          <AppLink
             href="/reading"
             className="btn-primary"
             style={{ textDecoration: 'none', display: 'inline-block' }}
           >
             Begin a Reading
-          </Link>
+          </AppLink>
         </div>
 
       </div>
