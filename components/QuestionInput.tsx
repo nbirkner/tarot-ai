@@ -29,7 +29,9 @@ export function QuestionInput({ value, onChange, onSkip }: QuestionInputProps) {
       />
 
       <div>
-        <p className="label">Suggested questions</p>
+        <p className="label" style={{ marginBottom: 12 }}>
+          Suggested questions
+        </p>
         <div className="flex flex-wrap gap-2">
           {SUGGESTIONS.map((s) => (
             <button key={s} type="button" className="chip" onClick={() => onChange(s)}>
