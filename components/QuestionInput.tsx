@@ -29,64 +29,17 @@ export function QuestionInput({ value, onChange, onSkip }: QuestionInputProps) {
       />
 
       <div>
-        <p
-          style={{
-            fontFamily: 'var(--font-sans), sans-serif',
-            fontSize: 13,
-            color: 'var(--brown-light)',
-            fontStyle: 'italic',
-            letterSpacing: '0.01em',
-            textTransform: 'uppercase',
-            marginBottom: 10,
-          }}
-        >
-          Suggested questions
-        </p>
+        <p className="label">Suggested questions</p>
         <div className="flex flex-wrap gap-2">
           {SUGGESTIONS.map((s) => (
-            <button
-              key={s}
-              onClick={() => onChange(s)}
-              style={{
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 14,
-                fontStyle: 'italic',
-                color: 'var(--brown-mid)',
-                border: '1px solid var(--border-gold)',
-                borderRadius: 2,
-                padding: '5px 12px',
-                background: 'transparent',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--gold)';
-                e.currentTarget.style.color = 'var(--gold)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border-gold)';
-                e.currentTarget.style.color = 'var(--brown-mid)';
-              }}
-            >
+            <button key={s} type="button" className="chip" onClick={() => onChange(s)}>
               {s}
             </button>
           ))}
         </div>
       </div>
 
-      <button
-        onClick={onSkip}
-        style={{
-          fontFamily: 'var(--font-sans), sans-serif',
-          fontSize: 15,
-          color: 'var(--brown-light)',
-          fontStyle: 'italic',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          padding: 0,
-        }}
-      >
+      <button type="button" onClick={onSkip} className="link-quiet">
         Skip — let the cards speak freely →
       </button>
     </div>

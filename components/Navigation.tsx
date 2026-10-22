@@ -44,15 +44,36 @@ export function Navigation() {
 
   return (
     <header className="site-header">
-      <div className="site-header-top">
-        <a className="back-link" href="https://www.nikibirkner.com">
-          <span className="arrow" aria-hidden="true">←</span>
-          {' '}
-          nikibirkner.com
-        </a>
-        <AppLink href="/" className="app-mark">
-          tarot · ai
-        </AppLink>
+      <div className="site-mark-wrap">
+        <span className="where-clip">
+          <span className="where" aria-hidden="true">on /tarot-ai</span>
+        </span>
+        <div className="site-mark">
+          <a className="mark-home" href="https://www.nikibirkner.com">
+            <svg
+              className="arrow"
+              viewBox="0 0 24 24"
+              width="15"
+              height="15"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M19 12H5" />
+              <path d="M11 6l-6 6 6 6" />
+            </svg>
+            <span>Niki Birkner</span>
+          </a>
+          <span className="mark-sep" aria-hidden="true">/</span>
+          <AppLink href="/" className="mark-app" aria-current={path === '/' ? 'page' : undefined}>
+            tarot-ai
+          </AppLink>
+        </div>
+      </div>
+      <div className="tools">
         <button
           type="button"
           className="icon-btn"

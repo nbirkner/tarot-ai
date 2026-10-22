@@ -43,8 +43,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </Script>
         <BasePathProvider base={base}>
           <div className="app-shell">
-            <Navigation />
-            <div className="app-main">{children}</div>
+            <div className="wrap">
+              <Navigation />
+              <div className="wrap-inner">{children}</div>
+            </div>
           </div>
         </BasePathProvider>
       </body>

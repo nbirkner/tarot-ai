@@ -96,11 +96,9 @@ function WitchyLoader() {
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.35 }}
             style={{
-              fontFamily: 'var(--font-sans), sans-serif',
-              fontSize: 20,
-              fontStyle: 'italic',
-              color: 'var(--g2)',
-              letterSpacing: '0.02em',
+              fontSize: 15,
+              lineHeight: 1.6,
+              color: 'var(--muted)',
             }}
           >
             {WITCHY_PHRASES[phraseIndex]}
@@ -323,6 +321,7 @@ export default function ReadingPage() {
   const [error, setError] = useState<string | null>(null);
   const [streamingState, setStreamingState] = useState<StreamingState | null>(null);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
+  const [isDark, setIsDark] = useState(false);
   const resolvedImagesRef = useRef<(string | undefined)[]>([]);
   const hangTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -687,7 +686,24 @@ export default function ReadingPage() {
       : 'sm';
 
   const isSetupStep = SETUP_STEPS.includes(step as (typeof SETUP_STEPS)[number]);
-  const isDark = false; // always light background — sections have their own styling
+  useEffect(() => {
+    const root = document.documentElement;
+    const read = () => {
+      if (root.dataset.theme === 'dark') return true;
+      if (root.dataset.theme === 'light') return false;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    };
+    const sync = () => setIsDark(read());
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    media.addEventListener('change', sync);
+    return () => {
+      observer.disconnect();
+      media.removeEventListener('change', sync);
+    };
+  }, []);
 
   // Advance setup flow on Enter key press
   useEffect(() => {
@@ -716,22 +732,9 @@ export default function ReadingPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [step, isSetupStep]);
 
-  // Background styles
-  const lightBg = 'var(--cream)';
-  const darkBg =
-    'radial-gradient(ellipse at 50% 0%, #0D1535 0%, #060C22 60%, #030710 100%)';
-  const candleGlow =
-    'radial-gradient(ellipse at 50% 80%, rgba(120,100,200,0.12) 0%, transparent 60%)';
-
   return (
-    <main
-      className="min-h-screen pt-8 pb-20 relative"
-      style={{
-        background: isDark ? `${candleGlow}, ${darkBg}` : lightBg,
-        transition: 'background 0.8s ease',
-      }}
-    >
-      <div className="max-w-3xl mx-auto px-6">
+    <main className="reading">
+      <div>
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -742,24 +745,18 @@ export default function ReadingPage() {
           >
             {/* Setup steps — unchanged */}
             {isSetupStep && (
-              <div className="max-w-xl mx-auto space-y-8">
-                {/* Step header */}
-                <div className="text-center pt-6" style={{ paddingBottom: 4 }}>
-                  <p className="mono" style={{
-                    fontSize: 12,
-                    color: 'var(--muted)',
-                    marginBottom: 10,
-                  }}>
-                    ✦ {SETUP_STEPS.indexOf(step as (typeof SETUP_STEPS)[number]) + 1} of {SETUP_STEPS.length}
+              <div className="reading-step">
+                <div>
+                  <p className="label">
+                    {SETUP_STEPS.indexOf(step as (typeof SETUP_STEPS)[number]) + 1} of {SETUP_STEPS.length}
                   </p>
                   <h2
                     style={{
-                      fontFamily: 'var(--font-sans), sans-serif',
-                      fontSize: 'clamp(20px, 3vw, 24px)',
-                      color: 'var(--fg)',
-                      letterSpacing: '-0.02em',
+                      margin: 0,
+                      fontSize: 17,
                       fontWeight: 600,
-                      marginBottom: 8,
+                      lineHeight: 1.6,
+                      color: 'var(--fg)',
                     }}
                   >
                     {STEP_CONFIG[step as keyof typeof STEP_CONFIG]?.title}
@@ -778,12 +775,7 @@ export default function ReadingPage() {
                   )}
                 </div>
 
-                {/* Divider */}
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 h-px" style={{ background: 'var(--border-gold)' }} />
-                  <span style={{ color: 'var(--gold)', fontSize: 12 }}>✦</span>
-                  <div className="flex-1 h-px" style={{ background: 'var(--border-gold)' }} />
-                </div>
+                <hr className="rule" />
 
                 {step === 'question' && (
                   <QuestionInput
@@ -819,10 +811,9 @@ export default function ReadingPage() {
                 {error && (
                   <p
                     style={{
-                      color: 'var(--rose)',
-                      fontFamily: 'var(--font-sans), sans-serif',
-                      fontStyle: 'italic',
-                      textAlign: 'center',
+                      color: 'var(--accent)',
+                      fontSize: 15,
+                      lineHeight: 1.6,
                     }}
                   >
                     {error}
@@ -838,7 +829,6 @@ export default function ReadingPage() {
                         if (i > 0) setStep(SETUP_STEPS[i - 1]);
                       }}
                       className="btn-secondary"
-                      style={{ fontSize: 12, letterSpacing: '0.01em' }}
                     >
                       ← Back
                     </button>
@@ -847,7 +837,7 @@ export default function ReadingPage() {
                   )}
 
                   {step === 'astrology' ? (
-                    <button onClick={startReading} className="btn-primary" style={{ fontSize: 11, letterSpacing: '0.01em' }}>
+                    <button onClick={startReading} className="btn-primary">
                       Draw the Cards
                     </button>
                   ) : (
@@ -857,7 +847,6 @@ export default function ReadingPage() {
                         setStep(SETUP_STEPS[i + 1]);
                       }}
                       className="btn-primary"
-                      style={{ fontSize: 11, letterSpacing: '0.01em' }}
                     >
                       Continue →
                     </button>
@@ -877,7 +866,7 @@ export default function ReadingPage() {
                           width: isActive ? 18 : 5,
                           height: 5,
                           borderRadius: isActive ? 2 : '50%',
-                          background: isActive ? 'var(--gold)' : isPast ? 'var(--gold-muted)' : 'var(--border-gold)',
+                          background: isActive ? 'var(--accent)' : isPast ? 'var(--muted)' : 'var(--hairline)',
                           transition: 'all 0.3s ease',
                           opacity: isPast ? 0.55 : 1,
                         }}
@@ -894,6 +883,8 @@ export default function ReadingPage() {
                 {/* Top bar: Back on left, downloads on right */}
                 <div className="flex items-center justify-between">
                   <button
+                    type="button"
+                    className="link-quiet"
                     onClick={() => {
                       setStep('astrology');
                       setDrawnCards([]);
@@ -902,18 +893,6 @@ export default function ReadingPage() {
                       setReading(null);
                       setError(null);
                     }}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'color-mix(in srgb, var(--accent) 50%, transparent)',
-                      fontFamily: 'var(--font-sans), sans-serif',
-                      fontSize: 11,
-                      letterSpacing: '0.01em',
-                      cursor: 'pointer',
-                      padding: '4px 0',
-                    }}
-                    onMouseEnter={e => { (e.target as HTMLElement).style.color = 'var(--gold)'; }}
-                    onMouseLeave={e => { (e.target as HTMLElement).style.color = 'color-mix(in srgb, var(--accent) 50%, transparent)'; }}
                   >
                     ← Back
                   </button>
@@ -923,23 +902,11 @@ export default function ReadingPage() {
                     const allImagesLoaded = drawnCards.length > 0 && drawnCards.every(d => d.imageUrl);
                     const readingWithImages = { ...reading, cards: drawnCards };
                     const canDownload = allImagesLoaded && !isPdfGenerating;
-                    const topBtnStyle = (active: boolean): React.CSSProperties => ({
-                      background: 'transparent',
-                      color: active ? 'var(--gold)' : 'color-mix(in srgb, var(--accent) 30%, transparent)',
-                      fontFamily: 'var(--font-sans), sans-serif',
-                      fontSize: 10,
-                      letterSpacing: '0.01em',
-                      padding: '6px 14px',
-                      borderRadius: 2,
-                      border: `1px solid ${active ? 'color-mix(in srgb, var(--accent) 40%, transparent)' : 'color-mix(in srgb, var(--accent) 15%, transparent)'}`,
-                      cursor: active ? 'pointer' : 'not-allowed',
-                      transition: 'all 0.2s ease',
-                      textTransform: 'uppercase',
-                      whiteSpace: 'nowrap',
-                    });
                     return (
                       <div className="flex items-center gap-2">
                         <button
+                          type="button"
+                          className="btn-secondary"
                           disabled={!canDownload}
                           onClick={async () => {
                             setIsPdfGenerating(true);
@@ -953,11 +920,12 @@ export default function ReadingPage() {
                               setIsPdfGenerating(false);
                             }
                           }}
-                          style={topBtnStyle(canDownload)}
                         >
-                          {isPdfGenerating ? '⋯' : '↓ Reading'}
+                          {isPdfGenerating ? '…' : '↓ Reading'}
                         </button>
                         <button
+                          type="button"
+                          className="btn-secondary"
                           disabled={!canDownload}
                           onClick={async () => {
                             setIsPdfGenerating(true);
@@ -971,13 +939,8 @@ export default function ReadingPage() {
                               setIsPdfGenerating(false);
                             }
                           }}
-                          style={{
-                            ...topBtnStyle(canDownload),
-                            color: canDownload ? 'var(--brown-mid)' : 'color-mix(in srgb, var(--fg) 30%, transparent)',
-                            border: `1px solid ${canDownload ? 'var(--border-brown)' : 'color-mix(in srgb, var(--fg) 15%, transparent)'}`,
-                          }}
                         >
-                          {isPdfGenerating ? '⋯' : '↓ Cards'}
+                          {isPdfGenerating ? '…' : '↓ Cards'}
                         </button>
                       </div>
                     );
@@ -989,12 +952,11 @@ export default function ReadingPage() {
                   {question && (
                     <p
                       style={{
-                        fontFamily: 'var(--font-sans), sans-serif',
-                        fontSize: 18,
+                        fontSize: 17,
                         fontStyle: 'italic',
-                        color: isDark ? 'var(--gold-muted)' : 'var(--brown-mid)',
+                        color: 'var(--fg)',
+                        lineHeight: 1.6,
                         marginBottom: 8,
-                        transition: 'color 0.6s ease',
                       }}
                     >
                       &ldquo;{question}&rdquo;
@@ -1072,13 +1034,7 @@ export default function ReadingPage() {
                 </div>
 
                 {/* Ornamental divider — appears as soon as cards are drawn */}
-                {drawnCards.length > 0 && (
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1 h-px" style={{ background: isDark ? 'color-mix(in srgb, var(--accent) 30%, transparent)' : 'var(--border-gold)' }} />
-                    <span style={{ color: 'var(--gold)', fontSize: 14 }}>✦ ✦ ✦</span>
-                    <div className="flex-1 h-px" style={{ background: isDark ? 'color-mix(in srgb, var(--accent) 30%, transparent)' : 'var(--border-gold)' }} />
-                  </div>
-                )}
+                {drawnCards.length > 0 && <hr className="rule" />}
 
                 {/* Error state */}
                 {error && !isReadingReady && (
@@ -1097,13 +1053,11 @@ export default function ReadingPage() {
                           The Oracle is Unreachable
                         </p>
                         <p style={{
-                          fontFamily: 'var(--font-sans), sans-serif',
-                          fontSize: 16,
-                          fontStyle: 'italic',
-                          color: 'var(--brown-light)',
+                          fontSize: 15,
+                          color: 'var(--muted)',
                           maxWidth: 360,
                           margin: '0 auto',
-                          lineHeight: 1.65,
+                          lineHeight: 1.6,
                         }}>
                           The crystal ball is buffering... Perhaps Mercury is in retrograde. The spirits will realign — try summoning them again.
                         </p>
@@ -1112,10 +1066,8 @@ export default function ReadingPage() {
                       <>
                         <p className="kicker">The oracle is resting</p>
                         <p style={{
-                          fontFamily: 'var(--font-sans), sans-serif',
-                          fontSize: 18,
-                          fontStyle: 'italic',
-                          color: 'var(--muted)',
+                          fontSize: 15,
+                          color: 'var(--fg)',
                           maxWidth: 360,
                           margin: '12px auto 0',
                           lineHeight: 1.6,
@@ -1124,7 +1076,7 @@ export default function ReadingPage() {
                         </p>
                       </>
                     ) : (
-                      <p style={{ fontFamily: 'var(--font-sans), sans-serif', fontSize: 18, fontStyle: 'italic', color: 'var(--brown-light)' }}>
+                      <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--subtle)' }}>
                         {error}
                       </p>
                     )}
@@ -1159,27 +1111,7 @@ export default function ReadingPage() {
 
 
                     <div className="text-center mt-12">
-                      <button
-                        onClick={reset}
-                        style={
-                          isDark
-                            ? {
-                                background: 'transparent',
-                                color: 'var(--gold-light)',
-                                fontFamily: 'var(--font-sans), sans-serif',
-                                fontSize: 12,
-                                letterSpacing: '0.1em',
-                                padding: '12px 28px',
-                                borderRadius: 2,
-                                border: '1px solid color-mix(in srgb, var(--accent) 45%, transparent)',
-                                cursor: 'pointer',
-                                transition: 'all 0.25s ease',
-                                textTransform: 'uppercase' as const,
-                              }
-                            : undefined
-                        }
-                        className={isDark ? '' : 'btn-secondary'}
-                      >
+                      <button onClick={reset} className="btn-secondary">
                         Begin a New Reading
                       </button>
                     </div>

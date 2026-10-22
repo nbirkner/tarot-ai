@@ -12,8 +12,6 @@ const models = [
     docsLabel: 'Serverless models',
     apiRef: 'https://docs.together.ai/reference/images',
     apiLabel: 'Images API reference',
-    accent: 'var(--gold)',
-    symbol: '◈',
   },
   {
     name: 'Reference photo',
@@ -26,8 +24,6 @@ const models = [
     docsLabel: 'Reference images',
     apiRef: 'https://docs.together.ai/reference/images',
     apiLabel: 'Images API reference',
-    accent: 'var(--rose)',
-    symbol: '◉',
   },
   {
     name: 'Muse Glimmer 30B',
@@ -40,348 +36,98 @@ const models = [
     docsLabel: 'Serverless models',
     apiRef: 'https://docs.together.ai/reference/chat-completions',
     apiLabel: 'Chat completions reference',
-    accent: 'var(--sage)',
-    symbol: '◇',
   },
 ];
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen pt-8 pb-20" style={{ background: 'var(--cream)' }}>
-      <div className="max-w-2xl mx-auto px-4">
+    <main className="page">
+      <div>
+        <p className="label">About</p>
+        <h1>A side project that got out of hand.</h1>
+      </div>
 
-        {/* Header */}
-        <div className="mb-8">
-          <p
-            className="mono"
-            style={{
-              fontSize: 12,
-              color: 'var(--muted)',
-              marginBottom: 12,
-            }}
-          >
-            About
-          </p>
-          <h1
-            style={{
-              fontFamily: 'var(--font-sans), sans-serif',
-              fontSize: 24,
-              letterSpacing: '-0.02em',
-              color: 'var(--fg)',
-              fontWeight: 600,
-              marginBottom: 12,
-            }}
-          >
-            A side project that got out of hand.
-          </h1>
-        </div>
-
-        {/* Ornamental divider */}
-        <div className="flex items-center gap-3 mb-10" style={{ color: 'var(--gold)', opacity: 0.5 }}>
-          <div style={{ flex: 1, height: 1, background: 'var(--border-gold)' }} />
-          <span style={{ fontSize: 10 }}>✦</span>
-          <div style={{ flex: 1, height: 1, background: 'var(--border-gold)' }} />
-        </div>
-
-        {/* Story */}
-        <div
-          className="space-y-5 mb-12"
-          style={{
-            fontFamily: 'var(--font-sans), sans-serif',
-            fontSize: 18,
-            lineHeight: 1.75,
-            color: 'var(--brown-mid)',
-          }}
-        >
-          <p>
-            By day I&apos;m a product manager at Together AI, which means I spend a lot of time
-            thinking about inference infrastructure, model benchmarks, and token pricing. Very
-            grounded. Very left-brained.
-          </p>
-          <p>
-            I also pull tarot cards most mornings and have strong opinions about my rising sign.
-          </p>
-          <p>
-            For a long time those two sides of my life existed in completely separate tabs. I
-            didn&apos;t really talk about the tarot thing at work, and I didn&apos;t think too hard
-            about the AI thing during my more witchy moments. This was probably fine.
-          </p>
-          <p>
-            But I kept thinking: what would it actually look like to merge them? Not in a
-            corporate &ldquo;AI-powered wellness&rdquo; kind of way. Just, what if I used the
-            models I work with every day to build something I actually believed in?
-          </p>
-          <p>
-            This is that. A real tarot app, built with real AI, made by someone who uses both
-            sincerely and is fine being judged for it.
-          </p>
-        </div>
-
-        {/* Readwise quote */}
-        <div
-          style={{
-            borderLeft: '1px solid var(--hairline)',
-            paddingLeft: 24,
-            marginBottom: 48,
-          }}
-        >
-          <p
-            style={{
-              fontFamily: 'var(--font-sans), sans-serif',
-              fontSize: 17,
-              fontStyle: 'italic',
-              color: 'var(--brown-dark)',
-              lineHeight: 1.75,
-              marginBottom: 10,
-            }}
-          >
-            &ldquo;You may sense the truth before you fully understand it. You may feel closure
-            before you see visible results. You may know something must change — even if you
-            cannot yet explain why.&rdquo;
-          </p>
-          <p
-            style={{
-              fontFamily: 'var(--font-sans), sans-serif',
-              fontSize: 13,
-              color: 'var(--brown-light)',
-              letterSpacing: '0.04em',
-            }}
-          >
-            — Divine Feminine Energy, <em>The Lunar Eclipse in Virgo</em>
-          </p>
-        </div>
-
-        {/* Built with */}
-        <p
-          style={{
-            fontFamily: 'var(--font-sans), sans-serif',
-            fontSize: 11,
-            letterSpacing: '0.01em',
-            color: 'var(--gold)',
-            textTransform: 'uppercase',
-            marginBottom: 24,
-          }}
-        >
-          Built with Together AI
+      <div className="prose">
+        <p>
+          By day I&apos;m a product manager at Together AI, which means I spend a lot of time
+          thinking about inference infrastructure, model benchmarks, and token pricing. Very
+          grounded. Very left-brained.
         </p>
+        <p>
+          I also pull tarot cards most mornings and have strong opinions about my rising sign.
+        </p>
+        <p>
+          For a long time those two sides of my life existed in completely separate tabs. I
+          didn&apos;t really talk about the tarot thing at work, and I didn&apos;t think too hard
+          about the AI thing during my more witchy moments. This was probably fine.
+        </p>
+        <p>
+          But I kept thinking: what would it actually look like to merge them? Not in a
+          corporate &ldquo;AI-powered wellness&rdquo; kind of way. Just, what if I used the
+          models I work with every day to build something I actually believed in?
+        </p>
+        <p>
+          This is that. A real tarot app, built with real AI, made by someone who uses both
+          sincerely and is fine being judged for it.
+        </p>
+      </div>
 
-        <p
-          style={{
-            fontFamily: 'var(--font-sans), sans-serif',
-            fontSize: 17,
-            fontStyle: 'italic',
-            color: 'var(--brown-mid)',
-            lineHeight: 1.65,
-            marginBottom: 32,
-          }}
-        >
+      <blockquote className="quote">
+        <p>
+          &ldquo;You may sense the truth before you fully understand it. You may feel closure
+          before you see visible results. You may know something must change — even if you
+          cannot yet explain why.&rdquo;
+        </p>
+        <p className="cite">
+          — Divine Feminine Energy, <em>The Lunar Eclipse in Virgo</em>
+        </p>
+      </blockquote>
+
+      <div className="stack">
+        <p className="label">Built with Together AI</p>
+        <p className="prose">
           Every card drawn, every reading delivered, every question asked — powered by models
           running on the Together AI inference platform.
         </p>
-
-        {/* Model cards */}
-        <div className="space-y-6">
-          {models.map((m) => (
-            <div
-              key={m.name}
-              style={{
-                background: 'var(--cream-card)',
-                border: '1px solid var(--hairline)',
-                borderRadius: 10,
-                padding: 'clamp(18px, 4vw, 28px) clamp(18px, 5vw, 32px)',
-              }}
-            >
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <div>
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-sans), sans-serif',
-                      fontSize: 12,
-                      letterSpacing: '0.01em',
-                      color: m.accent,
-                      textTransform: 'uppercase',
-                      marginBottom: 4,
-                    }}
-                  >
-                    {m.role}
-                  </p>
-                  <h2
-                    style={{
-                      fontFamily: 'var(--font-sans), sans-serif',
-                      fontSize: 15,
-                      letterSpacing: '0.06em',
-                      color: 'var(--brown-dark)',
-                      fontWeight: 400,
-                      marginBottom: 2,
-                    }}
-                  >
-                    {m.name}
-                  </h2>
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-sans), sans-serif',
-                      fontSize: 13,
-                      fontStyle: 'italic',
-                      color: 'var(--brown-light)',
-                    }}
-                  >
-                    {m.provider}
-                  </p>
-                </div>
-                <span
-                  style={{
-                    fontSize: 28,
-                    color: m.accent,
-                    opacity: 0.3,
-                    flexShrink: 0,
-                    lineHeight: 1,
-                    marginTop: 4,
-                  }}
-                >
-                  {m.symbol}
-                </span>
-              </div>
-
-              <p
-                style={{
-                  fontFamily: 'var(--font-sans), sans-serif',
-                  fontSize: 17,
-                  lineHeight: 1.65,
-                  color: 'var(--brown-mid)',
-                  marginBottom: 10,
-                }}
-              >
-                {m.description}
-              </p>
-
-              <p
-                style={{
-                  fontFamily: 'var(--font-sans), sans-serif',
-                  fontSize: 14,
-                  fontStyle: 'italic',
-                  color: 'var(--brown-light)',
-                  marginBottom: 16,
-                }}
-              >
-                {m.detail}
-              </p>
-
-              <div className="flex flex-wrap gap-4">
-                <a
-                  href={m.docsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    fontFamily: 'var(--font-sans), sans-serif',
-                    fontSize: 14,
-                    color: m.accent,
-                    textDecoration: 'none',
-                    borderBottom: `1px solid ${m.accent}`,
-                    paddingBottom: 1,
-                    opacity: 0.85,
-                  }}
-                >
-                  {m.docsLabel} →
-                </a>
-                <a
-                  href={m.apiRef}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    fontFamily: 'var(--font-sans), sans-serif',
-                    fontSize: 14,
-                    color: 'var(--brown-light)',
-                    textDecoration: 'none',
-                    borderBottom: '1px solid var(--border-gold)',
-                    paddingBottom: 1,
-                  }}
-                >
-                  {m.apiLabel} →
-                </a>
-              </div>
+        {models.map((m) => (
+          <article key={m.name} className="model">
+            <p className="label">{m.role}</p>
+            <h2>{m.name}</h2>
+            <p className="provider">{m.provider}</p>
+            <p className="body">{m.description}</p>
+            <p className="detail">{m.detail}</p>
+            <div className="links">
+              <a href={m.docsUrl} target="_blank" rel="noopener noreferrer">
+                {m.docsLabel} →
+              </a>
+              <a href={m.apiRef} target="_blank" rel="noopener noreferrer">
+                {m.apiLabel} →
+              </a>
             </div>
-          ))}
-        </div>
+          </article>
+        ))}
+      </div>
 
-        {/* Together AI platform note */}
-        <div
-          style={{
-            marginTop: 32,
-            padding: '20px 24px',
-            background: 'var(--gold-pale)',
-            border: '1px solid var(--border-gold)',
-            borderRadius: 4,
-          }}
-        >
-          <p
-            style={{
-              fontFamily: 'var(--font-sans), sans-serif',
-              fontSize: 11,
-              letterSpacing: '0.01em',
-              color: 'var(--gold)',
-              textTransform: 'uppercase',
-              marginBottom: 10,
-            }}
-          >
-            The Platform
-          </p>
-          <p
-            style={{
-              fontFamily: 'var(--font-sans), sans-serif',
-              fontSize: 16,
-              lineHeight: 1.65,
-              color: 'var(--brown-mid)',
-              marginBottom: 14,
-            }}
-          >
-            All models run on Together AI&apos;s serverless inference platform — no infrastructure
-            to manage, no GPUs to provision. One API key, unified billing, sub-second cold starts.
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <a
-              href="https://docs.together.ai/docs/quickstart"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 14,
-                color: 'var(--gold)',
-                textDecoration: 'none',
-                borderBottom: '1px solid var(--gold)',
-                paddingBottom: 1,
-              }}
-            >
-              Quickstart →
-            </a>
-            <a
-              href="https://www.together.ai"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 14,
-                color: 'var(--brown-light)',
-                textDecoration: 'none',
-                borderBottom: '1px solid var(--border-gold)',
-                paddingBottom: 1,
-              }}
-            >
-              together.ai →
-            </a>
-          </div>
+      <div className="note">
+        <p className="label">The Platform</p>
+        <p>
+          All models run on Together AI&apos;s serverless inference platform — no infrastructure
+          to manage, no GPUs to provision. One API key, unified billing, sub-second cold starts.
+        </p>
+        <div className="links">
+          <a href="https://docs.together.ai/docs/quickstart" target="_blank" rel="noopener noreferrer">
+            Quickstart →
+          </a>
+          <a href="https://www.together.ai" target="_blank" rel="noopener noreferrer">
+            together.ai →
+          </a>
         </div>
+      </div>
 
-        {/* CTA */}
-        <div className="text-center mt-12">
-          <AppLink
-            href="/reading"
-            className="btn-primary"
-            style={{ textDecoration: 'none', display: 'inline-block' }}
-          >
-            Begin a Reading
-          </AppLink>
-        </div>
-
+      <div>
+        <AppLink href="/reading" className="btn-primary">
+          Begin a Reading
+        </AppLink>
       </div>
     </main>
   );

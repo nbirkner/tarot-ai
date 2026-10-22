@@ -46,65 +46,18 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
     <div className="flex flex-col gap-4">
       {/* Standard Tarot section */}
       <div>
-        <p
-          style={{
-            fontFamily: 'var(--font-sans), sans-serif',
-            fontSize: 10,
-            letterSpacing: '0.01em',
-            color: 'var(--gold)',
-            textTransform: 'uppercase',
-            marginBottom: 8,
-            opacity: 0.7,
-          }}
-        >
-          Standard Tarot
-        </p>
+        <p className="label">Standard Tarot</p>
         <div className="flex flex-col gap-2">
           {STANDARD_DECKS.map((deck) => {
             const isSelected = value === deck.style;
             return (
               <button
                 key={deck.style}
+                type="button"
                 onClick={() => onChange(deck.style)}
-                style={{
-                  background: isSelected ? 'var(--gold-pale)' : 'var(--cream-card)',
-                  border: `1px solid ${isSelected ? 'var(--gold)' : 'var(--border-gold)'}`,
-                  borderRadius: 3,
-                  padding: '14px 18px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.2s ease',
-                  outline: 'none',
-                  position: 'relative',
-                }}
-                onMouseEnter={e => {
-                  if (!isSelected) {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 16px color-mix(in srgb, var(--accent) 10%, transparent)';
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!isSelected) {
-                    (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-gold)';
-                    (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-                  }
-                }}
+                className={`select-card${isSelected ? ' selected' : ''}`}
+                aria-pressed={isSelected}
               >
-                {isSelected && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: 14,
-                      right: 16,
-                      color: 'var(--gold)',
-                      fontSize: 10,
-                      opacity: 0.8,
-                    }}
-                  >
-                    ✦
-                  </span>
-                )}
-
                 <div className="flex items-center gap-5">
                   <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
                     {deck.swatchColors.map((color, i) => (
@@ -124,40 +77,13 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
                   </div>
 
                   <div style={{ flex: 1 }}>
-                    <p
-                      style={{
-                        fontFamily: 'var(--font-sans), sans-serif',
-                        fontSize: 12,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: isSelected ? 'var(--brown-dark)' : 'var(--brown-mid)',
-                        marginBottom: 5,
-                        transition: 'color 0.2s ease',
-                      }}
-                    >
+                    <p style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.4, marginBottom: 4, color: 'var(--fg)' }}>
                       {deck.label}
                     </p>
-                    <p
-                      style={{
-                        fontFamily: 'var(--font-sans), sans-serif',
-                        fontSize: 15,
-                        fontStyle: 'italic',
-                        color: 'var(--brown-light)',
-                        marginBottom: 3,
-                        lineHeight: 1.3,
-                      }}
-                    >
+                    <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 4, lineHeight: 1.5 }}>
                       {deck.description}
                     </p>
-                    <p
-                      style={{
-                        fontFamily: 'var(--font-sans), sans-serif',
-                        fontSize: 12,
-                        color: isSelected ? 'var(--gold)' : 'var(--gold-muted)',
-                        letterSpacing: '0.04em',
-                        transition: 'color 0.2s ease',
-                      }}
-                    >
+                    <p className="label" style={{ margin: 0 }}>
                       {deck.mood}
                     </p>
                   </div>
@@ -169,69 +95,18 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
       </div>
 
       {/* Divider */}
-      <div className="flex items-center gap-3" style={{ color: 'var(--gold)', opacity: 0.35 }}>
-        <div style={{ flex: 1, height: 1, background: 'var(--border-gold)' }} />
-        <span style={{ fontSize: 9 }}>✦</span>
-        <div style={{ flex: 1, height: 1, background: 'var(--border-gold)' }} />
-      </div>
+      <hr className="rule" />
 
       {/* Osho Zen section */}
       <div>
-        <p
-          style={{
-            fontFamily: 'var(--font-sans), sans-serif',
-            fontSize: 10,
-            letterSpacing: '0.01em',
-            color: 'var(--sage, #7A8C6E)',
-            textTransform: 'uppercase',
-            marginBottom: 8,
-            opacity: 0.8,
-          }}
-        >
-          Osho Zen Tarot
-        </p>
+        <p className="label">Osho Zen Tarot</p>
         <button
+          type="button"
           onClick={() => onChange('osho-zen')}
-          style={{
-            width: '100%',
-            background: isOshoSelected ? 'rgba(122,140,110,0.12)' : 'var(--cream-card)',
-            border: `1px solid ${isOshoSelected ? 'var(--sage, #7A8C6E)' : 'var(--border-gold)'}`,
-            borderRadius: 3,
-            padding: '14px 18px',
-            cursor: 'pointer',
-            textAlign: 'left',
-            transition: 'all 0.2s ease',
-            outline: 'none',
-            position: 'relative',
-          }}
-          onMouseEnter={e => {
-            if (!isOshoSelected) {
-              (e.currentTarget as HTMLElement).style.borderColor = 'var(--sage, #7A8C6E)';
-              (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 16px rgba(122,140,110,0.12)';
-            }
-          }}
-          onMouseLeave={e => {
-            if (!isOshoSelected) {
-              (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-gold)';
-              (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-            }
-          }}
+          className={`select-card${isOshoSelected ? ' selected' : ''}`}
+          aria-pressed={isOshoSelected}
+          style={{ width: '100%' }}
         >
-          {isOshoSelected && (
-            <span
-              style={{
-                position: 'absolute',
-                top: 14,
-                right: 16,
-                color: 'var(--sage, #7A8C6E)',
-                fontSize: 10,
-                opacity: 0.8,
-              }}
-            >
-              ✦
-            </span>
-          )}
-
           <div className="flex items-center gap-5">
             {/* Zen color swatches */}
             <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
@@ -252,40 +127,13 @@ export function DeckSelector({ value, onChange }: DeckSelectorProps) {
             </div>
 
             <div style={{ flex: 1 }}>
-              <p
-                style={{
-                  fontFamily: 'var(--font-sans), sans-serif',
-                  fontSize: 12,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  color: isOshoSelected ? 'var(--brown-dark)' : 'var(--brown-mid)',
-                  marginBottom: 5,
-                  transition: 'color 0.2s ease',
-                }}
-              >
+              <p style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.4, marginBottom: 4, color: 'var(--fg)' }}>
                 Osho Zen
               </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-sans), sans-serif',
-                  fontSize: 15,
-                  fontStyle: 'italic',
-                  color: 'var(--brown-light)',
-                  marginBottom: 3,
-                  lineHeight: 1.3,
-                }}
-              >
+              <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 4, lineHeight: 1.5 }}>
                 79 cards, no reversals, pure awareness
               </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-sans), sans-serif',
-                  fontSize: 12,
-                  color: isOshoSelected ? 'var(--sage, #7A8C6E)' : 'var(--gold-muted)',
-                  letterSpacing: '0.04em',
-                  transition: 'color 0.2s ease',
-                }}
-              >
+              <p className="label" style={{ margin: 0 }}>
                 Meditation as the mirror
               </p>
             </div>
