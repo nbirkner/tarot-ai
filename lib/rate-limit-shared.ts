@@ -8,17 +8,34 @@ export const READING_LIMITS = {
 
 export const HOUR_MS = 60 * 60 * 1000;
 export const DAY_MS = 24 * HOUR_MS;
-/** Retries inside one spread share a reading id and do not count again. */
+/** How long one IP may reuse a reading id before it has to spend again. */
 export const READING_ID_TTL_MS = 15 * 60 * 1000;
 
-export type QuotaScope = 'hour' | 'day' | 'global';
+/** Celtic Cross is the largest spread. */
+export const MAX_SPREAD_CARDS = 10;
+/**
+ * Hard cap on calls that reuse one reading id.
+ * One call per card, plus synthesis and a single spare (cards + 2).
+ * Image generations use a separate counter with the same cap.
+ */
+export const MAX_CALLS_PER_READING = MAX_SPREAD_CARDS + 2;
+
+export type QuotaScope = 'hour' | 'day' | 'global' | 'reading';
+
+/** Text/chat routes share a reading allowance. Card images spend on their own. */
+export type QuotaKind = 'reading' | 'image';
 
 export type QuotaDecision =
   | { ok: true }
   | { ok: false; scope: QuotaScope; retryAfterSeconds: number };
 
 export interface ReadingQuota {
-  consume(ip: string, readingId: string, now?: number): Promise<QuotaDecision>;
+  consume(
+    ip: string,
+    readingId: string,
+    now?: number,
+    kind?: QuotaKind,
+  ): Promise<QuotaDecision>;
 }
 
 export function clientIp(headers: Headers): string {
@@ -49,6 +66,8 @@ function retryAfter(hits: number[], now: number, windowMs: number): number {
  * fallback if Redis throws. One process only — production should set Upstash
  * so the cap is shared across serverless instances.
  */
+type Allowance = { at: number; calls: number };
+
 export function createMemoryQuota(
   limits: {
     perIpPerHour: number;
@@ -57,7 +76,7 @@ export function createMemoryQuota(
   } = READING_LIMITS,
 ): ReadingQuota {
   const hits = new Map<string, number[]>();
-  const seen = new Map<string, number>();
+  const allowances = new Map<string, Allowance>();
 
   function windowHits(key: string, now: number, windowMs: number): number[] {
     const fresh = (hits.get(key) ?? []).filter((t) => now - t < windowMs);
@@ -66,20 +85,34 @@ export function createMemoryQuota(
   }
 
   return {
-    async consume(ip, readingId, now = Date.now()) {
-      const seenKey = `${ip}:${readingId}`;
-      const seenAt = seen.get(seenKey);
-      if (seenAt !== undefined && now - seenAt < READING_ID_TTL_MS) return { ok: true };
-
-      if (seen.size > 2000) {
-        for (const [key, at] of seen) {
-          if (now - at >= READING_ID_TTL_MS) seen.delete(key);
+    async consume(ip, readingId, now = Date.now(), kind = 'reading') {
+      if (allowances.size > 2000) {
+        for (const [key, entry] of allowances) {
+          if (now - entry.at >= READING_ID_TTL_MS) allowances.delete(key);
         }
       }
 
-      const hour = windowHits(`hour:${ip}`, now, HOUR_MS);
-      const day = windowHits(`day:${ip}`, now, DAY_MS);
-      const global = windowHits('global', now, DAY_MS);
+      // Image generations do not ride a text allow. Each kind has its own
+      // counter, and the first call of that kind consumes the spend windows.
+      const allowanceKey = `${kind}:${ip}:${readingId}`;
+      const entry = allowances.get(allowanceKey);
+      if (entry && now - entry.at < READING_ID_TTL_MS) {
+        if (entry.calls >= MAX_CALLS_PER_READING) {
+          return {
+            ok: false,
+            scope: 'reading',
+            retryAfterSeconds: Math.max(1, Math.ceil((entry.at + READING_ID_TTL_MS - now) / 1000)),
+          };
+        }
+        entry.calls += 1;
+        return { ok: true };
+      }
+
+      // Same numeric spend limits as readings, on a separate counter so card
+      // images are not waived by an earlier text allow and do not eat it either.
+      const hour = windowHits(`${kind}:hour:${ip}`, now, HOUR_MS);
+      const day = windowHits(`${kind}:day:${ip}`, now, DAY_MS);
+      const global = windowHits(`${kind}:global`, now, DAY_MS);
 
       if (hour.length >= limits.perIpPerHour) {
         return { ok: false, scope: 'hour', retryAfterSeconds: retryAfter(hour, now, HOUR_MS) };
@@ -94,7 +127,7 @@ export function createMemoryQuota(
       hour.push(now);
       day.push(now);
       global.push(now);
-      seen.set(seenKey, now);
+      allowances.set(allowanceKey, { at: now, calls: 1 });
       return { ok: true };
     },
   };

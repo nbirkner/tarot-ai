@@ -70,7 +70,7 @@ async function requestImage(
 }
 
 export async function POST(req: NextRequest) {
-  const limited = await readingLimitResponse(req);
+  const limited = await readingLimitResponse(req, 'image');
   if (limited) return limited;
 
   try {
