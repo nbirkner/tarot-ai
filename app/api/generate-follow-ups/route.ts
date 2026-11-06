@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readingLimitResponse } from '../../../lib/reading-quota';
 import {
   FOLLOWUP_MAX_TOKENS,
   chatCompletionBody,
@@ -9,6 +10,9 @@ import {
 const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
 
 export async function POST(req: NextRequest) {
+  const limited = await readingLimitResponse(req);
+  if (limited) return limited;
+
   try {
     const { question } = await req.json();
     if (!question?.trim()) {
