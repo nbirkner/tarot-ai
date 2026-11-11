@@ -9,74 +9,78 @@ interface SpreadSelectorProps {
   deckType?: 'rider-waite' | 'osho-zen';
 }
 
-// Geometric card-count visualizations
-function SpreadDots({ count, isSelected }: { count: number; isSelected: boolean }) {
-  const size = 5;
-  const gap = 4;
-  const color = isSelected ? 'var(--accent)' : 'var(--muted)';
-
-  if (count === 10) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'center' }}>
-        <div style={{ display: 'flex', gap: gap }}>
-          {[0,1,2].map(i => <div key={i} style={{ width: size, height: size, borderRadius: '50%', background: color, opacity: isSelected ? 0.9 : 0.5 }} />)}
-        </div>
-        <div style={{ display: 'flex', gap: gap }}>
-          {[0,1,2,3].map(i => <div key={i} style={{ width: size, height: size, borderRadius: '50%', background: color, opacity: isSelected ? 0.9 : 0.5 }} />)}
-        </div>
-        <div style={{ display: 'flex', gap: gap }}>
-          {[0,1,2].map(i => <div key={i} style={{ width: size, height: size, borderRadius: '50%', background: color, opacity: isSelected ? 0.9 : 0.5 }} />)}
-        </div>
-      </div>
-    );
-  }
+function SpreadMark({ count }: { count: number }) {
+  const rects =
+    count === 1
+      ? [{ x: 28, y: 8, w: 12, h: 26 }]
+      : count === 3
+        ? [0, 1, 2].map((i) => ({ x: 10 + i * 16, y: 8, w: 12, h: 26 }))
+        : count === 5
+          ? [
+              { x: 28, y: 2, w: 10, h: 16 },
+              { x: 12, y: 14, w: 10, h: 16 },
+              { x: 28, y: 14, w: 10, h: 16 },
+              { x: 44, y: 14, w: 10, h: 16 },
+              { x: 28, y: 26, w: 10, h: 12 },
+            ]
+          : count === 7
+            ? [0, 1, 2, 3, 4, 5, 6].map((i) => ({
+                x: 4 + i * 9,
+                y: 18 - Math.abs(i - 3) * 3,
+                w: 7,
+                h: 16,
+              }))
+            : [
+                { x: 30, y: 2, w: 8, h: 12 },
+                { x: 18, y: 14, w: 8, h: 12 },
+                { x: 30, y: 14, w: 8, h: 12 },
+                { x: 42, y: 14, w: 8, h: 12 },
+                { x: 4, y: 4, w: 7, h: 11 },
+                { x: 4, y: 16, w: 7, h: 11 },
+                { x: 4, y: 28, w: 7, h: 11 },
+                { x: 54, y: 6, w: 7, h: 10 },
+                { x: 54, y: 18, w: 7, h: 10 },
+                { x: 54, y: 30, w: 7, h: 10 },
+              ];
 
   return (
-    <div style={{ display: 'flex', gap: gap, alignItems: 'center' }}>
-      {Array.from({ length: count }).map((_, i) => (
-        <div
+    <svg className="spread-mark" viewBox="0 0 68 44" aria-hidden="true">
+      {rects.map((rect, i) => (
+        <rect
           key={i}
-          style={{
-            width: size,
-            height: size,
-            borderRadius: '50%',
-            background: color,
-            opacity: isSelected ? 0.9 : 0.5,
-            transition: 'all 0.2s ease',
-          }}
+          x={rect.x}
+          y={rect.y}
+          width={rect.w}
+          height={rect.h}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
         />
       ))}
-    </div>
+    </svg>
   );
 }
 
 export function SpreadSelector({ value, onChange, deckType = 'rider-waite' }: SpreadSelectorProps) {
   const visibleSpreads = SPREADS.filter((s) => s.deck === deckType);
   return (
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+    <div className="spread-grid">
       {visibleSpreads.map((spread) => {
-        const isSelected = value === spread.type;
+        const selected = value === spread.type;
         return (
           <button
             key={spread.type}
             type="button"
+            className="spread-tile"
+            aria-pressed={selected}
             onClick={() => onChange(spread.type)}
-            className={`select-card${isSelected ? ' selected' : ''}`}
-            aria-pressed={isSelected}
           >
-            <div style={{ marginBottom: 12 }}>
-              <SpreadDots count={spread.cardCount} isSelected={isSelected} />
-            </div>
-
-            <p style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.4, marginBottom: 4, color: 'var(--fg)' }}>
-              {spread.label}
-            </p>
-            <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.5, marginBottom: 6 }}>
-              {spread.description}
-            </p>
-            <p className="label" style={{ margin: 0 }}>
-              {spread.cardCount} card{spread.cardCount > 1 ? 's' : ''}
-            </p>
+            <SpreadMark count={spread.cardCount} />
+            <strong>{spread.label}</strong>
+            <span className="fine">{spread.description}</span>
+            <span className="mono-label">
+              {spread.cardCount} {spread.cardCount === 1 ? 'Card' : 'Cards'}
+            </span>
           </button>
         );
       })}

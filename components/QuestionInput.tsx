@@ -18,21 +18,25 @@ const SUGGESTIONS = [
 
 export function QuestionInput({ value, onChange, onSkip }: QuestionInputProps) {
   return (
-    <div className="space-y-5">
+    <div className="stack" style={{ gap: 16 }}>
+      <label className="mono-label" htmlFor="question">
+        Your Question
+      </label>
       <textarea
+        id="question"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="What weighs on your heart? Or leave blank for an open reading..."
+        placeholder="What weighs on you? Or leave this blank for an open reading."
         rows={4}
         className="input-field"
-        style={{ resize: 'none', lineHeight: 1.6 }}
+        style={{ resize: 'vertical', lineHeight: 1.5 }}
       />
 
       <div>
-        <p className="label" style={{ marginBottom: 12 }}>
-          Suggested questions
+        <p className="mono-label" style={{ marginBottom: 10 }}>
+          Suggested Questions
         </p>
-        <div className="flex flex-wrap gap-2">
+        <div className="keyword-row">
           {SUGGESTIONS.map((s) => (
             <button key={s} type="button" className="chip" onClick={() => onChange(s)}>
               {s}
@@ -42,7 +46,7 @@ export function QuestionInput({ value, onChange, onSkip }: QuestionInputProps) {
       </div>
 
       <button type="button" onClick={onSkip} className="link-quiet">
-        Skip — let the cards speak freely →
+        Skip. Let the cards speak freely.
       </button>
     </div>
   );

@@ -23,14 +23,14 @@ export default function HistoryPage() {
       </div>
 
       <div className="note">
-        The oracle has no memory. (Relatable.) Your readings live in this browser only — clear your cache and they&apos;re gone. No cloud. No account. The cards forget everything.
+        The oracle has no memory. (Relatable.) Your readings live in this browser only. Clear your cache and they&apos;re gone. No cloud. No account. The cards forget everything.
       </div>
 
       {readings.length === 0 ? (
         <div className="stack">
           <p>The void stares back. It has opinions.</p>
           <AppLink href="/reading" className="link-quiet">
-            Ask it something →
+            Ask It Something
           </AppLink>
         </div>
       ) : (

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { SpreadSelector } from '../../components/SpreadSelector';
 import { DeckSelector } from '../../components/DeckSelector';
 import { AstrologyInput } from '../../components/AstrologyInput';
@@ -21,93 +21,14 @@ import {
 import { drawCards, drawOshoZenCards, isReversed, getSpread } from '../../lib/tarot';
 import { buildReadingContext, formatAstrologyContext } from '../../lib/astronomy';
 import { apiUrl } from '../../lib/base-path';
-import { RATE_LIMIT_MESSAGE, SPEND_CAP_MESSAGE, messageForLimitResponse } from '../../lib/rate-limit-shared';
+import {
+  RATE_LIMIT_MESSAGE,
+  SPEND_CAP_MESSAGE,
+  messageForLimitResponse,
+} from '../../lib/rate-limit-shared';
 import { getUserId, saveReading } from '../../lib/storage';
 
 type Step = 'question' | 'context' | 'spread' | 'deck' | 'photo' | 'astrology' | 'generating' | 'reveal' | 'reading';
-
-const WITCHY_PHRASES = [
-  'manifesting your destiny...',
-  'ascending through the veil...',
-  'turbochakraing your intentions...',
-  'consulting the ancient ones...',
-  'weaving the threads of fate...',
-  'aligning the celestial frequencies...',
-  'communing with the cosmos...',
-  'reading the akashic records...',
-  'decoding the lunar signals...',
-  'channeling the oracle within...',
-  'dissolving karmic blockages...',
-  'attuning to your higher self...',
-  'googling "what the moon wants"...',
-  'asking the ancient ones to please hold...',
-  'defragging the spirit realm...',
-  'estimating your fate (margin of error: ±one lifetime)...',
-  'checking if Mercury is up to something again...',
-  'filing a cosmic ticket on your behalf...',
-  'waiting for the universe to load...',
-  "consulting the oracle (she's with another client)...",
-];
-
-function WitchyLoader() {
-  const [phraseIndex, setPhraseIndex] = useState(0);
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setVisible(false);
-      setTimeout(() => {
-        setPhraseIndex((i) => (i + 1) % WITCHY_PHRASES.length);
-        setVisible(true);
-      }, 400);
-    }, 2800);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="text-center py-8">
-      {/* Orbiting stars */}
-      <div className="relative w-16 h-16 mx-auto mb-6">
-        <div
-          className="absolute inset-0 rounded-full border border-[color-mix(in srgb, var(--accent) 30%, transparent)]"
-          style={{ animation: 'rotate-slow 8s linear infinite' }}
-        >
-          <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[var(--accent)] text-xs">
-            ✦
-          </div>
-        </div>
-        <div
-          className="absolute inset-2 rounded-full border border-[color-mix(in srgb, var(--accent) 20%, transparent)]"
-          style={{ animation: 'rotate-slow 5s linear infinite reverse' }}
-        >
-          <div className="absolute -top-1 left-1/2 -translate-x-1/2 text-[var(--accent)] text-xs opacity-60">✦</div>
-        </div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-[var(--accent)] text-lg">☽</span>
-        </div>
-      </div>
-
-      <AnimatePresence mode="wait">
-        {visible && (
-          <motion.p
-            key={phraseIndex}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.35 }}
-            style={{
-              fontSize: 15,
-              lineHeight: 1.6,
-              color: 'var(--muted)',
-            }}
-          >
-            {WITCHY_PHRASES[phraseIndex]}
-          </motion.p>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 const STEP_CONFIG: Record<
   Exclude<Step, 'generating' | 'reveal' | 'reading'>,
@@ -119,11 +40,11 @@ const STEP_CONFIG: Record<
   },
   context: {
     title: 'Add context',
-    subtitle: 'Optional — but the more you share, the nosier the oracle gets.',
+    subtitle: 'Optional. The more you share, the nosier the oracle gets.',
   },
   spread: {
     title: 'Choose your spread',
-    subtitle: 'More cards = more unsolicited advice from the universe.',
+    subtitle: 'More cards, more unsolicited advice from the universe.',
   },
   deck: {
     title: 'Choose your deck',
@@ -131,11 +52,11 @@ const STEP_CONFIG: Record<
   },
   photo: {
     title: 'Add your photo',
-    subtitle: 'Optional — so you can see your face in The Tower card.',
+    subtitle: 'Optional. So you can see your face in The Tower.',
   },
   astrology: {
     title: 'Your astrological self',
-    subtitle: 'Optional — great for blaming Mercury when the reading is accurate.',
+    subtitle: 'Optional. Useful for blaming Mercury when the reading is accurate.',
   },
 };
 
@@ -227,7 +148,7 @@ async function readSseStream(
   onPartial: (accumulated: string) => void,
 ): Promise<string> {
   if (!res.body) {
-    throw new Error('Response body is null — cannot read SSE stream');
+    throw new Error('Response body is null. Cannot read the stream.');
   }
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
@@ -295,6 +216,7 @@ function extractSynthesisFields(buf: string): Partial<StreamingState> {
 
 
 export default function ReadingPage() {
+  const reduce = useReducedMotion();
   const [step, setStep] = useState<Step>('question');
   const [question, setQuestion] = useState('');
   const [spreadType, setSpreadType] = useState<SpreadType>('three');
@@ -320,7 +242,7 @@ export default function ReadingPage() {
   const [error, setError] = useState<string | null>(null);
   const [streamingState, setStreamingState] = useState<StreamingState | null>(null);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const resolvedImagesRef = useRef<(string | undefined)[]>([]);
   const hangTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -689,24 +611,6 @@ export default function ReadingPage() {
       : 'sm';
 
   const isSetupStep = SETUP_STEPS.includes(step as (typeof SETUP_STEPS)[number]);
-  useEffect(() => {
-    const root = document.documentElement;
-    const read = () => {
-      if (root.dataset.theme === 'dark') return true;
-      if (root.dataset.theme === 'light') return false;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    };
-    const sync = () => setIsDark(read());
-    sync();
-    const observer = new MutationObserver(sync);
-    observer.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    media.addEventListener('change', sync);
-    return () => {
-      observer.disconnect();
-      media.removeEventListener('change', sync);
-    };
-  }, []);
 
   // Advance setup flow on Enter key press
   useEffect(() => {
@@ -741,40 +645,23 @@ export default function ReadingPage() {
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
-            initial={{ opacity: 0, y: 10 }}
+            initial={reduce ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
+            exit={reduce ? undefined : { opacity: 0, y: -10 }}
+            transition={reduce ? { duration: 0 } : { duration: 0.3 }}
           >
-            {/* Setup steps — unchanged */}
             {isSetupStep && (
               <div className="reading-step">
-                <div>
-                  <p className="label">
-                    {SETUP_STEPS.indexOf(step as (typeof SETUP_STEPS)[number]) + 1} of {SETUP_STEPS.length}
-                  </p>
-                  <h2
-                    style={{
-                      margin: 0,
-                      fontSize: 17,
-                      fontWeight: 600,
-                      lineHeight: 1.6,
-                      color: 'var(--fg)',
-                    }}
-                  >
+                <div className="step-head">
+                  <h1 className="step-title">
+                    <span className="idx">
+                      {String(SETUP_STEPS.indexOf(step as (typeof SETUP_STEPS)[number]) + 1).padStart(2, '0')}
+                      {' / '}
+                    </span>
                     {STEP_CONFIG[step as keyof typeof STEP_CONFIG]?.title}
-                  </h2>
+                  </h1>
                   {STEP_CONFIG[step as keyof typeof STEP_CONFIG]?.subtitle && (
-                    <p
-                      style={{
-                        fontFamily: 'var(--font-sans), sans-serif',
-                        fontSize: 15,
-                        color: 'var(--muted)',
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {STEP_CONFIG[step as keyof typeof STEP_CONFIG]?.subtitle}
-                    </p>
+                    <p className="lede">{STEP_CONFIG[step as keyof typeof STEP_CONFIG]?.subtitle}</p>
                   )}
                 </div>
 
@@ -812,69 +699,50 @@ export default function ReadingPage() {
                 )}
 
                 {error && (
-                  <p
-                    style={{
-                      color: 'var(--accent)',
-                      fontSize: 15,
-                      lineHeight: 1.6,
-                    }}
-                  >
+                  <p className="field-error" role="alert">
                     {error}
                   </p>
                 )}
 
-                {/* Navigation */}
-                <div className="flex items-center justify-between pt-2">
+                <div className="step-nav">
                   {step !== 'question' ? (
                     <button
+                      type="button"
                       onClick={() => {
                         const i = SETUP_STEPS.indexOf(step as (typeof SETUP_STEPS)[number]);
                         if (i > 0) setStep(SETUP_STEPS[i - 1]);
                       }}
                       className="btn-secondary"
                     >
-                      ← Back
+                      Back
                     </button>
                   ) : (
-                    <div />
+                    <span />
                   )}
 
                   {step === 'astrology' ? (
-                    <button onClick={startReading} className="btn-primary">
+                    <button type="button" onClick={startReading} className="btn-primary">
                       Draw the Cards
                     </button>
                   ) : (
                     <button
+                      type="button"
                       onClick={() => {
                         const i = SETUP_STEPS.indexOf(step as (typeof SETUP_STEPS)[number]);
                         setStep(SETUP_STEPS[i + 1]);
                       }}
                       className="btn-primary"
                     >
-                      Continue →
+                      Continue
                     </button>
                   )}
                 </div>
 
-                {/* Step indicator — refined dots */}
-                <div className="flex justify-center items-center gap-3 pt-2">
+                <div className="step-meter" aria-hidden="true">
                   {SETUP_STEPS.map((s, idx) => {
                     const currentIdx = SETUP_STEPS.indexOf(step as (typeof SETUP_STEPS)[number]);
-                    const isPast = idx < currentIdx;
-                    const isActive = s === step;
-                    return (
-                      <div
-                        key={s}
-                        style={{
-                          width: isActive ? 18 : 5,
-                          height: 5,
-                          borderRadius: isActive ? 2 : '50%',
-                          background: isActive ? 'var(--accent)' : isPast ? 'var(--muted)' : 'var(--hairline)',
-                          transition: 'all 0.3s ease',
-                          opacity: isPast ? 0.55 : 1,
-                        }}
-                      />
-                    );
+                    const isOn = idx <= currentIdx;
+                    return <i key={s} className={isOn ? 'is-on' : undefined} />;
                   })}
                 </div>
               </div>
@@ -882,12 +750,11 @@ export default function ReadingPage() {
 
             {/* Generating + Reveal state — dark atmosphere */}
             {(step === 'generating' || isReadingReady) && (
-              <div className="space-y-10">
-                {/* Top bar: Back on left, downloads on right */}
-                <div className="flex items-center justify-between">
+              <div className="reading-step" style={{ maxWidth: '100%' }}>
+                <div className="tool-row">
                   <button
                     type="button"
-                    className="link-quiet"
+                    className="btn-secondary"
                     onClick={() => {
                       setStep('astrology');
                       setDrawnCards([]);
@@ -897,7 +764,7 @@ export default function ReadingPage() {
                       setError(null);
                     }}
                   >
-                    ← Back
+                    Back
                   </button>
 
                   {/* Download buttons — top right, only when reading is ready */}
@@ -918,13 +785,13 @@ export default function ReadingPage() {
                               await downloadReadingPDF(readingWithImages);
                             } catch (e) {
                               console.error('PDF generation failed:', e);
-                              alert(`PDF failed: ${e instanceof Error ? e.message : String(e)}`);
+                              setPdfError(e instanceof Error ? e.message : String(e));
                             } finally {
                               setIsPdfGenerating(false);
                             }
                           }}
                         >
-                          {isPdfGenerating ? '…' : '↓ Reading'}
+                          {isPdfGenerating ? 'Preparing' : 'Download Reading'}
                         </button>
                         <button
                           type="button"
@@ -937,13 +804,13 @@ export default function ReadingPage() {
                               await downloadCardsPDF(readingWithImages);
                             } catch (e) {
                               console.error('PDF generation failed:', e);
-                              alert(`PDF failed: ${e instanceof Error ? e.message : String(e)}`);
+                              setPdfError(e instanceof Error ? e.message : String(e));
                             } finally {
                               setIsPdfGenerating(false);
                             }
                           }}
                         >
-                          {isPdfGenerating ? '…' : '↓ Cards'}
+                          {isPdfGenerating ? 'Preparing' : 'Download Cards'}
                         </button>
                       </div>
                     );
@@ -951,172 +818,87 @@ export default function ReadingPage() {
                 </div>
 
                 {/* Page title */}
-                <div className="text-center pt-4">
-                  {question && (
-                    <p
-                      style={{
-                        fontSize: 17,
-                        fontStyle: 'italic',
-                        color: 'var(--fg)',
-                        lineHeight: 1.6,
-                        marginBottom: 8,
-                      }}
-                    >
-                      &ldquo;{question}&rdquo;
-                    </p>
-                  )}
+                <div className="reveal-head">
+                  {question && <p className="question-line">&ldquo;{question}&rdquo;</p>}
+                  {!isReadingReady && !error && <h1 className="step-title">Drawing</h1>}
                   {isReadingReady && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex flex-col items-center gap-3"
-                    >
-                      <p style={{
-                        fontFamily: 'var(--font-sans), sans-serif',
-                        fontSize: 14,
-                        letterSpacing: '0.01em',
-                        color: 'var(--gold)',
-                      }}>
-                        YOUR FATE IS SEALED — CLICK EACH TO UNSEAL IT
-                      </p>
+                    <>
+                      <h1 className="seal">
+                        Your fate is sealed. <em>Turn each card over.</em>
+                      </h1>
                       {!allFlipped && (
-                        <button
-                          onClick={flipAll}
-                          style={{
-                            background: 'transparent',
-                            border: '1px solid color-mix(in srgb, var(--accent) 35%, transparent)',
-                            color: 'var(--gold)',
-                            fontFamily: 'var(--font-sans), sans-serif',
-                            fontSize: 10,
-                            letterSpacing: '0.01em',
-                            padding: '7px 20px',
-                            borderRadius: 2,
-                            cursor: 'pointer',
-                            textTransform: 'uppercase',
-                            transition: 'all 0.2s ease',
-                          }}
-                          onMouseEnter={e => {
-                            (e.currentTarget as HTMLElement).style.background = 'color-mix(in srgb, var(--accent) 8%, transparent)';
-                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--gold)';
-                          }}
-                          onMouseLeave={e => {
-                            (e.currentTarget as HTMLElement).style.background = 'transparent';
-                            (e.currentTarget as HTMLElement).style.borderColor = 'color-mix(in srgb, var(--accent) 35%, transparent)';
-                          }}
-                        >
-                          Reveal All
+                        <button type="button" onClick={flipAll} className="btn-secondary">
+                          Turn All Over
                         </button>
                       )}
-                    </motion.div>
+                    </>
                   )}
                 </div>
 
-                {/* Cards spread */}
-                <div
-                  className={`flex flex-wrap gap-6 justify-center items-start ${
-                    drawnCards.length === 1 ? 'py-4' : ''
-                  }`}
-                >
+                <div className="spread-row">
                   {drawnCards.map((drawn, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, y: 30, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ delay: i * 0.1, duration: 0.5, ease: 'easeOut' }}
-                    >
-                      <TarotCard
-                        drawn={drawn}
-                        isFlipped={flippedCards.has(i)}
-                        isFlippable={isReadingReady && !flippedCards.has(i)}
-                        onClick={() => flipCard(i)}
-                        size={cardSize}
-                        showPosition={true}
-                      />
-                    </motion.div>
+                    <TarotCard
+                      key={`${drawn.card.name}-${i}`}
+                      drawn={drawn}
+                      isFlipped={flippedCards.has(i)}
+                      isFlippable={isReadingReady && !flippedCards.has(i)}
+                      onClick={() => flipCard(i)}
+                      size={cardSize}
+                      showPosition={true}
+                      tilt={(i % 5 - 2) * 2.4}
+                    />
                   ))}
                 </div>
 
                 {/* Ornamental divider — appears as soon as cards are drawn */}
                 {drawnCards.length > 0 && <hr className="rule" />}
 
-                {/* Error state */}
-                {error && !isReadingReady && (
-                  <div className="text-center py-10 space-y-4">
-                    {error === 'hang' ? (
-                      <>
-                        <div style={{ fontSize: 32, opacity: 0.6, marginBottom: 4 }}>☽</div>
-                        <p style={{
-                          fontFamily: 'var(--font-sans), sans-serif',
-                          fontSize: 12,
-                          letterSpacing: '0.01em',
-                          color: 'var(--gold)',
-                          textTransform: 'uppercase',
-                          opacity: 0.8,
-                        }}>
-                          The Oracle is Unreachable
-                        </p>
-                        <p style={{
-                          fontSize: 15,
-                          color: 'var(--muted)',
-                          maxWidth: 360,
-                          margin: '0 auto',
-                          lineHeight: 1.6,
-                        }}>
-                          The crystal ball is buffering... Perhaps Mercury is in retrograde. The spirits will realign — try summoning them again.
-                        </p>
-                      </>
-                    ) : error === RATE_LIMIT_MESSAGE || error === SPEND_CAP_MESSAGE ? (
-                      <>
-                        <p className="kicker">
-                          {error === SPEND_CAP_MESSAGE ? 'The deck is resting' : 'The oracle is resting'}
-                        </p>
-                        <p style={{
-                          fontSize: 15,
-                          color: 'var(--fg)',
-                          maxWidth: 360,
-                          margin: '12px auto 0',
-                          lineHeight: 1.6,
-                        }}>
-                          {error}
-                        </p>
-                      </>
-                    ) : (
-                      <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--subtle)' }}>
-                        {error}
-                      </p>
-                    )}
-                    <div style={{ marginTop: 28 }}>
-                      {error === RATE_LIMIT_MESSAGE || error === SPEND_CAP_MESSAGE ? (
-                        <button onClick={reset} className="btn-secondary">Back</button>
-                      ) : (
-                        <button onClick={startReading} className="btn-primary">Try Again</button>
-                      )}
-                    </div>
+                {pdfError && (
+                  <div className="limit-panel" role="alert">
+                    <h2 className="limit-title">The PDF did not land.</h2>
+                    <p>{pdfError}</p>
+                    <button type="button" className="btn-primary" onClick={() => setPdfError(null)}>
+                      Back
+                    </button>
                   </div>
                 )}
 
-                {/* Skeleton + streaming (shown immediately once cards are drawn, no WitchyLoader wait) */}
+                {error && !isReadingReady && (
+                  <div className="limit-panel" role="alert">
+                    <h1 className="limit-title">
+                      {error === 'hang' ? 'The crystal ball is buffering.' : error}
+                    </h1>
+                    {error === 'hang' && (
+                      <p>
+                        Perhaps Mercury is in retrograde. The spirits will realign. Try summoning them again.
+                      </p>
+                    )}
+                    {error === RATE_LIMIT_MESSAGE || error === SPEND_CAP_MESSAGE ? (
+                      <button type="button" onClick={reset} className="btn-primary">
+                        Back
+                      </button>
+                    ) : (
+                      <button type="button" onClick={startReading} className="btn-primary">
+                        Try Again
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 {streamingState && !isReadingReady && (
-                  <StreamingReadingDisplay
-                    state={streamingState}
-                    drawnCards={drawnCards}
-                    isDark={isDark}
-                  />
+                  <StreamingReadingDisplay state={streamingState} drawnCards={drawnCards} />
                 )}
 
                 {/* Complete: full reading with motion reveals */}
                 {isReadingReady && reading && (
                   <motion.div
-                    initial={{ opacity: 0 }}
+                    initial={reduce ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
+                    transition={reduce ? { duration: 0 } : { duration: 0.5 }}
                   >
                     <ReadingDisplay reading={reading} />
-
-
-
-                    <div className="text-center mt-12">
-                      <button onClick={reset} className="btn-secondary">
+                    <div style={{ marginTop: 28 }}>
+                      <button type="button" onClick={reset} className="btn-secondary">
                         Begin a New Reading
                       </button>
                     </div>
