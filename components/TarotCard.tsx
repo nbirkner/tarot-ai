@@ -1,9 +1,10 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { DrawnCard } from '../lib/types';
+import { GeometricFace } from './GeometricFace';
 
 interface TarotCardProps {
   drawn: DrawnCard;
@@ -14,462 +15,100 @@ interface TarotCardProps {
   onClick?: () => void;
   size?: 'sm' | 'md' | 'lg' | 'hero';
   showPosition?: boolean;
+  tilt?: number;
 }
 
-const SIZES = {
-  sm:   { width: 90,  height: 135 },
-  md:   { width: 130, height: 195 },
-  lg:   { width: 180, height: 270 },
-  hero: { width: 260, height: 390 },
-};
-
-function CardBackSVG({ cardName, position, reversed }: { cardName?: string; position?: string; reversed?: boolean }) {
-  return (
-    <svg viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-      <defs>
-        <radialGradient id="cbBg" cx="50%" cy="50%" r="70%">
-          <stop offset="0%" stopColor="var(--g0)" />
-          <stop offset="60%" stopColor="var(--g0)" />
-          <stop offset="100%" stopColor="var(--g0)" />
-        </radialGradient>
-        <pattern id="dotGrid" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
-          <circle cx="4" cy="4" r="0.7" fill="var(--accent)" opacity="0.06" />
-        </pattern>
-      </defs>
-
-      {/* Parchment background */}
-      <rect width="200" height="300" fill="url(#cbBg)" rx="6" />
-
-      {/* Dot grid texture */}
-      <rect width="200" height="300" fill="url(#dotGrid)" rx="6" />
-
-      {/* Outer double-line border */}
-      <rect x="5" y="5" width="190" height="290" fill="none" stroke="var(--accent)" strokeWidth="2" rx="4" opacity="0.55" />
-      <rect x="11" y="11" width="178" height="278" fill="none" stroke="var(--accent)" strokeWidth="1" rx="4" opacity="0.35" />
-
-      {/* Corner ornaments — botanical flourish with rose petals */}
-      {([
-        [22, 22, 0],
-        [178, 22, 90],
-        [178, 278, 180],
-        [22, 278, 270],
-      ] as [number, number, number][]).map(([cx, cy, rot], i) => (
-        <g key={i} transform={`translate(${cx},${cy}) rotate(${rot})`} opacity="0.7">
-          {/* Radiating petals */}
-          <ellipse cx="0" cy="-8" rx="2.5" ry="5" fill="var(--accent)" opacity="0.55" transform="rotate(0)" />
-          <ellipse cx="0" cy="-8" rx="2.5" ry="5" fill="var(--accent)" opacity="0.45" transform="rotate(45)" />
-          <ellipse cx="0" cy="-8" rx="2.5" ry="5" fill="var(--accent)" opacity="0.45" transform="rotate(90)" />
-          <ellipse cx="0" cy="-8" rx="2.5" ry="5" fill="var(--accent)" opacity="0.35" transform="rotate(135)" />
-          {/* Rose center */}
-          <circle cx="0" cy="0" r="3.5" fill="var(--g2)" opacity="0.6" />
-          <circle cx="0" cy="0" r="1.8" fill="var(--accent)" opacity="0.8" />
-          {/* Tiny leaves extending outward */}
-          <path d="M4 0 C8 -3 12 -1 14 2 C11 0 8 2 4 0Z" fill="var(--live)" opacity="0.45" />
-          <path d="M0 4 C-3 8 -1 12 2 14 C0 11 2 8 0 4Z" fill="var(--live)" opacity="0.45" />
-        </g>
-      ))}
-
-      {/* Central mandala outer ring — 12 diamonds */}
-      {Array.from({ length: 12 }).map((_, i) => {
-        const angle = (i * 30 - 90) * (Math.PI / 180);
-        const r = 64;
-        const x = 100 + r * Math.cos(angle);
-        const y = 150 + r * Math.sin(angle);
-        return (
-          <polygon
-            key={i}
-            points={`${x},${y - 4} ${x + 3},${y} ${x},${y + 4} ${x - 3},${y}`}
-            fill="var(--accent)"
-            opacity={i % 3 === 0 ? 0.7 : 0.4}
-          />
-        );
-      })}
-
-      {/* Outer ring circle guide */}
-      <circle cx="100" cy="150" r="64" fill="none" stroke="var(--accent)" strokeWidth="0.4" opacity="0.18" />
-
-      {/* Middle ring — 8 curved lotus petals */}
-      {Array.from({ length: 8 }).map((_, i) => {
-        const angle = (i * 45) * (Math.PI / 180);
-        const px = 100 + 42 * Math.cos(angle);
-        const py = 150 + 42 * Math.sin(angle);
-        const c1x = 100 + 52 * Math.cos(angle - 0.35);
-        const c1y = 150 + 52 * Math.sin(angle - 0.35);
-        const c2x = 100 + 52 * Math.cos(angle + 0.35);
-        const c2y = 150 + 52 * Math.sin(angle + 0.35);
-        return (
-          <path
-            key={i}
-            d={`M100,150 C${c1x},${c1y} ${px},${py} ${px},${py} C${px},${py} ${c2x},${c2y} 100,150`}
-            fill="var(--accent)"
-            opacity="0.13"
-            stroke="var(--accent)"
-            strokeWidth="0.6"
-            strokeOpacity="0.35"
-          />
-        );
-      })}
-
-      {/* Inner mandala ring */}
-      <circle cx="100" cy="150" r="28" fill="none" stroke="var(--accent)" strokeWidth="0.8" opacity="0.3" />
-      <circle cx="100" cy="150" r="20" fill="none" stroke="var(--g2)" strokeWidth="0.6" opacity="0.25" />
-
-      {/* Crescent moon in center */}
-      <path
-        d="M100 130 Q115 138 115 150 Q115 162 100 170 Q120 167 123 150 Q123 133 100 130Z"
-        fill="var(--accent)"
-        opacity="0.35"
-      />
-      <path
-        d="M100 132 Q113 140 113 150 Q113 160 100 168 Q118 165 121 150 Q121 135 100 132Z"
-        fill="none"
-        stroke="var(--accent)"
-        strokeWidth="0.8"
-        opacity="0.55"
-      />
-
-      {/* 5-pointed star emerging from moon tips */}
-      <polygon
-        points="88,133 90,139 96,139 91,143 93,149 88,145 83,149 85,143 80,139 86,139"
-        fill="var(--accent)"
-        opacity="0.45"
-        transform="scale(0.85) translate(14,17)"
-      />
-
-      {/* Top ornamental line — leaf/dot pattern */}
-      <g opacity="0.35" transform="translate(100, 30)">
-        {[-36, -24, -12, 0, 12, 24, 36].map((x, j) => (
-          <g key={j} transform={`translate(${x}, 0)`}>
-            {j % 2 === 0 ? (
-              <ellipse cx="0" cy="0" rx="3" ry="4.5" fill="var(--live)" opacity="0.7" />
-            ) : (
-              <circle cx="0" cy="0" r="1.5" fill="var(--accent)" opacity="0.8" />
-            )}
-          </g>
-        ))}
-      </g>
-
-      {/* Bottom ornamental line — mirrored */}
-      <g opacity="0.35" transform="translate(100, 270)">
-        {[-36, -24, -12, 0, 12, 24, 36].map((x, j) => (
-          <g key={j} transform={`translate(${x}, 0)`}>
-            {j % 2 === 0 ? (
-              <ellipse cx="0" cy="0" rx="3" ry="4.5" fill="var(--live)" opacity="0.7" />
-            ) : (
-              <circle cx="0" cy="0" r="1.5" fill="var(--accent)" opacity="0.8" />
-            )}
-          </g>
-        ))}
-      </g>
-
-      {/* TAROT · AI label */}
-      <text
-        x="100" y="20"
-        textAnchor="middle"
-        fontFamily="var(--font-mono), ui-monospace, monospace"
-        fontSize="6"
-        fill="var(--accent)"
-        opacity="0.6"
-        letterSpacing="5"
-      >
-        TAROT · AI
-      </text>
-
-      {/* Card name + position on the back */}
-      {cardName ? (
-        <g>
-          {/* Subtle frosted banner */}
-          <rect x="14" y="258" width="172" height="34" rx="3" fill="#1A0F06" opacity="0.45" />
-          <rect x="14" y="258" width="172" height="34" rx="3" fill="none" stroke="var(--accent)" strokeWidth="0.5" opacity="0.3" />
-          <text
-            x="100" y="272"
-            textAnchor="middle"
-            fontFamily="var(--font-mono), ui-monospace, monospace"
-            fontSize="8.5"
-            fill="#F5E9CC"
-            opacity="0.92"
-            letterSpacing="1.5"
-          >
-            {cardName.toUpperCase()}
-          </text>
-          {position && (
-            <text x="100" y="283" textAnchor="middle" fontFamily="var(--font-mono), ui-monospace, monospace" fontSize="6.5" fill="#D4B483" opacity="0.75" fontStyle="italic">
-              {position}{reversed ? ' · Rev.' : ''}
-            </text>
-          )}
-        </g>
-      ) : (
-        <text x="100" y="288" textAnchor="middle" fontFamily="serif" fontSize="8" fill="var(--accent)" opacity="0.5" letterSpacing="7">✦ ✦ ✦</text>
-      )}
-
-      {/* Side line accents */}
-      <line x1="17" y1="80" x2="17" y2="220" stroke="var(--accent)" strokeWidth="0.5" opacity="0.18" />
-      <line x1="183" y1="80" x2="183" y2="220" stroke="var(--accent)" strokeWidth="0.5" opacity="0.18" />
-
-      {/* Small diamond accents along sides */}
-      {[110, 140, 170].map((y, i) => (
-        <g key={i}>
-          <polygon points={`17,${y - 4} 20,${y} 17,${y + 4} 14,${y}`} fill="var(--accent)" opacity="0.3" />
-          <polygon points={`183,${y - 4} 186,${y} 183,${y + 4} 180,${y}`} fill="var(--accent)" opacity="0.3" />
-        </g>
-      ))}
-    </svg>
-  );
+function variantFor(name: string): 0 | 1 | 2 {
+  let sum = 0;
+  for (let i = 0; i < name.length; i++) sum += name.charCodeAt(i);
+  return (sum % 3) as 0 | 1 | 2;
 }
 
-// Sparkle positions: [top%, left%, size]
-const SPARKLE_POSITIONS: [string, string, number][] = [
-  ['-8%', '10%',  3],
-  ['-8%', '80%',  4],
-  ['20%', '-10%', 3],
-  ['20%', '105%', 4],
-  ['85%', '5%',   3],
-  ['85%', '88%',  3],
-];
-
-export function TarotCard({ drawn, isFlipped, isFlippable, isRevealed, isLoading, onClick, size = 'md', showPosition = true }: TarotCardProps) {
-  const { width, height } = SIZES[size];
-  const [showSparkle, setShowSparkle] = useState(false);
+export function TarotCard({
+  drawn,
+  isFlipped,
+  isFlippable,
+  onClick,
+  size = 'md',
+  showPosition = true,
+  tilt = 0,
+}: TarotCardProps) {
+  const reduce = useReducedMotion();
   const [artFailed, setArtFailed] = useState(false);
+  const canFlip = Boolean(isFlippable && !isFlipped && onClick);
+  const variant = variantFor(drawn.card.name);
+  const hasArt = Boolean(drawn.imageUrl && drawn.imageUrl !== 'failed' && !artFailed);
 
   useEffect(() => {
     setArtFailed(false);
   }, [drawn.imageUrl]);
 
-  useEffect(() => {
-    if (isFlipped) {
-      setShowSparkle(true);
-      const t = setTimeout(() => setShowSparkle(false), 1000);
-      return () => clearTimeout(t);
-    }
-  }, [isFlipped]);
+  const face = (
+    <div className="oracle-shell" data-size={size}>
+      <motion.div
+        className="oracle-3d"
+        animate={{ rotateY: isFlipped ? 180 : 0 }}
+        transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 260, damping: 18 }}
+      >
+        <div className="face back">
+          <GeometricFace variant={variant} />
+        </div>
+        <div className="face front">
+          {hasArt ? (
+            <div className={drawn.reversed ? 'art-frame is-reversed' : 'art-frame'}>
+              <Image
+                src={drawn.imageUrl as string}
+                alt={drawn.card.name}
+                width={520}
+                height={780}
+                className="card-photo"
+                onError={() => setArtFailed(true)}
+              />
+            </div>
+          ) : drawn.imageUrl === 'failed' || artFailed ? (
+            <div className="card-fallback" role="img" aria-label={`${drawn.card.name} art unavailable`}>
+              <GeometricFace variant={variant} />
+              <span className="name">{drawn.card.name}</span>
+            </div>
+          ) : (
+            <div className="drawing" aria-hidden="true">
+              <GeometricFace variant={(variant + 1) % 3 as 0 | 1 | 2} />
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+
+  const label = `Turn over ${drawn.card.name}${drawn.reversed ? ', reversed' : ''}${
+    drawn.position ? `, ${drawn.position}` : ''
+  }`;
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div
-        style={{
-          width: `min(${width}px, 42vw)`,
-          height: `min(${height}px, 63vw)`,
-          perspective: 1200,
-          position: 'relative',
-        }}
-        onClick={isFlippable && !isFlipped ? onClick : undefined}
-        className={isFlippable && !isFlipped ? 'cursor-pointer' : ''}
-      >
-        {/* Sparkle burst on flip */}
-        {showSparkle && SPARKLE_POSITIONS.map(([top, left, sz], i) => (
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              top,
-              left,
-              width: sz,
-              height: sz,
-              borderRadius: '50%',
-              background: 'var(--accent)',
-              animation: 'drift-up 1s ease-out forwards',
-              animationDelay: `${i * 0.07}s`,
-              pointerEvents: 'none',
-              zIndex: 20,
-            }}
-          />
-        ))}
+    <motion.div
+      className="deal"
+      initial={reduce ? false : { opacity: 0, y: 28, rotate: tilt - 8 }}
+      animate={{ opacity: 1, y: 0, rotate: tilt }}
+      whileHover={reduce || !canFlip ? undefined : { y: -8, rotate: tilt - 1.5 }}
+      transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 320, damping: 20 }}
+    >
+      {canFlip ? (
+        <button type="button" className="oracle-hit" onClick={onClick} aria-label={label}>
+          {face}
+        </button>
+      ) : (
+        <div className="oracle-hit">{face}</div>
+      )}
 
-        <motion.div
-          className="relative w-full h-full"
-          style={{ transformStyle: 'preserve-3d' }}
-          animate={{ rotateY: isFlipped ? 180 : 0 }}
-          transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
-        >
-          {/* CARD BACK — face down (shown first), shows card name */}
-          <div
-            className={`absolute inset-0 rounded-lg overflow-hidden shadow-lg transition-shadow duration-500 ${
-              isFlippable && !isFlipped ? 'card-glow shadow-[0_0_30px_color-mix(in srgb, var(--accent) 20%, transparent)]' : 'shadow-[0_4px_20px_color-mix(in srgb, var(--fg) 12%, transparent)]'
-            }`}
-            style={{ backfaceVisibility: 'hidden' }}
-          >
-            <CardBackSVG cardName={drawn.card.name} position={drawn.position} reversed={drawn.reversed} />
-          </div>
+      {isFlipped && showPosition ? (
+        <div className="card-caption">
+          <p className="card-name">{drawn.card.name}</p>
+          {drawn.position && <p className="mono-label">{drawn.position}</p>}
+          {drawn.reversed && <p className="mono-label">Reversed</p>}
+        </div>
+      ) : null}
 
-          {/* CARD FRONT — revealed on flip (the AI art) */}
-          <div
-            className="absolute inset-0 rounded-lg overflow-hidden shadow-lg border border-[color-mix(in srgb, var(--accent) 30%, transparent)]"
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-          >
-            {drawn.imageUrl && drawn.imageUrl !== 'failed' && !artFailed ? (
-              <div className={`relative w-full h-full ${drawn.reversed ? 'rotate-180' : ''}`}>
-                <Image
-                  src={drawn.imageUrl}
-                  alt={drawn.card.name}
-                  width={width * 2}
-                  height={height * 2}
-                  className="w-full h-full object-cover"
-                  onError={() => setArtFailed(true)}
-                />
-                {/* Card name overlay */}
-                <div style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  background: 'linear-gradient(to top, rgba(10,6,2,0.82) 0%, rgba(10,6,2,0.4) 70%, transparent 100%)',
-                  padding: '18px 8px 7px',
-                  textAlign: 'center',
-                }}>
-                  <span style={{
-                    fontFamily: 'var(--font-sans), sans-serif',
-                    fontSize: Math.max(6, Math.round(width * 0.062)),
-                    letterSpacing: '0.01em',
-                    color: 'rgba(245,233,204,0.95)',
-                    textTransform: 'uppercase',
-                    textShadow: '0 1px 4px rgba(0,0,0,0.7)',
-                    display: 'block',
-                    lineHeight: 1.2,
-                  }}>
-                    {drawn.card.name}
-                  </span>
-                </div>
-              </div>
-            ) : drawn.imageUrl === 'failed' || artFailed ? (
-              <div className="card-art-placeholder" role="img" aria-label={`${drawn.card.name} art unavailable`}>
-                <div className="mark" aria-hidden="true">✦</div>
-                <span className="label">Card art</span>
-                <span className="name" style={{ fontSize: Math.max(12, Math.round(width * 0.09)) }}>
-                  {drawn.card.name}
-                </span>
-              </div>
-            ) : (
-              // Image still generating — mystical loading state
-              <div className="w-full h-full flex flex-col items-center justify-center gap-4" style={{
-                position: 'relative', overflow: 'hidden',
-                background: 'radial-gradient(ellipse at 50% 40%, #1E1430 0%, #0E0A1A 60%, #060410 100%)',
-              }}>
-                {/* Slow shimmer sweep */}
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  backgroundImage: 'linear-gradient(110deg, transparent 35%, color-mix(in srgb, var(--accent) 6%, transparent) 50%, transparent 65%)',
-                  backgroundSize: '200% 100%',
-                  animation: 'shimmer 3s ease-in-out infinite',
-                }} />
-                {/* Star field on card face */}
-                {[[20,15],[70,25],[45,70],[80,55],[15,60],[60,12],[35,85]].map(([x,y],i) => (
-                  <div key={i} style={{
-                    position: 'absolute',
-                    left: `${x}%`, top: `${y}%`,
-                    width: 1.5, height: 1.5,
-                    borderRadius: '50%',
-                    background: 'var(--accent)',
-                    animation: `star-twinkle ${2.5 + i * 0.4}s ease-in-out ${i * 0.3}s infinite`,
-                  }} />
-                ))}
-                {/* Concentric rings */}
-                <div style={{ position: 'relative', width: 38, height: 38, flexShrink: 0 }}>
-                  <div style={{
-                    position: 'absolute', inset: 0, borderRadius: '50%',
-                    border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)',
-                    animation: 'rotate-slow 6s linear infinite',
-                  }}>
-                    <div style={{ position: 'absolute', top: -3, left: '50%', transform: 'translateX(-50%)', color: 'var(--accent)', fontSize: 6 }}>✦</div>
-                  </div>
-                  <div style={{
-                    position: 'absolute', inset: 7, borderRadius: '50%',
-                    border: '1px solid color-mix(in srgb, var(--accent) 18%, transparent)',
-                    animation: 'rotate-slow 4s linear infinite reverse',
-                  }} />
-                  <div style={{
-                    position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'color-mix(in srgb, var(--accent) 50%, transparent)', fontSize: 11,
-                  }}>☽</div>
-                </div>
-                <span style={{
-                  fontFamily: 'var(--font-sans), sans-serif',
-                  fontSize: 6,
-                  letterSpacing: '0.01em',
-                  color: 'color-mix(in srgb, var(--accent) 45%, transparent)',
-                  textAlign: 'center',
-                  textTransform: 'uppercase',
-                }}>
-                  Manifesting
-                </span>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Card label — shows after flip */}
-      <AnimatePresence>
-        {isFlipped && showPosition && (
-          <motion.div
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.55, duration: 0.45 }}
-            className="text-center"
-          >
-            <p
-              style={{
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 10,
-                letterSpacing: '0.01em',
-                color: 'color-mix(in srgb, var(--accent) 90%, transparent)',
-                textTransform: 'uppercase',
-                marginBottom: 2,
-              }}
-            >
-              {drawn.card.name}
-            </p>
-            {drawn.position && (
-              <p style={{
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 12,
-                color: 'var(--brown-light)',
-                fontStyle: 'italic',
-              }}>
-                {drawn.position}
-              </p>
-            )}
-            {drawn.reversed && (
-              <p style={{
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 11,
-                color: 'var(--gold)',
-                fontStyle: 'italic',
-                opacity: 0.7,
-                marginTop: 2,
-              }}>
-                ↻ Reversed
-              </p>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* "tap to reveal" hint on flippable unflipped cards */}
-      <AnimatePresence>
-        {isFlippable && !isFlipped && (
-          <motion.div
-            initial={{ opacity: 0, y: 3 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -2 }}
-            transition={{ duration: 0.4 }}
-            style={{ textAlign: 'center' }}
-          >
-            <p
-              style={{
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 12,
-                color: 'var(--gold)',
-                fontStyle: 'italic',
-                letterSpacing: '0.06em',
-                opacity: 0.8,
-              }}
-            >
-              tap to reveal
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+      {canFlip && <p className="mono-label">Turn Over</p>}
+    </motion.div>
   );
 }

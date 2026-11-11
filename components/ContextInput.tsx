@@ -53,10 +53,11 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
     <div className="space-y-6">
       {/* Situation textarea */}
       <div>
-        <label className="label" style={{ display: 'block' }}>
-          What is happening in your life right now?
+        <label className="mono-label" htmlFor="situation" style={{ display: 'block', marginBottom: 8 }}>
+          What Is Happening Right Now?
         </label>
         <textarea
+          id="situation"
           className="input-field"
           rows={4}
           placeholder="Share as much or as little as you'd like. The more specific you are, the more personal your reading will be. This is private."
@@ -72,17 +73,18 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
       {/* Follow-up questions section — only show if question exists */}
       {question.trim() && (
         <div>
-          <p className="label" style={{ marginBottom: 12 }}>
-            Or let the oracle ask you
+          <p className="mono-label" style={{ marginBottom: 12 }}>
+            Or Let the Oracle Ask You
           </p>
 
           {followUpQuestions.length === 0 ? (
             <button
+              type="button"
               onClick={handleGenerateFollowUps}
               disabled={isLoadingFollowUps}
               className="btn-secondary w-full"
             >
-              {isLoadingFollowUps ? 'Reading your question...' : 'Generate follow-up questions'}
+              {isLoadingFollowUps ? 'Reading Your Question' : 'Generate Follow-Up Questions'}
             </button>
           ) : (
             <div className="space-y-4">

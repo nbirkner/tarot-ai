@@ -23,69 +23,35 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
 
   const tabs: { id: Tab; label: string; desc: string }[] = [
     { id: 'none', label: 'Skip', desc: 'General reading' },
-    { id: 'sun-sign', label: 'Sun Sign', desc: 'Quick & easy' },
+    { id: 'sun-sign', label: 'Sun Sign', desc: 'Quick and easy' },
     { id: 'birth-data', label: 'Full Chart', desc: 'Deepest reading' },
   ];
 
   return (
-    <div className="space-y-5">
-      {/* Tab switcher */}
-      <div className="flex gap-2">
+    <div className="stack" style={{ gap: 16 }}>
+      <div className="choice-row" role="group" aria-label="Chart detail">
         {tabs.map((t) => (
           <button
             key={t.id}
+            type="button"
+            className="choice-tile"
+            aria-pressed={tab === t.id}
             onClick={() => switchTab(t.id)}
-            style={{
-              flex: 1,
-              padding: '10px 8px',
-              border: '1px solid',
-              borderColor: tab === t.id ? 'var(--gold)' : 'var(--border-gold)',
-              borderRadius: 2,
-              background: tab === t.id ? 'var(--gold-pale)' : 'var(--cream-card)',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              textAlign: 'center' as const,
-            }}
           >
-            <p
-              style={{
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 11,
-                letterSpacing: '0.1em',
-                color: tab === t.id ? 'var(--brown-dark)' : 'var(--brown-light)',
-                marginBottom: 2,
-              }}
-            >
-              {t.label}
-            </p>
-            <p
-              style={{
-                fontFamily: 'var(--font-sans), sans-serif',
-                fontSize: 13,
-                fontStyle: 'italic',
-                color: 'var(--brown-light)',
-              }}
-            >
-              {t.desc}
-            </p>
+            <strong>{t.label}</strong>
+            <span className="fine">{t.desc}</span>
           </button>
         ))}
       </div>
 
       {tab === 'sun-sign' && (
-        <div>
-          <p
-            style={{
-              fontFamily: 'var(--font-sans), sans-serif',
-              fontSize: 14,
-              fontStyle: 'italic',
-              color: 'var(--brown-light)',
-              marginBottom: 8,
-            }}
-          >
-            Your sun sign shapes the reading&apos;s lens.
-          </p>
+        <div className="stack" style={{ gap: 8 }}>
+          <label className="mono-label" htmlFor="sun-sign">
+            Sun Sign
+          </label>
+          <p className="fine">Your sun sign shapes the reading&apos;s lens.</p>
           <select
+            id="sun-sign"
             className="input-field"
             value={value.type === 'sun-sign' ? value.sign : ''}
             onChange={(e) => onChange({ type: 'sun-sign', sign: e.target.value })}
@@ -101,18 +67,13 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
       )}
 
       {tab === 'birth-data' && (
-        <div className="space-y-3">
-          <p
-            style={{
-              fontFamily: 'var(--font-sans), sans-serif',
-              fontSize: 14,
-              fontStyle: 'italic',
-              color: 'var(--brown-light)',
-            }}
-          >
-            Your natal chart allows a deeply personal reading.
-          </p>
+        <div className="stack" style={{ gap: 10 }}>
+          <p className="fine">Your natal chart allows a deeply personal reading.</p>
+          <label className="mono-label" htmlFor="birth-date">
+            Birth Date
+          </label>
           <input
+            id="birth-date"
             type="date"
             className="input-field"
             value={value.type === 'birth-data' ? value.date : ''}
@@ -120,30 +81,41 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
               value.type === 'birth-data' && onChange({ ...value, date: e.target.value })
             }
           />
+          <label className="mono-label" htmlFor="birth-time">
+            Birth Time
+          </label>
           <input
+            id="birth-time"
             type="time"
-            placeholder="Birth time (optional)"
             className="input-field"
             value={value.type === 'birth-data' ? value.time : ''}
             onChange={(e) =>
               value.type === 'birth-data' && onChange({ ...value, time: e.target.value })
             }
           />
+          <label className="mono-label" htmlFor="birth-place">
+            Birth Place
+          </label>
           <input
+            id="birth-place"
             type="text"
-            placeholder="Birth location, e.g. Paris, France"
+            placeholder="Paris, France"
             className="input-field"
             value={value.type === 'birth-data' ? value.location : ''}
             onChange={(e) =>
               value.type === 'birth-data' && onChange({ ...value, location: e.target.value })
             }
           />
+          <label className="mono-label" htmlFor="birth-lat">
+            Latitude
+          </label>
           <input
+            id="birth-lat"
             type="number"
             min={-90}
             max={90}
             step={0.01}
-            placeholder="e.g. 40.71"
+            placeholder="40.71"
             className="input-field"
             value={value.type === 'birth-data' && value.lat != null ? value.lat : ''}
             onChange={(e) =>
@@ -151,12 +123,16 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
               onChange({ ...value, lat: e.target.value !== '' ? parseFloat(e.target.value) : undefined })
             }
           />
+          <label className="mono-label" htmlFor="birth-lon">
+            Longitude
+          </label>
           <input
+            id="birth-lon"
             type="number"
             min={-180}
             max={180}
             step={0.01}
-            placeholder="e.g. -74.01"
+            placeholder="-74.01"
             className="input-field"
             value={value.type === 'birth-data' && value.lon != null ? value.lon : ''}
             onChange={(e) =>
@@ -164,16 +140,8 @@ export function AstrologyInput({ value, onChange }: AstrologyInputProps) {
               onChange({ ...value, lon: e.target.value !== '' ? parseFloat(e.target.value) : undefined })
             }
           />
-          <p
-            style={{
-              fontFamily: 'var(--font-sans), sans-serif',
-              fontSize: 12,
-              fontStyle: 'italic',
-              color: 'var(--brown-light)',
-              marginTop: 2,
-            }}
-          >
-            Latitude &amp; longitude for Rising sign calculation (optional). Find your coordinates at latlong.net
+          <p className="fine">
+            Latitude and longitude are optional, for a rising sign. Look up coordinates at latlong.net.
           </p>
         </div>
       )}

@@ -79,7 +79,7 @@ export function PhotoUpload({ value, onChange }: PhotoUploadProps) {
   }
 
   return (
-    <div style={{ fontFamily: 'var(--font-sans), sans-serif' }}>
+    <div>
       <input
         ref={inputRef}
         type="file"
@@ -89,154 +89,38 @@ export function PhotoUpload({ value, onChange }: PhotoUploadProps) {
       />
 
       {value ? (
-        /* Preview state */
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <div style={{ position: 'relative', display: 'inline-block' }}>
-            <div
-              style={{
-                width: 96,
-                height: 96,
-                borderRadius: '50%',
-                overflow: 'hidden',
-                border: '2px solid var(--gold)',
-                boxShadow: '0 0 20px color-mix(in srgb, var(--accent) 20%, transparent)',
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={value}
-                alt="Your photo"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            </div>
-            <button
-              onClick={handleRemove}
-              title="Remove photo"
-              style={{
-                position: 'absolute',
-                top: -6,
-                right: -6,
-                width: 22,
-                height: 22,
-                borderRadius: '50%',
-                background: 'var(--brown-mid)',
-                color: 'var(--cream)',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: 13,
-                lineHeight: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: 'sans-serif',
-              }}
-            >
-              ×
+        <div className="photo-preview">
+          <div className="photo-frame">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={value} alt="Your uploaded portrait" />
+            <button type="button" className="photo-remove" onClick={handleRemove} aria-label="Remove Photo">
+              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                <path d="M3 3 L13 13 M13 3 L3 13" fill="none" stroke="currentColor" strokeWidth="2" />
+              </svg>
             </button>
           </div>
-          <p
-            style={{
-              fontSize: 14,
-              color: 'var(--brown-mid)',
-              fontStyle: 'italic',
-              margin: 0,
-              textAlign: 'center',
-            }}
-          >
-            Photo added ✦ Your cards will mirror your likeness.
-          </p>
-          <button
-            onClick={() => inputRef.current?.click()}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--brown-light)',
-              fontFamily: 'var(--font-sans), sans-serif',
-              fontSize: 13,
-              textDecoration: 'underline',
-              fontStyle: 'italic',
-            }}
-          >
-            Change photo
+          <p className="fine">Photo added. Your cards will mirror your likeness.</p>
+          <button type="button" className="link-quiet" onClick={() => inputRef.current?.click()}>
+            Change Photo
           </button>
         </div>
       ) : (
-        /* Upload area */
-        <div
+        <button
+          type="button"
+          className={`dropzone${isDragging ? ' is-hot' : ''}`}
           onClick={() => inputRef.current?.click()}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          style={{
-            border: `1.5px dashed ${isDragging ? 'var(--gold)' : 'var(--border-gold)'}`,
-            borderRadius: 4,
-            padding: '28px 24px',
-            textAlign: 'center',
-            cursor: 'pointer',
-            background: isDragging ? 'var(--gold-pale)' : 'var(--cream-card)',
-            transition: 'all 0.2s ease',
-          }}
         >
-          {/* Portrait icon */}
-          <div
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: '50%',
-              border: '1.5px solid var(--border-gold)',
-              margin: '0 auto 12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--gold-muted)',
-              fontSize: 22,
-            }}
-          >
-            ☽
-          </div>
-
-          <p
-            style={{
-              fontSize: 16,
-              color: 'var(--brown-dark)',
-              margin: '0 0 4px',
-              fontWeight: 500,
-            }}
-          >
-            Add your photo{' '}
-            <span style={{ color: 'var(--brown-light)', fontStyle: 'italic', fontSize: 14 }}>
-              (optional)
-            </span>
-          </p>
-
-          <p
-            style={{
-              fontSize: 14,
-              color: 'var(--brown-mid)',
-              fontStyle: 'italic',
-              margin: '0 0 12px',
-            }}
-          >
-            If your cards contain people, they&rsquo;ll resemble you ✦
-          </p>
-
-          <p style={{ fontSize: 13, color: 'var(--brown-light)', margin: 0 }}>
-            Click to browse or drag and drop
-          </p>
-        </div>
+          <span className="mono-label">Add Your Photo</span>
+          <span className="fine">Optional. If the cards contain people, they can resemble you.</span>
+          <span className="fine">Click to browse, or drag a picture here.</span>
+        </button>
       )}
 
       {error && (
-        <p
-          style={{
-            color: 'var(--rose)',
-            fontSize: 14,
-            fontStyle: 'italic',
-            textAlign: 'center',
-            marginTop: 8,
-          }}
-        >
+        <p className="field-error" role="alert" style={{ marginTop: 8 }}>
           {error}
         </p>
       )}

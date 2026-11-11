@@ -1,0 +1,436 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-11T01:11:45Z",
+  "title": "Design System: tarotai",
+  "extensions": {
+    "colorMeta": {
+      "ember": {
+        "role": "primary",
+        "displayName": "Ember",
+        "canonical": "oklch(68.4% 0.207 33.9)",
+        "tonalRamp": [
+          "oklch(15% 0.207 33.9)",
+          "oklch(26% 0.207 33.9)",
+          "oklch(38% 0.207 33.9)",
+          "oklch(49% 0.207 33.9)",
+          "oklch(61% 0.207 33.9)",
+          "oklch(72% 0.207 33.9)",
+          "oklch(84% 0.207 33.9)",
+          "oklch(95% 0.207 33.9)"
+        ]
+      },
+      "ember-row": {
+        "role": "primary",
+        "displayName": "Ember Row",
+        "canonical": "oklch(90.1% 0.053 37.1)",
+        "tonalRamp": [
+          "oklch(15% 0.053 37.1)",
+          "oklch(26% 0.053 37.1)",
+          "oklch(38% 0.053 37.1)",
+          "oklch(49% 0.053 37.1)",
+          "oklch(61% 0.053 37.1)",
+          "oklch(72% 0.053 37.1)",
+          "oklch(84% 0.053 37.1)",
+          "oklch(95% 0.053 37.1)"
+        ]
+      },
+      "stamp": {
+        "role": "secondary",
+        "displayName": "Stamp",
+        "canonical": "oklch(46.6% 0.156 32.7)",
+        "tonalRamp": [
+          "oklch(15% 0.156 32.7)",
+          "oklch(26% 0.156 32.7)",
+          "oklch(38% 0.156 32.7)",
+          "oklch(49% 0.156 32.7)",
+          "oklch(61% 0.156 32.7)",
+          "oklch(72% 0.156 32.7)",
+          "oklch(84% 0.156 32.7)",
+          "oklch(95% 0.156 32.7)"
+        ]
+      },
+      "salmon": {
+        "role": "tertiary",
+        "displayName": "Salmon",
+        "canonical": "oklch(82.9% 0.098 37.8)",
+        "tonalRamp": [
+          "oklch(15% 0.098 37.8)",
+          "oklch(26% 0.098 37.8)",
+          "oklch(38% 0.098 37.8)",
+          "oklch(49% 0.098 37.8)",
+          "oklch(61% 0.098 37.8)",
+          "oklch(72% 0.098 37.8)",
+          "oklch(84% 0.098 37.8)",
+          "oklch(95% 0.098 37.8)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "oklch(16.5% 0.015 34.5)",
+        "tonalRamp": [
+          "oklch(15% 0.015 34.5)",
+          "oklch(26% 0.015 34.5)",
+          "oklch(38% 0.015 34.5)",
+          "oklch(49% 0.015 34.5)",
+          "oklch(61% 0.015 34.5)",
+          "oklch(72% 0.015 34.5)",
+          "oklch(84% 0.015 34.5)",
+          "oklch(95% 0.015 34.5)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "oklch(97.9% 0.013 56.3)",
+        "tonalRamp": [
+          "oklch(15% 0.013 56.3)",
+          "oklch(26% 0.013 56.3)",
+          "oklch(38% 0.013 56.3)",
+          "oklch(49% 0.013 56.3)",
+          "oklch(61% 0.013 56.3)",
+          "oklch(72% 0.013 56.3)",
+          "oklch(84% 0.013 56.3)",
+          "oklch(95% 0.013 56.3)"
+        ]
+      },
+      "disabled": {
+        "role": "neutral",
+        "displayName": "Disabled",
+        "canonical": "oklch(40.6% 0.070 32.7)",
+        "tonalRamp": [
+          "oklch(15% 0.070 32.7)",
+          "oklch(26% 0.070 32.7)",
+          "oklch(38% 0.070 32.7)",
+          "oklch(49% 0.070 32.7)",
+          "oklch(61% 0.070 32.7)",
+          "oklch(72% 0.070 32.7)",
+          "oklch(84% 0.070 32.7)",
+          "oklch(95% 0.070 32.7)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Landing poster. Uppercase Host Grotesk 800, italic for the stressed phrase."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page titles and step titles, with a mono step index."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Thought titles, the seal, and the cap-panel title."
+      },
+      "lead": {
+        "displayName": "Lead",
+        "purpose": "The sentence under a thought title."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Reading text, ledes, and notes. Max 62ch."
+      },
+      "fine": {
+        "displayName": "Fine",
+        "purpose": "Asides, credits, and secondary lines at 14px."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Azeret Mono indexes, nav, keywords, and the footer."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card",
+        "value": "7px 7px 0 var(--ink)",
+        "purpose": "Oracle cards at rest."
+      },
+      {
+        "name": "card-hover",
+        "value": "11px 12px 0 var(--ink)",
+        "purpose": "Card hover, with a 7px lift and a further -1.5deg turn."
+      },
+      {
+        "name": "button",
+        "value": "4px 4px 0 var(--stamp)",
+        "purpose": "Primary actions and cap-panel buttons."
+      },
+      {
+        "name": "button-hover",
+        "value": "7px 7px 0 var(--stamp)",
+        "purpose": "Primary hover, after a -2px step."
+      },
+      {
+        "name": "button-secondary",
+        "value": "4px 4px 0 var(--ink)",
+        "purpose": "Secondary actions. Hover keeps this offset."
+      },
+      {
+        "name": "pressed",
+        "value": "0 0 0 var(--ink)",
+        "purpose": "Active button, translated 2px into the offset."
+      },
+      {
+        "name": "selected",
+        "value": "4px 4px 0 var(--ink)",
+        "purpose": "Selected deck row, spread tile, or choice tile."
+      },
+      {
+        "name": "field",
+        "value": "4px 4px 0 var(--ink)",
+        "purpose": "Text fields. Focus adds a 3px paper ring and a 6px ink ring."
+      },
+      {
+        "name": "photo",
+        "value": "5px 5px 0 var(--ink)",
+        "purpose": "The 120px photo frame."
+      },
+      {
+        "name": "cap",
+        "value": "8px 8px 0 var(--stamp)",
+        "purpose": "The ink cap panel."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "Hover, press, sigil turn, and the loading sweep."
+      },
+      {
+        "name": "press",
+        "value": "0.18s",
+        "purpose": "Button transform, shadow, and color."
+      },
+      {
+        "name": "card",
+        "value": "0.28s",
+        "purpose": "Card turn and shadow."
+      },
+      {
+        "name": "sigil",
+        "value": "0.45s",
+        "purpose": "Wordmark sigil rotates 18deg."
+      },
+      {
+        "name": "sweep",
+        "value": "1.6s",
+        "purpose": "Drawing sheen on a card. Skeleton sheen is 1.8s."
+      },
+      {
+        "name": "spin",
+        "value": "2.8s linear",
+        "purpose": "Sigil spin while a reading streams."
+      },
+      {
+        "name": "blink",
+        "value": "1.1s step-end",
+        "purpose": "Streaming caret."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "step",
+        "value": "640px"
+      },
+      {
+        "name": "fan",
+        "value": "700px"
+      },
+      {
+        "name": "choice",
+        "value": "720px"
+      },
+      {
+        "name": "mast",
+        "value": "800px"
+      },
+      {
+        "name": "spread",
+        "value": "900px"
+      },
+      {
+        "name": "home",
+        "value": "960px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ink stamp for the main action. Paper type, stamp offset, press flattens it.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">Begin Your Reading</button>",
+      "css": ".ds-btn-primary {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 48px;\n  padding: 0 18px;\n  border-radius: 2px;\n  border: 2px solid var(--ink);\n  background: var(--ink);\n  color: var(--paper);\n  box-shadow: 4px 4px 0 var(--stamp);\n  font-family: var(--font-sans);\n  font-weight: 800;\n  font-size: 16px;\n  letter-spacing: -0.03em;\n  line-height: 1;\n  text-decoration: none;\n  cursor: pointer;\n  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease), background-color 0.18s var(--ease), color 0.18s var(--ease);\n}\n.ds-btn-primary:hover {\n  background: var(--ink);\n  color: var(--paper);\n  transform: translate(-2px, -2px);\n  box-shadow: 7px 7px 0 var(--stamp);\n}\n.ds-btn-primary:focus-visible {\n  outline: 3px solid var(--paper);\n  outline-offset: 2px;\n}\n.ds-btn-primary:active {\n  transform: translate(2px, 2px);\n  box-shadow: 0 0 0 var(--ink);\n}\n.ds-btn-primary:disabled {\n  background: var(--disabled);\n  color: var(--paper);\n  border-color: var(--disabled);\n  box-shadow: none;\n  cursor: not-allowed;\n  transform: none;\n}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Transparent stamp with an ink offset. Hover fills ink and keeps the 4px shadow.",
+      "html": "<button class=\"ds-btn-secondary\" type=\"button\">Turn All Over</button>",
+      "css": ".ds-btn-secondary {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 48px;\n  padding: 0 18px;\n  border-radius: 2px;\n  border: 2px solid var(--ink);\n  background: transparent;\n  color: var(--ink);\n  box-shadow: 4px 4px 0 var(--ink);\n  font-family: var(--font-sans);\n  font-weight: 800;\n  font-size: 16px;\n  letter-spacing: -0.03em;\n  line-height: 1;\n  cursor: pointer;\n  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease), background-color 0.18s var(--ease), color 0.18s var(--ease);\n}\n.ds-btn-secondary:hover {\n  background: var(--ink);\n  color: var(--paper);\n  transform: translate(-2px, -2px);\n}\n.ds-btn-secondary:focus-visible {\n  outline: 3px solid var(--paper);\n  outline-offset: 2px;\n}\n.ds-btn-secondary:active {\n  transform: translate(2px, 2px);\n  box-shadow: 0 0 0 var(--ink);\n}\n.ds-btn-secondary:disabled {\n  background: var(--disabled);\n  color: var(--paper);\n  border-color: var(--disabled);\n  box-shadow: none;\n  cursor: not-allowed;\n  transform: none;\n}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Paper field with a 4px ink offset. Focus adds a paper ring inside an ink ring.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-label\">Your Question</span><textarea class=\"ds-input\" rows=\"4\" placeholder=\"What weighs on you? Or leave this blank for an open reading.\"></textarea></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 8px; width: 100%; }\n.ds-label { font-family: var(--font-mono); font-weight: 500; font-size: 12px; line-height: 1.4; letter-spacing: 0.04em; color: var(--ink); }\n.ds-input {\n  width: 100%;\n  min-height: 120px;\n  background: var(--paper);\n  color: var(--ink);\n  border: 2px solid var(--ink);\n  border-radius: 2px;\n  padding: 12px 14px;\n  box-shadow: 4px 4px 0 var(--ink);\n  font-family: var(--font-sans);\n  font-size: 16px;\n  line-height: 1.5;\n  outline: none;\n  resize: vertical;\n}\n.ds-input::placeholder { color: #4a2c24; opacity: 1; }\n.ds-input:focus { box-shadow: 4px 4px 0 var(--ink), 0 0 0 3px var(--paper), 0 0 0 6px var(--ink); }"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "A suggested question. Paper wash at rest, ember row on hover.",
+      "html": "<button class=\"ds-chip\" type=\"button\">What should I release?</button>",
+      "css": ".ds-chip {\n  min-height: 44px;\n  padding: 8px 12px;\n  border-radius: 2px;\n  border: 2px solid var(--ink);\n  background: color-mix(in srgb, var(--paper) 35%, transparent);\n  color: var(--ink);\n  font-family: var(--font-sans);\n  font-size: 14px;\n  line-height: 1.35;\n  text-align: left;\n  cursor: pointer;\n}\n.ds-chip:hover { background: var(--ember-row); }\n.ds-chip:focus-visible {\n  outline: 3px solid var(--paper);\n  outline-offset: 2px;\n  box-shadow: 0 0 0 6px var(--ink);\n}"
+    },
+    {
+      "name": "Deck Row",
+      "kind": "custom",
+      "refersTo": "deck-row",
+      "description": "A full-width deck choice. Selected rows turn to paper and take a 4px ink offset.",
+      "html": "<button class=\"ds-deck\" type=\"button\" aria-pressed=\"true\"><span class=\"ds-deck-copy\"><strong>Dark Gothic</strong><span class=\"ds-fine\">Atmospheric, mysterious, celestial</span><span class=\"ds-label\">Midnight ritual energy</span></span><span class=\"ds-radio\" aria-hidden=\"true\"></span></button>",
+      "css": ".ds-deck {\n  width: 100%;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 16px;\n  min-height: 72px;\n  padding: 14px 16px;\n  border: 2px solid var(--ink);\n  border-radius: 2px;\n  background: color-mix(in srgb, var(--paper) 28%, transparent);\n  color: var(--ink);\n  text-align: left;\n  cursor: pointer;\n  font-family: var(--font-sans);\n}\n.ds-deck:hover { background: var(--ember-row); }\n.ds-deck[aria-pressed=\"true\"] { background: var(--paper); box-shadow: 4px 4px 0 var(--ink); }\n.ds-deck[aria-pressed=\"true\"]:hover { background: var(--paper); }\n.ds-deck-copy { display: flex; flex-direction: column; gap: 2px; }\n.ds-deck strong { font-weight: 800; letter-spacing: -0.03em; font-size: 16px; }\n.ds-fine { font-size: 14px; line-height: 1.45; }\n.ds-label { font-family: var(--font-mono); font-weight: 500; font-size: 12px; letter-spacing: 0.04em; line-height: 1.4; }\n.ds-radio { width: 18px; height: 18px; border: 2px solid var(--ink); border-radius: 50%; flex: none; background: transparent; }\n.ds-deck[aria-pressed=\"true\"] .ds-radio { background: var(--ink); box-shadow: inset 0 0 0 3px var(--paper); }\n.ds-deck:focus-visible { outline: 3px solid var(--paper); outline-offset: 2px; }"
+    },
+    {
+      "name": "Spread Tile",
+      "kind": "custom",
+      "refersTo": "spread-tile",
+      "description": "A spread choice with a line diagram, a name, and a mono card count.",
+      "html": "<button class=\"ds-spread\" type=\"button\" aria-pressed=\"false\"><svg class=\"ds-mark\" viewBox=\"0 0 68 44\" aria-hidden=\"true\"><rect x=\"10\" y=\"8\" width=\"12\" height=\"26\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"/><rect x=\"26\" y=\"8\" width=\"12\" height=\"26\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"/><rect x=\"42\" y=\"8\" width=\"12\" height=\"26\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"/></svg><strong>Three Card</strong><span class=\"ds-fine\">Past, Present, Future (allegedly)</span><span class=\"ds-label\">3 Cards</span></button>",
+      "css": ".ds-spread {\n  width: 220px;\n  min-height: 148px;\n  padding: 12px;\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n  border: 2px solid var(--ink);\n  border-radius: 2px;\n  background: color-mix(in srgb, var(--paper) 28%, transparent);\n  color: var(--ink);\n  text-align: left;\n  cursor: pointer;\n  font-family: var(--font-sans);\n}\n.ds-spread:hover { background: var(--ember-row); }\n.ds-spread[aria-pressed=\"true\"] { background: var(--paper); box-shadow: 4px 4px 0 var(--ink); }\n.ds-mark { width: 100%; height: 42px; }\n.ds-spread strong { font-weight: 800; letter-spacing: -0.03em; font-size: 16px; }\n.ds-fine { font-size: 14px; line-height: 1.45; }\n.ds-label { font-family: var(--font-mono); font-weight: 500; font-size: 12px; letter-spacing: 0.04em; }\n.ds-spread:focus-visible { outline: 3px solid var(--paper); outline-offset: 2px; }"
+    },
+    {
+      "name": "Oracle Card",
+      "kind": "card",
+      "refersTo": "oracle-card",
+      "description": "A square paper shell with a 7px ink offset and a slight turn. Hover lifts and turns it further.",
+      "html": "<article class=\"ds-card\" style=\"--tilt:-7deg\"><svg class=\"ds-geo\" viewBox=\"0 0 200 300\" aria-hidden=\"true\"><rect width=\"200\" height=\"300\" fill=\"#140c0a\"/><rect x=\"14\" y=\"14\" width=\"172\" height=\"272\" fill=\"none\" stroke=\"#ff5a36\" stroke-width=\"2\"/><polygon points=\"100,42 164,150 100,258 36,150\" fill=\"none\" stroke=\"#ff5a36\" stroke-width=\"3\"/><polygon points=\"100,86 138,150 100,214 62,150\" fill=\"none\" stroke=\"#ff5a36\" stroke-width=\"3\"/><polygon points=\"100,140 106,150 100,160 94,150\" fill=\"#ff5a36\"/></svg></article>",
+      "css": ".ds-card {\n  --tilt: -7deg;\n  width: 148px;\n  aspect-ratio: 2 / 3;\n  border: 2px solid var(--ink);\n  background: var(--paper);\n  box-shadow: 7px 7px 0 var(--ink);\n  transform: rotate(var(--tilt));\n  overflow: hidden;\n  transition: transform 0.28s var(--ease), box-shadow 0.28s var(--ease);\n}\n.ds-card:hover {\n  transform: rotate(calc(var(--tilt) - 1.5deg)) translateY(-7px);\n  box-shadow: 11px 12px 0 var(--ink);\n}\n.ds-geo { display: block; width: 100%; height: 100%; }\n@media (prefers-reduced-motion: reduce) {\n  .ds-card, .ds-card:hover { transform: none; transition: none; }\n}"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "refersTo": "tab-current",
+      "description": "Sigil wordmark, mono links, and the ember mobile bar. The product shows the bar below 800px and the mast links from 800px.",
+      "html": "<header class=\"ds-mast\"><a class=\"ds-wordmark\" href=\"/\"><svg class=\"ds-sigil\" viewBox=\"0 0 32 32\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M16 1.2 21.2 10.8 30.8 16 21.2 21.2 16 30.8 10.8 21.2 1.2 16 10.8 10.8 16 1.2ZM16 9.2 18.3 13.7 22.8 16 18.3 18.3 16 22.8 13.7 18.3 9.2 16 13.7 13.7 16 9.2Z\"/></svg><span>tarotai</span></a><nav class=\"ds-mast-nav\" aria-label=\"Primary\"><a href=\"/reading\" aria-current=\"page\">Oracle</a><a href=\"/history\">History</a><a href=\"/about\">About</a></nav></header><nav class=\"ds-tabbar\" aria-label=\"Primary\"><a href=\"/reading\" aria-current=\"page\">Oracle</a><a href=\"/history\">History</a><a href=\"/about\">About</a></nav>",
+      "css": ".ds-mast {\n  display: grid;\n  grid-template-columns: 1fr auto;\n  align-items: center;\n  gap: 8px 16px;\n  padding-bottom: 14px;\n  border-bottom: 1px solid var(--ink);\n  color: var(--ink);\n}\n.ds-wordmark {\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n  min-height: 44px;\n  font-family: var(--font-sans);\n  font-weight: 800;\n  font-size: 22px;\n  letter-spacing: -0.04em;\n  line-height: 1;\n  text-decoration: none;\n  color: inherit;\n}\n.ds-sigil { width: 22px; height: 22px; display: block; transition: transform 0.45s var(--ease); }\n.ds-wordmark:hover .ds-sigil, .ds-wordmark:focus-visible .ds-sigil { transform: rotate(18deg); }\n.ds-mast-nav, .ds-tabbar { display: flex; }\n.ds-mast-nav { gap: 4px 18px; }\n.ds-mast-nav a, .ds-tabbar a {\n  font-family: var(--font-mono);\n  font-weight: 500;\n  font-size: 12px;\n  line-height: 1;\n  letter-spacing: 0.04em;\n  text-decoration: none;\n  color: var(--ink);\n}\n.ds-mast-nav a { min-height: 44px; display: inline-flex; align-items: center; border-bottom: 2px solid transparent; }\n.ds-mast-nav a:hover, .ds-mast-nav a[aria-current=\"page\"] { border-bottom-color: var(--ink); }\n.ds-tabbar {\n  margin-top: 12px;\n  background: var(--ember);\n  border-top: 1px solid var(--ink);\n  padding: 4px 6px;\n}\n.ds-tabbar a { flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; }\n.ds-tabbar a[aria-current=\"page\"] { background: var(--ink); color: var(--paper); }\n.ds-wordmark:focus-visible, .ds-mast-nav a:focus-visible, .ds-tabbar a:focus-visible {\n  outline: 3px solid var(--paper);\n  outline-offset: 2px;\n  box-shadow: 0 0 0 6px var(--ink);\n}"
+    },
+    {
+      "name": "Cap Panel",
+      "kind": "custom",
+      "refersTo": "limit-panel",
+      "description": "The ink hard stop for the spend cap. Stamp offset, paper type, paper button.",
+      "html": "<section class=\"ds-limit\" role=\"alert\"><h2 class=\"ds-limit-title\">The cards need rest, come back later</h2><p>The deck is capped for now. Come back when it has had a minute.</p><button class=\"ds-btn-on-ink\" type=\"button\">Back</button></section>",
+      "css": ".ds-limit {\n  display: flex;\n  flex-direction: column;\n  align-items: flex-start;\n  gap: 12px;\n  max-width: 440px;\n  padding: 22px 20px;\n  background: var(--ink);\n  color: var(--paper);\n  box-shadow: 8px 8px 0 var(--stamp);\n}\n.ds-limit-title {\n  margin: 0;\n  font-family: var(--font-sans);\n  font-weight: 800;\n  font-size: clamp(1.7rem, 4vw, 2.5rem);\n  letter-spacing: -0.04em;\n  line-height: 0.92;\n  text-transform: uppercase;\n  color: var(--paper);\n}\n.ds-limit p { margin: 0; color: var(--paper); font-family: var(--font-sans); font-size: 16px; line-height: 1.5; }\n.ds-btn-on-ink {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 48px;\n  padding: 0 18px;\n  border-radius: 2px;\n  border: 2px solid var(--ink);\n  background: var(--paper);\n  color: var(--ink);\n  box-shadow: 4px 4px 0 var(--stamp);\n  font-family: var(--font-sans);\n  font-weight: 800;\n  font-size: 16px;\n  letter-spacing: -0.03em;\n  line-height: 1;\n  cursor: pointer;\n  transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease), background-color 0.18s var(--ease);\n}\n.ds-btn-on-ink:hover { background: var(--ember); color: var(--ink); transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--stamp); }\n.ds-btn-on-ink:focus-visible { outline: 3px solid var(--paper); outline-offset: 2px; }\n.ds-btn-on-ink:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--ink); }"
+    },
+    {
+      "name": "Colophon",
+      "kind": "custom",
+      "refersTo": "colophon",
+      "description": "The mono footer. Sigil, the magic-and-math line, the prompt line, and the site credit.",
+      "html": "<footer class=\"ds-colophon\"><p class=\"ds-brand\"><svg class=\"ds-sigil\" viewBox=\"0 0 32 32\" aria-hidden=\"true\" focusable=\"false\"><path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M16 1.2 21.2 10.8 30.8 16 21.2 21.2 16 30.8 10.8 21.2 1.2 16 10.8 10.8 16 1.2ZM16 9.2 18.3 13.7 22.8 16 18.3 18.3 16 22.8 13.7 18.3 9.2 16 13.7 13.7 16 9.2Z\"/></svg><span>Made with a little magic &amp; a lot of math</span></p><p>Not a prediction. A prompt.</p><p><a href=\"https://www.nikibirkner.com\">nikibirkner.com</a> <span aria-hidden=\"true\">/</span> <span>tarot-ai</span></p></footer>",
+      "css": ".ds-colophon {\n  display: grid;\n  gap: 8px;\n  padding-top: 16px;\n  border-top: 1px solid var(--ink);\n  color: var(--ink);\n  font-family: var(--font-mono);\n  font-weight: 500;\n  font-size: 12px;\n  line-height: 1.45;\n  letter-spacing: 0.03em;\n}\n.ds-colophon p { margin: 0; }\n.ds-brand { display: flex; align-items: center; gap: 8px; }\n.ds-brand .ds-sigil { width: 16px; height: 16px; }\n.ds-colophon a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }\n@media (min-width: 800px) {\n  .ds-colophon { grid-template-columns: 1.4fr 1fr auto; align-items: center; gap: 18px; }\n  .ds-colophon p:nth-child(2) { text-align: center; }\n  .ds-colophon p:nth-child(3) { text-align: right; }\n}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Pocket Grimoire",
+    "overview": "tarotai is a pocket oracle printed like a modern grimoire. The viewport is an ember field. Type, hairline rules, and borders are near-black ink. Paper is the card, the field, the selected row, and the keyword. The poster voice is Host Grotesk at weight 800, set in uppercase, with a real italic for the stressed phrase. Azeret Mono keeps the indexes, the nav, and the footer small.\n\nThe shell is one column inside 1120px. The landing pairs a left-hand poster with a fan of turned cards. The draw is a short sequence of deck rows and spread tiles, then the dealt cards, then the reading. A hard stop, including the spend cap, sits in an ink panel with a stamp-colored offset. Depth is that offset, with no blur. Below 800px the primary nav is an ember bar.\n\nThe world is its own brand, apart from the parent site, and it refuses the cream page and the serif tarot template. The wordmark is the lowercase name tarotai beside a four-point sigil. Labels and controls are Title Case, without emoji or em dashes.",
+    "keyCharacteristics": [
+      "Ember field with ink type, rules, and borders",
+      "Paper reserved for cards, fields, selected rows, and keywords",
+      "Host Grotesk 800 uppercase display with a real italic stress",
+      "Azeret Mono at 12px for labels, nav, keywords, and the footer",
+      "Hard offset shadows and a slight turn on the cards",
+      "2px radius on controls; square cards, rules, keywords, and the cap panel",
+      "Ember mobile tab bar with an ink current state",
+      "Sigil wordmark and a mono colophon"
+    ],
+    "rules": [
+      {
+        "name": "The Ember Field Rule",
+        "body": "The page, the shell, and the mobile tab bar are ember. Paper is a card, a field, a selected choice, or a keyword.",
+        "section": "colors"
+      },
+      {
+        "name": "The Stamp Shadow Rule",
+        "body": "Buttons and the cap panel cast stamp. Cards cast ink. The offset never blurs.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Ink Rule",
+        "body": "Text, hairline rules, and control borders are ink. Ember is the field. The cap panel flips type to paper.",
+        "section": "colors"
+      },
+      {
+        "name": "The Grotesk Italic Rule",
+        "body": "Display, step titles, and seals are Host Grotesk 800, uppercase, tracked at -0.04em, with line-height 0.92. A stressed phrase is the real italic at the same weight.",
+        "section": "typography"
+      },
+      {
+        "name": "The Mono Index Rule",
+        "body": "Nav, step indexes, keywords, group labels, and the footer are Azeret Mono 500 at 12px. Nav, indexes, and group labels track at 0.04em. Keywords and the footer track at 0.03em. They stay out of the display face.",
+        "section": "typography"
+      },
+      {
+        "name": "The Title Case Rule",
+        "body": "Labels and controls are Title Case. The wordmark stays the lowercase name tarotai.",
+        "section": "typography"
+      },
+      {
+        "name": "The Pocket Measure Rule",
+        "body": "The shell is a 1120px column. A reading step stops at 760px, the written reading at 740px, body lines at 62ch, and the home lede at 38ch.",
+        "section": "layout"
+      },
+      {
+        "name": "The Ember Bar Rule",
+        "body": "Below 800px the primary nav is a fixed ember bar with a 1px ink rule on top. The current item is ink with paper type. The page and the sticky step actions clear that bar.",
+        "section": "layout"
+      },
+      {
+        "name": "The Hard Offset Rule",
+        "body": "Shadows are zero-blur offsets. Cards rest at 7px 7px ink and lift to 11px 12px ink. Buttons rest at 4px 4px and grow to 7px 7px. A press moves 2px into the shadow until the offset is gone.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Turn Rule",
+        "body": "A dealt card steps about 2.4 degrees off upright. The landing fan rests at -7deg, 1.5deg, and 6deg. Hover turns a card another -1.5deg and lifts it 7px. Reduced motion drops the turn, the lift, and the button nudge.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Almost Sharp Rule",
+        "body": "Controls, fields, deck rows, spread tiles, and chips use a 2px radius. Cards, keywords, the cap panel, rules, and the photo frame stay square. The deck radio is the only circle.",
+        "section": "shapes"
+      },
+      {
+        "name": "The Paper Focus Rule",
+        "body": "Links, chips, and the wordmark take a 3px paper outline, offset 2px, plus a 6px ink ring. A button keeps its stamp or ink offset and adds the paper outline. A field clears the outline, keeps the 4px ink offset, and adds a 3px paper ring inside a 6px ink ring.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "**Do** flood the shell with ember (#ff5a36) and set text, rules, and borders in ink (#140c0a).",
+      "**Do** set posters, step titles, and seals in Host Grotesk 800, uppercase, tracked at -0.04em, and stress a phrase with the real italic at the same weight.",
+      "**Do** set nav, indexes, keywords, and the footer in Azeret Mono 500 at 12px, tracked at 0.04em.",
+      "**Do** print a card with a 2px ink border, a paper ground, a 7px ink offset shadow, and a slight turn.",
+      "**Do** keep the mobile tab bar on ember, with the current item in ink and paper type.",
+      "**Do** show the spend cap and other hard stops in the ink cap panel, with an 8px stamp shadow and a paper button.",
+      "**Do** close every page with the mono colophon: a 16px sigil, \"Made with a little magic & a lot of math\", \"Not a prediction. A prompt.\", and nikibirkner.com / tarot-ai.",
+      "**Do** keep labels and controls in Title Case, and keep the wordmark as lowercase tarotai."
+    ],
+    "donts": [
+      "**Don't** set the page on paper or cream. Paper is for cards, fields, selected rows, and keywords.",
+      "**Don't** blur a shadow or use the transparent warm-shadow alias. Depth is a hard offset.",
+      "**Don't** turn the mobile nav into a paper bar.",
+      "**Don't** set display type in a serif or in mono, and don't fake the italic with a slant.",
+      "**Don't** use emoji, stock photos, or em dashes in labels and controls.",
+      "**Don't** add eyebrow labels above headlines. The masthead center line is an existing exception, not a pattern.",
+      "**Don't** treat the legacy aliases (gold, sage, rose, violet, cream, brown) as a palette. They resolve to ink, paper, or ember row."
+    ]
+  }
+}
