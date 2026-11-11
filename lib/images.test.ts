@@ -12,11 +12,11 @@ import {
 
 describe('card image model', () => {
   it('uses a current Together serverless model instead of the retired FLUX ids', () => {
-    assert.equal(IMAGE_MODEL, 'black-forest-labs/FLUX.1.1-pro');
+    assert.equal(IMAGE_MODEL, 'Qwen/Qwen-Image');
     for (const retired of RETIRED_IMAGE_MODELS) {
       assert.notEqual(IMAGE_MODEL, retired);
     }
-    assert.equal(IMAGE_PRICE_USD, 0.031457);
+    assert.equal(IMAGE_PRICE_USD, 0.0058);
     assert.equal(IMAGE_WIDTH % 8, 0);
     assert.equal(IMAGE_HEIGHT % 8, 0);
     assert.equal(IMAGE_STEPS, 28);
