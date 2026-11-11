@@ -10,13 +10,12 @@ import {
   IMAGE_WIDTH,
   imageFailureIsTerminal,
 } from '../../../lib/images';
-import { readingLimitResponse } from '../../../lib/reading-quota';
-import { GenerateCardRequest } from '../../../lib/types';
+import { readingLimitResponse, takeSpend } from '../../../lib/reading-quota';
+import { IMAGE_PRICE_MICRODOLLARS, IMAGE_REFERENCE_PRICE_MICRODOLLARS } from '../../../lib/spend';
+import type { GenerateCardRequest } from '../../../lib/types';
 import { describeTogetherFailure, logTogetherFailure, type TogetherFailure } from '../../../lib/together';
 
 export const maxDuration = 60;
-
-const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
 
 type ImageResult =
   | { ok: true; imageUrl: string }
@@ -29,7 +28,7 @@ async function requestImage(
   const response = await fetch('https://api.together.xyz/v1/images/generations', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${TOGETHER_API_KEY}`,
+      Authorization: `Bearer ${process.env.TOGETHER_API_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -93,13 +92,19 @@ export async function POST(req: NextRequest) {
       : `Card title "${cardName.toUpperCase()}" at the bottom in gothic serif lettering.`;
     let fullPrompt = `${safetyPrefix}${basePrompt} ${styleModifier}. ${borderStyle} ${titleStyle} High detail illustration.`;
 
+    // The face photo is forwarded to Together as a reference image for this
+    // request only. It is not written to Redis, disk, logs, or the saved reading.
     if (userPhotoBase64) {
       fullPrompt += ' Use the reference photo for the faces and appearance of the human figures in this card — if the reference shows one person apply them to the card\'s main figure, if multiple people are shown distribute them naturally across the card\'s figures. Keep all symbolic objects, animals, landscapes, and celestial elements unchanged. All figures must be fully clothed and tasteful.';
+      const withReference = await takeSpend(IMAGE_REFERENCE_PRICE_MICRODOLLARS);
+      if (!withReference.ok) return withReference.response;
       try {
         const withPhoto = await requestImage(fullPrompt, userPhotoBase64);
         if (withPhoto.ok) {
+          await withReference.settle(IMAGE_REFERENCE_PRICE_MICRODOLLARS);
           return NextResponse.json({ imageUrl: withPhoto.imageUrl, estimatedCost: IMAGE_PRICE_USD });
         }
+        await withReference.settle(0);
         if (imageFailureIsTerminal(withPhoto.failure.providerCode)) {
           return NextResponse.json(
             {
@@ -112,23 +117,32 @@ export async function POST(req: NextRequest) {
         }
         console.error('generate-card: reference photo was rejected, drawing the card without it');
       } catch (photoErr) {
+        await withReference.settle(0);
         console.error('generate-card: reference photo request failed, drawing the card without it', photoErr instanceof Error ? photoErr.name : 'Error');
       }
     }
 
-    const drawn = await requestImage(fullPrompt);
-    if (!drawn.ok) {
-      return NextResponse.json(
-        {
-          error: 'Image generation failed',
-          providerStatus: drawn.failure.status,
-          providerCode: drawn.failure.providerCode,
-        },
-        { status: drawn.failure.status === 502 ? 500 : drawn.failure.status >= 400 ? drawn.failure.status : 500 },
-      );
+    const drawnSpend = await takeSpend(IMAGE_PRICE_MICRODOLLARS);
+    if (!drawnSpend.ok) return drawnSpend.response;
+    try {
+      const drawn = await requestImage(fullPrompt);
+      if (!drawn.ok) {
+        await drawnSpend.settle(0);
+        return NextResponse.json(
+          {
+            error: 'Image generation failed',
+            providerStatus: drawn.failure.status,
+            providerCode: drawn.failure.providerCode,
+          },
+          { status: drawn.failure.status === 502 ? 500 : drawn.failure.status >= 400 ? drawn.failure.status : 500 },
+        );
+      }
+      await drawnSpend.settle(IMAGE_PRICE_MICRODOLLARS);
+      return NextResponse.json({ imageUrl: drawn.imageUrl, estimatedCost: IMAGE_PRICE_USD });
+    } catch (err) {
+      await drawnSpend.settle(0);
+      throw err;
     }
-
-    return NextResponse.json({ imageUrl: drawn.imageUrl, estimatedCost: IMAGE_PRICE_USD });
   } catch (err) {
     console.error('generate-card error:', err instanceof Error ? err.name : 'Error');
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

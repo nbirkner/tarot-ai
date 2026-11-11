@@ -1,10 +1,30 @@
 export const RATE_LIMIT_MESSAGE = 'The cards need rest, come back later';
+export const SPEND_CAP_MESSAGE = 'The deck is resting, try again tomorrow';
+export const LIMITS_UNAVAILABLE_MESSAGE =
+  'The cards cannot be drawn right now. Please try again later.';
 
+/** Signed-out limits. A later signed-in cap must stay under the same daily dollar cap. */
 export const READING_LIMITS = {
   perIpPerHour: 5,
   perIpPerDay: 20,
   globalPerDay: 300,
 } as const;
+
+export function upstashConfigured(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return Boolean(env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN);
+}
+
+/** Map a limiter HTTP response to the sentence the reading page shows. */
+export function messageForLimitResponse(status: number, body: string): string | null {
+  if (body.includes('"spend_cap"') || body.includes(SPEND_CAP_MESSAGE)) return SPEND_CAP_MESSAGE;
+  if (status === 429 && (body.includes('"rate_limited"') || body.includes(RATE_LIMIT_MESSAGE))) {
+    return RATE_LIMIT_MESSAGE;
+  }
+  if (status === 503 && body.includes('"limits_unavailable"')) return LIMITS_UNAVAILABLE_MESSAGE;
+  return null;
+}
 
 export const HOUR_MS = 60 * 60 * 1000;
 export const DAY_MS = 24 * HOUR_MS;
@@ -14,13 +34,22 @@ export const READING_ID_TTL_MS = 15 * 60 * 1000;
 /** Celtic Cross is the largest spread. */
 export const MAX_SPREAD_CARDS = 10;
 /**
- * Hard cap on calls that reuse one reading id.
- * One call per card, plus synthesis and a single spare (cards + 2).
- * Image generations use a separate counter with the same cap.
+ * Text calls that reuse one reading id.
+ * Celtic Cross is 10 card interpretations plus one synthesis.
+ * The client retries one failed call, so there is a single spare.
  */
-export const MAX_CALLS_PER_READING = MAX_SPREAD_CARDS + 2;
+export const MAX_TEXT_CALLS_PER_READING = MAX_SPREAD_CARDS + 2;
+/**
+ * Image calls that reuse one reading id.
+ * One generation per card, plus one retry. A second spare is unused by the UI.
+ */
+export const MAX_IMAGE_CALLS_PER_READING = MAX_SPREAD_CARDS + 1;
 
-export type QuotaScope = 'hour' | 'day' | 'global' | 'reading';
+export function maxCallsFor(kind: QuotaKind): number {
+  return kind === 'image' ? MAX_IMAGE_CALLS_PER_READING : MAX_TEXT_CALLS_PER_READING;
+}
+
+export type QuotaScope = 'hour' | 'day' | 'global' | 'reading' | 'unavailable';
 
 /** Text/chat routes share a reading allowance. Card images spend on their own. */
 export type QuotaKind = 'reading' | 'image';
@@ -62,12 +91,13 @@ function retryAfter(hits: number[], now: number, windowMs: number): number {
 }
 
 /**
- * Sliding-window limiter used when Upstash env vars are absent, and as the
- * fallback if Redis throws. One process only — production should set Upstash
- * so the cap is shared across serverless instances.
+ * In-process model of the reading windows, for tests.
+ * Production must not use this. Signed-out limits live in Upstash, and a
+ * Redis error blocks the paid call instead of falling back here.
+ * One reading id spends a single shared IP/global slot. Text and image calls
+ * then have their own per-reading counters, so a direct image call cannot
+ * open a second hourly budget.
  */
-type Allowance = { at: number; calls: number };
-
 export function createMemoryQuota(
   limits: {
     perIpPerHour: number;
@@ -76,7 +106,8 @@ export function createMemoryQuota(
   } = READING_LIMITS,
 ): ReadingQuota {
   const hits = new Map<string, number[]>();
-  const allowances = new Map<string, Allowance>();
+  const sessions = new Map<string, number>();
+  const calls = new Map<string, { at: number; calls: number }>();
 
   function windowHits(key: string, now: number, windowMs: number): number[] {
     const fresh = (hits.get(key) ?? []).filter((t) => now - t < windowMs);
@@ -86,33 +117,38 @@ export function createMemoryQuota(
 
   return {
     async consume(ip, readingId, now = Date.now(), kind = 'reading') {
-      if (allowances.size > 2000) {
-        for (const [key, entry] of allowances) {
-          if (now - entry.at >= READING_ID_TTL_MS) allowances.delete(key);
+      if (sessions.size > 2000) {
+        for (const [key, at] of sessions) {
+          if (now - at < READING_ID_TTL_MS) continue;
+          sessions.delete(key);
+          for (const callKey of calls.keys()) {
+            if (callKey.endsWith(`:${key}`)) calls.delete(callKey);
+          }
         }
       }
 
-      // Image generations do not ride a text allow. Each kind has its own
-      // counter, and the first call of that kind consumes the spend windows.
-      const allowanceKey = `${kind}:${ip}:${readingId}`;
-      const entry = allowances.get(allowanceKey);
-      if (entry && now - entry.at < READING_ID_TTL_MS) {
-        if (entry.calls >= MAX_CALLS_PER_READING) {
+      const sessionKey = `${ip}:${readingId}`;
+      const callKey = `${kind}:${sessionKey}`;
+      const sessionAt = sessions.get(sessionKey);
+      const maxCalls = maxCallsFor(kind);
+
+      if (sessionAt !== undefined && now - sessionAt < READING_ID_TTL_MS) {
+        const entry = calls.get(callKey);
+        const used = entry && entry.at === sessionAt ? entry.calls : 0;
+        if (used >= maxCalls) {
           return {
             ok: false,
             scope: 'reading',
-            retryAfterSeconds: Math.max(1, Math.ceil((entry.at + READING_ID_TTL_MS - now) / 1000)),
+            retryAfterSeconds: Math.max(1, Math.ceil((sessionAt + READING_ID_TTL_MS - now) / 1000)),
           };
         }
-        entry.calls += 1;
+        calls.set(callKey, { at: sessionAt, calls: used + 1 });
         return { ok: true };
       }
 
-      // Same numeric spend limits as readings, on a separate counter so card
-      // images are not waived by an earlier text allow and do not eat it either.
-      const hour = windowHits(`${kind}:hour:${ip}`, now, HOUR_MS);
-      const day = windowHits(`${kind}:day:${ip}`, now, DAY_MS);
-      const global = windowHits(`${kind}:global`, now, DAY_MS);
+      const hour = windowHits(`hour:${ip}`, now, HOUR_MS);
+      const day = windowHits(`day:${ip}`, now, DAY_MS);
+      const global = windowHits('global', now, DAY_MS);
 
       if (hour.length >= limits.perIpPerHour) {
         return { ok: false, scope: 'hour', retryAfterSeconds: retryAfter(hour, now, HOUR_MS) };
@@ -127,7 +163,8 @@ export function createMemoryQuota(
       hour.push(now);
       day.push(now);
       global.push(now);
-      allowances.set(allowanceKey, { at: now, calls: 1 });
+      sessions.set(sessionKey, now);
+      calls.set(callKey, { at: now, calls: 1 });
       return { ok: true };
     },
   };

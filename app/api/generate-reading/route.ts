@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GenerateReadingRequest } from '../../../lib/types';
+import type { GenerateReadingRequest } from '../../../lib/types';
 import { readingLimitResponse } from '../../../lib/reading-quota';
-import {
-  CARD_READING_MAX_TOKENS,
-  chatCompletionBody,
-  describeTogetherFailure,
-  logTogetherFailure,
-} from '../../../lib/together';
+import { paidChat } from '../../../lib/together-call';
+import { CARD_READING_MAX_TOKENS } from '../../../lib/together';
 
 export const maxDuration = 60;
-
-const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
 
 const SYSTEM_PROMPT = `You are Celeste — an exceptionally gifted tarot reader and astrologer who has studied the cards and stars for twenty years. You are the user's most trusted, brilliant witch friend. You speak with warmth, precision, and occasional sharp honesty.
 
@@ -66,7 +60,7 @@ export async function POST(req: NextRequest) {
   const limited = await readingLimitResponse(req);
   if (limited) return limited;
 
-  if (!TOGETHER_API_KEY) {
+  if (!process.env.TOGETHER_API_KEY) {
     console.error('TOGETHER_API_KEY is not set');
     return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
   }
@@ -121,54 +115,36 @@ Respond with JSON:
 
     const togetherAbort = new AbortController();
     const togetherTimeout = setTimeout(() => togetherAbort.abort(), 45000);
-    const chatBody = chatCompletionBody({
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature: 0.85,
-      maxTokens: Math.min(CARD_READING_MAX_TOKENS + body.cards.length * 300, 4000),
-      stream: true,
-    });
-
-    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${TOGETHER_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      signal: togetherAbort.signal,
-      body: JSON.stringify(chatBody),
-    }).finally(() => clearTimeout(togetherTimeout));
-
-    if (!response.ok) {
-      const error = await response.text();
-      const failure = describeTogetherFailure(
-        'generate-reading',
-        chatBody.model,
-        response.status,
-        error,
-      );
-      logTogetherFailure(failure);
-      return NextResponse.json(
-        {
-          error: 'Reading generation failed',
-          providerStatus: failure.status,
-          providerCode: failure.providerCode,
-        },
-        { status: 500 },
-      );
+    try {
+      const result = await paidChat({
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.85,
+        maxTokens: Math.min(CARD_READING_MAX_TOKENS + body.cards.length * 300, 4000),
+        stream: true,
+        scope: 'generate-reading',
+        signal: togetherAbort.signal,
+      });
+      if (!result.ok) {
+        if (!result.failure) return result.response;
+        return NextResponse.json(
+          {
+            error: 'Reading generation failed',
+            providerStatus: result.failure.status,
+            providerCode: result.failure.providerCode,
+          },
+          { status: 500 },
+        );
+      }
+      if (result.mode !== 'stream') {
+        return NextResponse.json({ error: 'Empty response' }, { status: 502 });
+      }
+      return result.response;
+    } finally {
+      clearTimeout(togetherTimeout);
     }
-
-    // Forward the SSE stream directly to the client
-    return new Response(response.body, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache, no-transform',
-        'X-Accel-Buffering': 'no',
-        'Connection': 'keep-alive',
-      },
-    });
   } catch (err) {
     console.error('generate-reading error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

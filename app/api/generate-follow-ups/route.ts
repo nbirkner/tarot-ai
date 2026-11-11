@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readingLimitResponse } from '../../../lib/reading-quota';
-import {
-  FOLLOWUP_MAX_TOKENS,
-  chatCompletionBody,
-  describeTogetherFailure,
-  logTogetherFailure,
-} from '../../../lib/together';
-
-const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY!;
+import { paidChat } from '../../../lib/together-call';
+import { FOLLOWUP_MAX_TOKENS } from '../../../lib/together';
 
 export async function POST(req: NextRequest) {
   const limited = await readingLimitResponse(req);
@@ -19,7 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ questions: [] });
     }
 
-    const chatBody = chatCompletionBody({
+    const result = await paidChat({
       messages: [
         {
           role: 'system',
@@ -40,30 +34,22 @@ Rules:
       ],
       temperature: 0.8,
       maxTokens: FOLLOWUP_MAX_TOKENS,
+      stream: false,
+      scope: 'generate-follow-ups',
     });
 
-    const response = await fetch('https://api.together.xyz/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${TOGETHER_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(chatBody),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      logTogetherFailure(
-        describeTogetherFailure('generate-follow-ups', chatBody.model, response.status, error),
-      );
+    if (!result.ok) {
+      if (!result.failure) return result.response;
+      return NextResponse.json({ questions: [] });
+    }
+    if (result.mode !== 'json') {
       return NextResponse.json({ questions: [] });
     }
 
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '';
+    const content = result.data.choices?.[0]?.message?.content || '';
     if (!content.trim()) {
       console.error(
-        `generate-follow-ups: empty model content model=${chatBody.model} finish=${data.choices?.[0]?.finish_reason ?? 'unknown'}`,
+        `generate-follow-ups: empty model content finish=${result.data.choices?.[0]?.finish_reason ?? 'unknown'}`,
       );
       return NextResponse.json({ questions: [] });
     }
