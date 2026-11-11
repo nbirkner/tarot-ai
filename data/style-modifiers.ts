@@ -1,4 +1,4 @@
-import { DeckStyle } from '../lib/types';
+import type { DeckStyle } from '../lib/types';
 
 export const STYLE_MODIFIERS: Record<DeckStyle, string> = {
   'dark-gothic':

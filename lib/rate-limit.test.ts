@@ -3,13 +3,17 @@ import { describe, it } from 'node:test';
 import {
   DAY_MS,
   HOUR_MS,
-  MAX_CALLS_PER_READING,
+  LIMITS_UNAVAILABLE_MESSAGE,
+  MAX_IMAGE_CALLS_PER_READING,
   MAX_SPREAD_CARDS,
+  MAX_TEXT_CALLS_PER_READING,
   RATE_LIMIT_MESSAGE,
   READING_ID_TTL_MS,
   READING_LIMITS,
+  SPEND_CAP_MESSAGE,
   clientIp,
   createMemoryQuota,
+  messageForLimitResponse,
   normalizeReadingId,
 } from './rate-limit-shared.ts';
 
@@ -71,17 +75,18 @@ describe('reading quota', () => {
       const decision = await quota.consume(`ip-${i}`, `g-${i}`, now);
       assert.equal(decision.ok, true);
     }
-    const blocked = await quota.consume('198.51.100.99', 'g-extra', now);
+    const blocked = await quota.consume('198.51.100.99', 'g-extra', now, 'image');
     assert.equal(blocked.ok, false);
     if (!blocked.ok) assert.equal(blocked.scope, 'global');
   });
 
-  it('stops reusing a reading id after cards plus two calls', async () => {
+  it('stops reusing a reading id after the text calls the UI makes', async () => {
     const quota = createMemoryQuota();
     const now = Date.parse('2026-10-22T12:00:00Z');
-    assert.equal(MAX_CALLS_PER_READING, MAX_SPREAD_CARDS + 2);
+    assert.equal(MAX_TEXT_CALLS_PER_READING, MAX_SPREAD_CARDS + 2);
+    assert.equal(MAX_IMAGE_CALLS_PER_READING, MAX_SPREAD_CARDS + 1);
 
-    for (let i = 0; i < MAX_CALLS_PER_READING; i++) {
+    for (let i = 0; i < MAX_TEXT_CALLS_PER_READING; i++) {
       const decision = await quota.consume('203.0.113.7', 'spread-cap', now + i);
       assert.equal(decision.ok, true, `call ${i}`);
     }
@@ -98,28 +103,33 @@ describe('reading quota', () => {
     if (!blocked.ok) assert.equal(blocked.scope, 'hour');
   });
 
-  it('counts image generations on their own spend budget', async () => {
+  it('shares one per-IP budget across text and image calls', async () => {
     const quota = createMemoryQuota();
     const now = Date.parse('2026-10-22T18:00:00Z');
     const ip = '203.0.113.8';
 
     assert.equal((await quota.consume(ip, 'spread-img', now, 'reading')).ok, true);
-    for (let i = 0; i < MAX_CALLS_PER_READING; i++) {
+    for (let i = 0; i < MAX_IMAGE_CALLS_PER_READING; i++) {
       assert.equal((await quota.consume(ip, 'spread-img', now + i, 'image')).ok, true);
     }
     const imageCap = await quota.consume(ip, 'spread-img', now, 'image');
     assert.equal(imageCap.ok, false);
     if (!imageCap.ok) assert.equal(imageCap.scope, 'reading');
 
+    // Same reading id does not spend another hourly slot.
+    assert.equal((await quota.consume(ip, 'spread-img', now, 'reading')).ok, true);
+
     for (let i = 0; i < READING_LIMITS.perIpPerHour - 1; i++) {
-      assert.equal((await quota.consume(ip, `img-${i}`, now, 'image')).ok, true);
+      assert.equal((await quota.consume(ip, `direct-${i}`, now, 'image')).ok, true);
     }
-    const imagesBlocked = await quota.consume(ip, 'img-extra', now, 'image');
+    const imagesBlocked = await quota.consume(ip, 'direct-extra', now, 'image');
     assert.equal(imagesBlocked.ok, false);
     if (!imagesBlocked.ok) assert.equal(imagesBlocked.scope, 'hour');
 
-    // Text budget was charged once and is not shared with images.
-    assert.equal((await quota.consume(ip, 'another-reading', now, 'reading')).ok, true);
+    // A direct text call cannot bypass an hour that image calls already filled.
+    const textBlocked = await quota.consume(ip, 'another-reading', now, 'reading');
+    assert.equal(textBlocked.ok, false);
+    if (!textBlocked.ok) assert.equal(textBlocked.scope, 'hour');
   });
 
   it('charges a reading id again after its allowance expires', async () => {
@@ -144,5 +154,19 @@ describe('reading quota', () => {
     assert.equal(normalizeReadingId('reading-id-1'), 'reading-id-1');
     assert.notEqual(normalizeReadingId('no'), 'no');
     assert.equal(RATE_LIMIT_MESSAGE, 'The cards need rest, come back later');
+    assert.equal(SPEND_CAP_MESSAGE, 'The deck is resting, try again tomorrow');
+    assert.equal(
+      messageForLimitResponse(429, JSON.stringify({ error: 'spend_cap', message: SPEND_CAP_MESSAGE })),
+      SPEND_CAP_MESSAGE,
+    );
+    assert.equal(
+      messageForLimitResponse(429, JSON.stringify({ error: 'rate_limited', message: RATE_LIMIT_MESSAGE })),
+      RATE_LIMIT_MESSAGE,
+    );
+    assert.equal(
+      messageForLimitResponse(503, JSON.stringify({ error: 'limits_unavailable', message: LIMITS_UNAVAILABLE_MESSAGE })),
+      LIMITS_UNAVAILABLE_MESSAGE,
+    );
+    assert.equal(messageForLimitResponse(500, 'nope'), null);
   });
 });

@@ -8,6 +8,7 @@ import {
   SYNTHESIS_MAX_TOKENS,
   chatCompletionBody,
   describeTogetherFailure,
+  redactSensitive,
 } from './together.ts';
 
 describe('chat model', () => {
@@ -33,6 +34,7 @@ describe('chat model', () => {
     assert.equal(body.max_tokens, CARD_READING_MAX_TOKENS);
     assert.equal(body.stream, true);
     assert.deepEqual(body.reasoning, { enabled: false });
+    assert.deepEqual(body.stream_options, { include_usage: true });
   });
 });
 
@@ -68,5 +70,19 @@ describe('describeTogetherFailure', () => {
     );
     assert.equal(failure.providerCode, null);
     assert.equal(failure.providerMessage, 'bad gateway please retry');
+  });
+
+  it('strips a face photo out of a provider error before it can be logged', () => {
+    const photo = `data:image/jpeg;base64,${'A'.repeat(120)}`;
+    const failure = describeTogetherFailure(
+      'generate-card',
+      'Rundiffusion/Juggernaut-Lightning-Flux',
+      400,
+      JSON.stringify({ error: { message: `reference rejected ${photo}`, code: 'invalid_request' } }),
+    );
+    assert.equal(failure.providerCode, 'invalid_request');
+    assert.doesNotMatch(failure.providerMessage, /AAAA/);
+    assert.match(failure.providerMessage, /\[redacted-image\]/);
+    assert.equal(redactSensitive(photo), '[redacted-image]');
   });
 });

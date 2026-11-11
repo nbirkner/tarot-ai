@@ -34,7 +34,15 @@ export function chatCompletionBody(args: {
     max_tokens: args.maxTokens,
     stream: args.stream ?? false,
     reasoning: { enabled: false },
+    ...(args.stream ? { stream_options: { include_usage: true } } : {}),
   };
+}
+
+/** Drop data URLs and long base64 blobs before anything is written to logs. */
+export function redactSensitive(text: string): string {
+  return text
+    .replace(/data:image\/[a-z0-9.+-]+;base64,[^\s"]+/gi, '[redacted-image]')
+    .replace(/\b[A-Za-z0-9+/]{80,}={0,2}\b/g, '[redacted]');
 }
 
 export type TogetherFailure = {
@@ -52,7 +60,7 @@ export function describeTogetherFailure(
   body: string,
 ): TogetherFailure {
   let providerCode: string | null = null;
-  let providerMessage = body.replace(/\s+/g, ' ').trim().slice(0, 500);
+  let providerMessage = redactSensitive(body.replace(/\s+/g, ' ').trim()).slice(0, 500);
 
   try {
     const parsed = JSON.parse(body) as {
@@ -62,9 +70,9 @@ export function describeTogetherFailure(
     const err = parsed?.error;
     if (err && typeof err === 'object') {
       if (typeof err.code === 'string') providerCode = err.code;
-      if (typeof err.message === 'string') providerMessage = err.message.slice(0, 500);
+      if (typeof err.message === 'string') providerMessage = redactSensitive(err.message).slice(0, 500);
     } else if (typeof parsed?.message === 'string') {
-      providerMessage = parsed.message.slice(0, 500);
+      providerMessage = redactSensitive(parsed.message).slice(0, 500);
     }
   } catch {
     // Provider body was not JSON. Keep the truncated text.

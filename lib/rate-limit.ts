@@ -1,34 +1,63 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import {
-  MAX_CALLS_PER_READING,
   READING_ID_TTL_MS,
   READING_LIMITS,
+  maxCallsFor,
+  upstashConfigured,
   type QuotaKind,
   type QuotaScope,
   type ReadingQuota,
-  createMemoryQuota,
 } from './rate-limit-shared';
 
 export {
-  MAX_CALLS_PER_READING,
+  LIMITS_UNAVAILABLE_MESSAGE,
+  MAX_IMAGE_CALLS_PER_READING,
+  MAX_TEXT_CALLS_PER_READING,
   RATE_LIMIT_MESSAGE,
   READING_LIMITS,
+  SPEND_CAP_MESSAGE,
   clientIp,
+  maxCallsFor,
+  messageForLimitResponse,
   normalizeReadingId,
+  upstashConfigured,
 } from './rate-limit-shared';
 export type { QuotaKind, QuotaScope } from './rate-limit-shared';
-
-export function upstashConfigured(): boolean {
-  return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
-}
 
 function secondsUntil(resetMs: number, now = Date.now()): number {
   return Math.max(1, Math.ceil((resetMs - now) / 1000));
 }
 
-function createUpstashQuota(): ReadingQuota {
-  const redis = Redis.fromEnv();
+const unavailableQuota: ReadingQuota = {
+  async consume() {
+    return { ok: false, scope: 'unavailable', retryAfterSeconds: 30 };
+  },
+};
+
+/** Redis errors block the paid call. They never fall through to process memory. */
+export function failClosedQuota(inner: ReadingQuota): ReadingQuota {
+  return {
+    async consume(ip, readingId, now, kind) {
+      try {
+        return await inner.consume(ip, readingId, now, kind);
+      } catch (err) {
+        console.error(
+          `reading-quota: redis unavailable, blocking paid calls (${err instanceof Error ? err.name : 'Error'})`,
+        );
+        return { ok: false, scope: 'unavailable', retryAfterSeconds: 30 };
+      }
+    },
+  };
+}
+
+type WindowLimit = {
+  scope: Exclude<QuotaScope, 'reading' | 'unavailable'>;
+  limit: Ratelimit;
+  id: (ip: string) => string;
+};
+
+export function createUpstashQuota(redis: Redis): ReadingQuota {
   const hour = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(READING_LIMITS.perIpPerHour, '1 h'),
@@ -48,18 +77,22 @@ function createUpstashQuota(): ReadingQuota {
     analytics: false,
   });
 
-  const windows: { scope: Exclude<QuotaScope, 'reading'>; limit: Ratelimit; id: (ip: string, kind: QuotaKind) => string }[] = [
-    { scope: 'hour', limit: hour, id: (ip, kind) => (kind === 'reading' ? ip : `image:${ip}`) },
-    { scope: 'day', limit: day, id: (ip, kind) => (kind === 'reading' ? ip : `image:${ip}`) },
-    { scope: 'global', limit: global, id: (_ip, kind) => (kind === 'reading' ? 'all' : 'image:all') },
+  // Text and image routes share these ids. A direct image call spends the
+  // same per-IP and global reading slots as a text call.
+  const windows: WindowLimit[] = [
+    { scope: 'hour', limit: hour, id: (ip) => ip },
+    { scope: 'day', limit: day, id: (ip) => ip },
+    { scope: 'global', limit: global, id: () => 'all' },
   ];
 
   const ttlSec = Math.ceil(READING_ID_TTL_MS / 1000);
 
   return {
-    async consume(ip, readingId, _now, kind = 'reading') {
+    async consume(ip, readingId, _now, kind: QuotaKind = 'reading') {
       const countKey = `tarot:count:${kind}:${ip}:${readingId}`;
-      const statusKey = `tarot:status:${kind}:${ip}:${readingId}`;
+      const statusKey = `tarot:status:${ip}:${readingId}`;
+      const lockKey = `tarot:lock:${ip}:${readingId}`;
+      const maxCalls = maxCallsFor(kind);
 
       const status = await redis.get<string>(statusKey);
       if (status === 'no') {
@@ -68,7 +101,7 @@ function createUpstashQuota(): ReadingQuota {
 
       const count = await redis.incr(countKey);
       if (count === 1) await redis.expire(countKey, ttlSec);
-      if (count > MAX_CALLS_PER_READING) {
+      if (count > maxCalls) {
         const ttl = await redis.ttl(countKey);
         return {
           ok: false,
@@ -79,13 +112,12 @@ function createUpstashQuota(): ReadingQuota {
       if (status === 'ok') return { ok: true };
 
       if (count > 1) {
-        for (let i = 0; i < 25; i++) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          const value = await redis.get<string>(statusKey);
-          if (value === 'ok') return { ok: true };
-          if (value === 'no') return { ok: false, scope: 'hour', retryAfterSeconds: 30 };
-        }
-        return { ok: false, scope: 'hour', retryAfterSeconds: 5 };
+        return waitForStatus(redis, statusKey, countKey);
+      }
+
+      const lock = await redis.set(lockKey, '1', { nx: true, ex: 30 });
+      if (!lock) {
+        return waitForStatus(redis, statusKey, countKey);
       }
 
       const statusNow = await redis.get<string>(statusKey);
@@ -97,7 +129,7 @@ function createUpstashQuota(): ReadingQuota {
 
       try {
         for (const window of windows) {
-          const result = await window.limit.limit(window.id(ip, kind));
+          const result = await window.limit.limit(window.id(ip));
           if (!result.success) {
             await redis.set(statusKey, 'no', { ex: 30 });
             await redis.del(countKey);
@@ -113,38 +145,42 @@ function createUpstashQuota(): ReadingQuota {
         return { ok: true };
       } catch (err) {
         await redis.del(countKey);
+        await redis.del(lockKey);
         throw err;
       }
     },
   };
 }
 
-let cached: ReadingQuota | undefined;
-let cachedMode: 'upstash' | 'memory' | undefined;
-
-/** Upstash when both REST env vars are set; otherwise an in-memory limiter. */
-export function getReadingQuota(): ReadingQuota {
-  const mode = upstashConfigured() ? 'upstash' : 'memory';
-  if (!cached || cachedMode !== mode) {
-    cachedMode = mode;
-    if (mode === 'memory') {
-      cached = createMemoryQuota();
-      return cached;
+async function waitForStatus(redis: Redis, statusKey: string, countKey: string) {
+  for (let i = 0; i < 25; i++) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const value = await redis.get<string>(statusKey);
+    if (value === 'ok') return { ok: true as const };
+    if (value === 'no') {
+      await redis.del(countKey);
+      return { ok: false as const, scope: 'hour' as const, retryAfterSeconds: 30 };
     }
-    const memory = createMemoryQuota();
-    const upstash = createUpstashQuota();
-    cached = {
-      async consume(ip, readingId, now, kind) {
-        try {
-          return await upstash.consume(ip, readingId, now, kind);
-        } catch (err) {
-          console.error(
-            `reading-quota: redis unavailable, using in-memory limiter (${err instanceof Error ? err.name : 'Error'})`,
-          );
-          return memory.consume(ip, readingId, now, kind);
-        }
-      },
-    };
   }
+  return { ok: false as const, scope: 'unavailable' as const, retryAfterSeconds: 5 };
+}
+
+let cached: ReadingQuota | undefined;
+let quotaOverride: ReadingQuota | null = null;
+
+export function setReadingQuotaForTests(quota: ReadingQuota | null): void {
+  quotaOverride = quota;
+  cached = undefined;
+}
+
+export function resetLimitsForTests(): void {
+  cached = undefined;
+  quotaOverride = null;
+}
+
+export function getReadingQuota(): ReadingQuota {
+  if (quotaOverride) return failClosedQuota(quotaOverride);
+  if (!upstashConfigured()) return unavailableQuota;
+  if (!cached) cached = failClosedQuota(createUpstashQuota(Redis.fromEnv()));
   return cached;
 }

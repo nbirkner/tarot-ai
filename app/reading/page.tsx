@@ -21,7 +21,7 @@ import {
 import { drawCards, drawOshoZenCards, isReversed, getSpread } from '../../lib/tarot';
 import { buildReadingContext, formatAstrologyContext } from '../../lib/astronomy';
 import { apiUrl } from '../../lib/base-path';
-import { RATE_LIMIT_MESSAGE } from '../../lib/rate-limit-shared';
+import { RATE_LIMIT_MESSAGE, SPEND_CAP_MESSAGE, messageForLimitResponse } from '../../lib/rate-limit-shared';
 import { getUserId, saveReading } from '../../lib/storage';
 
 type Step = 'question' | 'context' | 'spread' | 'deck' | 'photo' | 'astrology' | 'generating' | 'reveal' | 'reading';
@@ -157,22 +157,21 @@ function cleanJson(raw: string): string {
 }
 
 class RateLimitError extends Error {
-  constructor() {
-    super(RATE_LIMIT_MESSAGE);
+  constructor(message = RATE_LIMIT_MESSAGE) {
+    super(message);
     this.name = 'RateLimitError';
   }
 }
 
-function isRateLimit(err: unknown): boolean {
+function isRateLimit(err: unknown): err is RateLimitError {
   return err instanceof Error && err.name === 'RateLimitError';
 }
 
 async function throwIfRateLimited(res: Response) {
-  if (res.status !== 429) return;
+  if (res.status !== 429 && res.status !== 503) return;
   const text = await res.clone().text().catch(() => '');
-  if (text.includes('"rate_limited"') || text.includes(RATE_LIMIT_MESSAGE)) {
-    throw new RateLimitError();
-  }
+  const message = messageForLimitResponse(res.status, text);
+  if (message) throw new RateLimitError(message);
 }
 // Returns results in the same order, matching Promise.allSettled semantics.
 async function pooledAllSettled<T, R>(
@@ -434,6 +433,7 @@ export default function ReadingPage() {
         );
       } catch (err) {
         console.error(`Image gen failed after retries for ${drawn.card.name}:`, err);
+        if (isRateLimit(err)) setError(err.message);
         setDrawnCards((prev) =>
           prev.map((d, j) => (j === i ? { ...d, imageUrl: 'failed' } : d))
         );
@@ -566,7 +566,10 @@ export default function ReadingPage() {
       if (cardResults.some(r => r.status === 'rejected' && isRateLimit(r.reason))) {
         if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
         setStreamingState(null);
-        setError(RATE_LIMIT_MESSAGE);
+        const limited = cardResults.find(
+          (result): result is PromiseRejectedResult => result.status === 'rejected' && isRateLimit(result.reason),
+        );
+        setError(limited && isRateLimit(limited.reason) ? limited.reason.message : RATE_LIMIT_MESSAGE);
         return;
       }
       if (successCount === 0) {
@@ -619,7 +622,7 @@ export default function ReadingPage() {
         if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
         setStreamingState(null);
         setError(isRateLimit(synthErr)
-          ? RATE_LIMIT_MESSAGE
+          ? synthErr.message
           : 'The oracle fell silent during synthesis. Please try again.');
         return;
       }
@@ -653,7 +656,7 @@ export default function ReadingPage() {
       if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
       setStreamingState(null);
       if (isRateLimit(err)) {
-        setError(RATE_LIMIT_MESSAGE);
+        setError(err.message);
       } else if (err instanceof Error && err.name === 'AbortError') {
         setError('The oracle is taking too long to respond. Please try again.');
       } else {
@@ -1062,9 +1065,11 @@ export default function ReadingPage() {
                           The crystal ball is buffering... Perhaps Mercury is in retrograde. The spirits will realign — try summoning them again.
                         </p>
                       </>
-                    ) : error === RATE_LIMIT_MESSAGE ? (
+                    ) : error === RATE_LIMIT_MESSAGE || error === SPEND_CAP_MESSAGE ? (
                       <>
-                        <p className="kicker">The oracle is resting</p>
+                        <p className="kicker">
+                          {error === SPEND_CAP_MESSAGE ? 'The deck is resting' : 'The oracle is resting'}
+                        </p>
                         <p style={{
                           fontSize: 15,
                           color: 'var(--fg)',
@@ -1072,7 +1077,7 @@ export default function ReadingPage() {
                           margin: '12px auto 0',
                           lineHeight: 1.6,
                         }}>
-                          {RATE_LIMIT_MESSAGE}
+                          {error}
                         </p>
                       </>
                     ) : (
@@ -1081,7 +1086,7 @@ export default function ReadingPage() {
                       </p>
                     )}
                     <div style={{ marginTop: 28 }}>
-                      {error === RATE_LIMIT_MESSAGE ? (
+                      {error === RATE_LIMIT_MESSAGE || error === SPEND_CAP_MESSAGE ? (
                         <button onClick={reset} className="btn-secondary">Back</button>
                       ) : (
                         <button onClick={startReading} className="btn-primary">Try Again</button>
