@@ -1,18 +1,16 @@
 /**
  * Card art model.
  *
- * `Rundiffusion/Juggernaut-Lightning-Flux` returns 403
- * `third_party_data_sharing_blocked` on this account. Qwen-Image is served
- * by Together. Width and height are multiples of 8. 28 steps is the step
- * count in Together's Qwen-Image example, so the request stays on the
- * published default price instead of the extra-step surcharge.
- *
- * Catalog price is $0.0058 per image at that default:
- * https://www.together.ai/models/qwen-image
+ * Juggernaut Lightning Flux and Qwen-Image both return 403
+ * `third_party_data_sharing_blocked`: Together forwards those prompts to
+ * another provider, and this organization has that sharing turned off.
+ * FLUX.2 [dev] is the open-weight serverless model Together runs itself.
+ * 768×1024 is a portrait multiple of 8. 28 steps matches Together's
+ * FLUX.2 [dev] example, which is the published $0.0154 image price.
  */
-export const IMAGE_MODEL = 'Qwen/Qwen-Image';
+export const IMAGE_MODEL = 'black-forest-labs/FLUX.2-dev';
 
-export const IMAGE_PRICE_USD = 0.0058;
+export const IMAGE_PRICE_USD = 0.0154;
 
 export const IMAGE_WIDTH = 768;
 export const IMAGE_HEIGHT = 1024;
@@ -22,6 +20,7 @@ export const RETIRED_IMAGE_MODELS = [
   'black-forest-labs/FLUX.1-schnell',
   'black-forest-labs/FLUX.1-kontext-pro',
   'Rundiffusion/Juggernaut-Lightning-Flux',
+  'Qwen/Qwen-Image',
 ] as const;
 
 /** Failures that will not change if the same model is called again without a photo. */
