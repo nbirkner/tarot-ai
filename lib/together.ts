@@ -1,19 +1,25 @@
 /**
  * Together chat model used for card readings, synthesis, and follow-ups.
  *
- * `meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8` was removed from
- * serverless inference on 2026-03-31. Calling it returns
- * `model_not_available`, which the reading page treats as every card failing.
- * Muse Glimmer 30B is Together's current Meta serverless chat model.
+ * Muse Glimmer 30B spends the first part of the stream on reasoning and can
+ * emit no visible `delta.content` before the client's 45s hang timer.
+ * Qwen3.5 9B is a fast serverless chat model. Requests still disable
+ * reasoning so the first tokens are the JSON the page renders.
  */
-export const CHAT_MODEL = 'meta-models/Muse-Glimmer-30B';
+export const CHAT_MODEL = 'Qwen/Qwen3.5-9B';
 
 export const RETIRED_SERVERLESS_CHAT_MODEL =
   'meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8';
 
+export const RETIRED_REASONING_CHAT_MODEL = 'meta-models/Muse-Glimmer-30B';
+
+/** Sentence shown when Together refuses the call with 403. */
+export const PROVIDER_BLOCKED_MESSAGE =
+  'The model host refused this request. Please try again later.';
+
 /**
- * Muse still spends completion tokens on reasoning before the visible JSON.
- * 380 tokens (the old card budget) comes back with an empty `content` field.
+ * Completion budget for one card. Qwen3.5 9B is not asked to reason, and
+ * the JSON still needs room for a full interpretation.
  */
 export const CARD_READING_MAX_TOKENS = 1400;
 export const SYNTHESIS_MAX_TOKENS = 2000;
@@ -79,6 +85,11 @@ export function describeTogetherFailure(
   }
 
   return { scope, model, status, providerCode, providerMessage };
+}
+
+/** Together 403, including third_party_data_sharing_blocked, will not succeed on retry. */
+export function togetherRequestIsBlocked(status: number, providerCode: string | null): boolean {
+  return status === 403 || providerCode === 'third_party_data_sharing_blocked';
 }
 
 export function logTogetherFailure(failure: TogetherFailure) {

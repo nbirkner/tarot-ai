@@ -39,7 +39,7 @@ Rules:
     });
 
     if (!result.ok) {
-      if (!result.failure) return result.response;
+      if (!result.failure || result.response.status === 403) return result.response;
       return NextResponse.json({ questions: [] });
     }
     if (result.mode !== 'json') {

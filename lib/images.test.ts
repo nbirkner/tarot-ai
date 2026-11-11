@@ -1,14 +1,25 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { IMAGE_MODEL, IMAGE_PRICE_USD, RETIRED_IMAGE_MODELS, imageFailureIsTerminal } from './images.ts';
+import {
+  IMAGE_HEIGHT,
+  IMAGE_MODEL,
+  IMAGE_PRICE_USD,
+  IMAGE_STEPS,
+  IMAGE_WIDTH,
+  RETIRED_IMAGE_MODELS,
+  imageFailureIsTerminal,
+} from './images.ts';
 
 describe('card image model', () => {
   it('uses a current Together serverless model instead of the retired FLUX ids', () => {
-    assert.equal(IMAGE_MODEL, 'Rundiffusion/Juggernaut-Lightning-Flux');
+    assert.equal(IMAGE_MODEL, 'Qwen/Qwen-Image');
     for (const retired of RETIRED_IMAGE_MODELS) {
       assert.notEqual(IMAGE_MODEL, retired);
     }
-    assert.equal(IMAGE_PRICE_USD, 0.0017);
+    assert.equal(IMAGE_PRICE_USD, 0.0058);
+    assert.equal(IMAGE_WIDTH % 8, 0);
+    assert.equal(IMAGE_HEIGHT % 8, 0);
+    assert.equal(IMAGE_STEPS, 28);
   });
 
   it('does not retry a photo-less call when the model itself is blocked', () => {

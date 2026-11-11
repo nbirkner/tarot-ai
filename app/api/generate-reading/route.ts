@@ -128,7 +128,7 @@ Respond with JSON:
         signal: togetherAbort.signal,
       });
       if (!result.ok) {
-        if (!result.failure) return result.response;
+        if (!result.failure || result.response.status === 403) return result.response;
         return NextResponse.json(
           {
             error: 'Reading generation failed',

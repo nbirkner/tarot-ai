@@ -13,7 +13,13 @@ import {
 import { readingLimitResponse, takeSpend } from '../../../lib/reading-quota';
 import { IMAGE_PRICE_MICRODOLLARS, IMAGE_REFERENCE_PRICE_MICRODOLLARS } from '../../../lib/spend';
 import type { GenerateCardRequest } from '../../../lib/types';
-import { describeTogetherFailure, logTogetherFailure, type TogetherFailure } from '../../../lib/together';
+import {
+  PROVIDER_BLOCKED_MESSAGE,
+  describeTogetherFailure,
+  logTogetherFailure,
+  togetherRequestIsBlocked,
+  type TogetherFailure,
+} from '../../../lib/together';
 
 export const maxDuration = 60;
 
@@ -68,6 +74,23 @@ async function requestImage(
   return { ok: true, imageUrl };
 }
 
+function imageFailureResponse(failure: TogetherFailure) {
+  if (togetherRequestIsBlocked(failure.status, failure.providerCode)) {
+    return NextResponse.json(
+      { error: PROVIDER_BLOCKED_MESSAGE, providerCode: failure.providerCode },
+      { status: 403 },
+    );
+  }
+  return NextResponse.json(
+    {
+      error: 'Image generation failed',
+      providerStatus: failure.status,
+      providerCode: failure.providerCode,
+    },
+    { status: failure.status === 502 ? 500 : failure.status >= 400 ? failure.status : 500 },
+  );
+}
+
 export async function POST(req: NextRequest) {
   const limited = await readingLimitResponse(req, 'image');
   if (limited) return limited;
@@ -106,14 +129,7 @@ export async function POST(req: NextRequest) {
         }
         await withReference.settle(0);
         if (imageFailureIsTerminal(withPhoto.failure.providerCode)) {
-          return NextResponse.json(
-            {
-              error: 'Image generation failed',
-              providerStatus: withPhoto.failure.status,
-              providerCode: withPhoto.failure.providerCode,
-            },
-            { status: 500 },
-          );
+          return imageFailureResponse(withPhoto.failure);
         }
         console.error('generate-card: reference photo was rejected, drawing the card without it');
       } catch (photoErr) {
@@ -128,14 +144,7 @@ export async function POST(req: NextRequest) {
       const drawn = await requestImage(fullPrompt);
       if (!drawn.ok) {
         await drawnSpend.settle(0);
-        return NextResponse.json(
-          {
-            error: 'Image generation failed',
-            providerStatus: drawn.failure.status,
-            providerCode: drawn.failure.providerCode,
-          },
-          { status: drawn.failure.status === 502 ? 500 : drawn.failure.status >= 400 ? drawn.failure.status : 500 },
-        );
+        return imageFailureResponse(drawn.failure);
       }
       await drawnSpend.settle(IMAGE_PRICE_MICRODOLLARS);
       return NextResponse.json({ imageUrl: drawn.imageUrl, estimatedCost: IMAGE_PRICE_USD });

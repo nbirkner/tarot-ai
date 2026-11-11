@@ -5,7 +5,7 @@ import { upstashConfigured } from './rate-limit-shared';
 /**
  * Daily Together spend, stored in Upstash Redis.
  *
- * The ledger is integer microdollars (millionths of a dollar) so a $0.0017
+ * The ledger is integer microdollars (millionths of a dollar) so a $0.0058
  * image is not rounded away. Each paid call reserves its estimate with one
  * Redis script, then settles to the measured cost. The script is the critical
  * section: Redis runs it atomically, so two servers cannot both pass a check
@@ -19,10 +19,14 @@ import { upstashConfigured } from './rate-limit-shared';
 export const MICRODOLLARS_PER_CENT = 10_000;
 export const DEFAULT_DAILY_SPEND_CAP_CENTS = 200;
 
-/** Together list price for Muse Glimmer 30B, USD per 1M tokens (November 2026). */
-export const CHAT_INPUT_USD_PER_MILLION = 0.35;
-export const CHAT_CACHED_INPUT_USD_PER_MILLION = 0.04;
-export const CHAT_OUTPUT_USD_PER_MILLION = 1.5;
+/**
+ * Together list price for Qwen3.5 9B, USD per 1M tokens.
+ * Together does not publish a cheaper cached-input rate for this model,
+ * so cached tokens are reserved at the input price.
+ */
+export const CHAT_INPUT_USD_PER_MILLION = 0.17;
+export const CHAT_CACHED_INPUT_USD_PER_MILLION = 0.17;
+export const CHAT_OUTPUT_USD_PER_MILLION = 0.25;
 
 /**
  * Input-token upper bound. English is about 4 characters per token; dividing
@@ -30,7 +34,7 @@ export const CHAT_OUTPUT_USD_PER_MILLION = 1.5;
  */
 export const CHARS_PER_TOKEN_UPPER = 2;
 
-/** Catalog estimate for Juggernaut Lightning Flux at the card settings, in microdollars. */
+/** Catalog estimate for Qwen-Image at the card settings, in microdollars. */
 export const IMAGE_PRICE_MICRODOLLARS = Math.round(IMAGE_PRICE_USD * 1_000_000);
 
 /**
