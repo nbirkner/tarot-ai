@@ -149,20 +149,21 @@ describe('daily spend cap', () => {
     assert.equal(dailySpendCapMicrodollars(undefined), 200 * MICRODOLLARS_PER_CENT);
     assert.equal(dailySpendCapMicrodollars(''), 2_000_000);
     assert.equal(dailySpendCapMicrodollars('nope'), 0);
-    assert.equal(CHAT_INPUT_USD_PER_MILLION, 0.35);
-    assert.equal(CHAT_CACHED_INPUT_USD_PER_MILLION, 0.04);
-    assert.equal(CHAT_OUTPUT_USD_PER_MILLION, 1.5);
-    assert.equal(IMAGE_PRICE_MICRODOLLARS, 1700);
-    assert.equal(IMAGE_REFERENCE_PRICE_MICRODOLLARS, 3400);
+    assert.equal(CHAT_INPUT_USD_PER_MILLION, 0.17);
+    assert.equal(CHAT_CACHED_INPUT_USD_PER_MILLION, 0.17);
+    assert.equal(CHAT_OUTPUT_USD_PER_MILLION, 0.25);
+    assert.equal(IMAGE_PRICE_MICRODOLLARS, 5800);
+    assert.equal(IMAGE_REFERENCE_PRICE_MICRODOLLARS, 11600);
     // 2000 chars at 2 chars/token = 1000 input tokens, plus 1400 output tokens.
-    assert.equal(estimateChatMicrodollars(2000, 1400), 2450);
+    // 1000 * 0.17 + 1400 * 0.25 = 520 microdollars.
+    assert.equal(estimateChatMicrodollars(2000, 1400), 520);
     assert.equal(
       chatUsageMicrodollars({
         prompt_tokens: 1000,
         completion_tokens: 100,
         prompt_tokens_details: { cached_tokens: 800 },
       }),
-      252,
+      195,
     );
     assert.equal(settleMicro(100, { prompt_tokens: 100_000, completion_tokens: 100_000 }), 100);
     assert.equal(spendKey(NOW), 'tarot:spend:2026-11-11');

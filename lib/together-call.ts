@@ -2,7 +2,14 @@ import { NextResponse } from 'next/server';
 import { takeSpend } from './reading-quota';
 import { estimateMessagesMicro, settleMicro, type ChatUsage } from './spend';
 import { billTogetherStream } from './sse-usage';
-import { chatCompletionBody, describeTogetherFailure, logTogetherFailure, type TogetherFailure } from './together';
+import {
+  PROVIDER_BLOCKED_MESSAGE,
+  chatCompletionBody,
+  describeTogetherFailure,
+  logTogetherFailure,
+  togetherRequestIsBlocked,
+  type TogetherFailure,
+} from './together';
 
 type ChatMessage = { role: string; content: string };
 
@@ -69,16 +76,19 @@ export async function paidChat(args: {
       await spend.settle(0);
       const failure = describeTogetherFailure(args.scope, chatBody.model, response.status, error);
       logTogetherFailure(failure);
+      const blocked = togetherRequestIsBlocked(failure.status, failure.providerCode);
       return {
         ok: false,
         failure,
         response: NextResponse.json(
-          {
-            error: 'upstream',
-            providerStatus: failure.status,
-            providerCode: failure.providerCode,
-          },
-          { status: 500 },
+          blocked
+            ? { error: PROVIDER_BLOCKED_MESSAGE, providerCode: failure.providerCode }
+            : {
+                error: 'upstream',
+                providerStatus: failure.status,
+                providerCode: failure.providerCode,
+              },
+          { status: blocked ? 403 : 500 },
         ),
       };
     }

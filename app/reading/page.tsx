@@ -26,6 +26,7 @@ import {
   SPEND_CAP_MESSAGE,
   messageForLimitResponse,
 } from '../../lib/rate-limit-shared';
+import { PROVIDER_BLOCKED_MESSAGE } from '../../lib/together';
 import { getUserId, saveReading } from '../../lib/storage';
 
 type Step = 'question' | 'context' | 'spread' | 'deck' | 'photo' | 'astrology' | 'generating' | 'reveal' | 'reading';
@@ -88,6 +89,24 @@ function isRateLimit(err: unknown): err is RateLimitError {
   return err instanceof Error && err.name === 'RateLimitError';
 }
 
+function isPermanentProviderError(err: unknown): err is Error {
+  return err instanceof Error && err.name === 'PermanentHttpError';
+}
+
+async function permanentProviderError(res: Response): Promise<Error> {
+  let message = PROVIDER_BLOCKED_MESSAGE;
+  const text = await res.text().catch(() => '');
+  try {
+    const parsed = JSON.parse(text) as { error?: unknown };
+    if (typeof parsed.error === 'string' && parsed.error.trim()) message = parsed.error;
+  } catch {
+    // Keep the friendly sentence when the body is not JSON.
+  }
+  const err = new Error(message);
+  err.name = 'PermanentHttpError';
+  return err;
+}
+
 async function throwIfRateLimited(res: Response) {
   if (res.status !== 429 && res.status !== 503) return;
   const text = await res.clone().text().catch(() => '');
@@ -146,6 +165,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 async function readSseStream(
   res: Response,
   onPartial: (accumulated: string) => void,
+  onBytes?: () => void,
 ): Promise<string> {
   if (!res.body) {
     throw new Error('Response body is null. Cannot read the stream.');
@@ -164,6 +184,7 @@ async function readSseStream(
         'SSE chunk read',
       );
       if (done) break;
+      if (value.byteLength > 0) onBytes?.();
       sseBuffer += decoder.decode(value, { stream: true });
       const lines = sseBuffer.split('\n');
       sseBuffer = lines.pop() ?? '';
@@ -269,15 +290,17 @@ export default function ReadingPage() {
     setFlippedCards(new Set());
     setStreamingState(null);
 
-    // If nothing streams within 45s, the oracle is stuck — show a friendly error.
-    // Cleared as soon as the first card chunk arrives. Muse emits reasoning
-    // tokens before the visible JSON, so the first content chunk is later
-    // than it was with the old non-reasoning model.
-    if (hangTimerRef.current) clearTimeout(hangTimerRef.current);
-    hangTimerRef.current = setTimeout(() => {
-      setStreamingState(null);
-      setError('hang');
-    }, 45000);
+    // 45s with no bytes from a card-reading stream means the oracle is stuck.
+    // Any SSE bytes restart that clock, including frames with no delta.content.
+    const resetHangTimer = () => {
+      if (hangTimerRef.current) clearTimeout(hangTimerRef.current);
+      hangTimerRef.current = setTimeout(() => {
+        hangTimerRef.current = null;
+        setStreamingState(null);
+        setError('hang');
+      }, 45000);
+    };
+    resetHangTimer();
 
     const readingId = crypto.randomUUID();
     const apiHeaders = {
@@ -339,6 +362,7 @@ export default function ReadingPage() {
             `image gen ${i}`,
           );
           await throwIfRateLimited(res);
+          if (res.status === 403) throw await permanentProviderError(res);
           if (!res.ok) {
             const err = new Error(`HTTP ${res.status}`);
             if (res.status >= 400 && res.status < 500) err.name = 'PermanentHttpError';
@@ -409,6 +433,7 @@ export default function ReadingPage() {
           );
 
           await throwIfRateLimited(res);
+          if (res.status === 403) throw await permanentProviderError(res);
           if (!res.ok) {
             const errText = await res.text().catch(() => '');
             console.error(`Card ${i} API error:`, res.status, errText);
@@ -416,19 +441,21 @@ export default function ReadingPage() {
           }
 
           const json = await withTimeout(
-            readSseStream(res, (partial) => {
-              // Clear hang timer the moment first streaming data arrives
-              if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
-              const fields = extractCardFields(partial);
-              if (Object.keys(fields).length > 0) {
-                setStreamingState(prev => {
-                  if (!prev) return prev;
-                  const cards = [...prev.cards];
-                  cards[i] = { ...cards[i], ...fields };
-                  return { ...prev, cards };
-                });
-              }
-            }),
+            readSseStream(
+              res,
+              (partial) => {
+                const fields = extractCardFields(partial);
+                if (Object.keys(fields).length > 0) {
+                  setStreamingState(prev => {
+                    if (!prev) return prev;
+                    const cards = [...prev.cards];
+                    cards[i] = { ...cards[i], ...fields };
+                    return { ...prev, cards };
+                  });
+                }
+              },
+              resetHangTimer,
+            ),
             PER_CARD_TIMEOUT_MS,
             `card ${i} stream`,
           );
@@ -494,6 +521,16 @@ export default function ReadingPage() {
         setError(limited && isRateLimit(limited.reason) ? limited.reason.message : RATE_LIMIT_MESSAGE);
         return;
       }
+      const blocked = cardResults.find(
+        (result): result is PromiseRejectedResult =>
+          result.status === 'rejected' && isPermanentProviderError(result.reason),
+      );
+      if (blocked && successCount === 0) {
+        if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
+        setStreamingState(null);
+        setError(blocked.reason.message);
+        return;
+      }
       if (successCount === 0) {
         setStreamingState(null);
         setError('The oracle could not read any of your cards. Please try again.');
@@ -522,6 +559,7 @@ export default function ReadingPage() {
           );
 
           await throwIfRateLimited(synthRes);
+          if (synthRes.status === 403) throw await permanentProviderError(synthRes);
           if (!synthRes.ok) {
             const errText = await synthRes.text().catch(() => '');
             console.error('Synthesis API error:', synthRes.status, errText);
@@ -543,9 +581,11 @@ export default function ReadingPage() {
         console.error('Synthesis failed after retries:', synthErr);
         if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
         setStreamingState(null);
-        setError(isRateLimit(synthErr)
-          ? synthErr.message
-          : 'The oracle fell silent during synthesis. Please try again.');
+        setError(
+          isRateLimit(synthErr) || isPermanentProviderError(synthErr)
+            ? synthErr.message
+            : 'The oracle fell silent during synthesis. Please try again.',
+        );
         return;
       }
 

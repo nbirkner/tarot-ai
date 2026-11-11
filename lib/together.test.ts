@@ -4,7 +4,10 @@ import {
   CARD_READING_MAX_TOKENS,
   CHAT_MODEL,
   FOLLOWUP_MAX_TOKENS,
+  PROVIDER_BLOCKED_MESSAGE,
+  RETIRED_REASONING_CHAT_MODEL,
   RETIRED_SERVERLESS_CHAT_MODEL,
+  togetherRequestIsBlocked,
   SYNTHESIS_MAX_TOKENS,
   chatCompletionBody,
   describeTogetherFailure,
@@ -14,7 +17,8 @@ import {
 describe('chat model', () => {
   it('does not call the retired Llama 4 Maverick serverless id', () => {
     assert.notEqual(CHAT_MODEL, RETIRED_SERVERLESS_CHAT_MODEL);
-    assert.equal(CHAT_MODEL, 'meta-models/Muse-Glimmer-30B');
+    assert.notEqual(CHAT_MODEL, RETIRED_REASONING_CHAT_MODEL);
+    assert.equal(CHAT_MODEL, 'Qwen/Qwen3.5-9B');
   });
 
   it('leaves enough completion tokens for JSON after reasoning', () => {
@@ -23,7 +27,7 @@ describe('chat model', () => {
     assert.ok(FOLLOWUP_MAX_TOKENS >= 800);
   });
 
-  it('asks Muse not to spend the budget on hidden reasoning', () => {
+  it('asks the chat model not to spend the budget on hidden reasoning', () => {
     const body = chatCompletionBody({
       messages: [{ role: 'user', content: 'hi' }],
       temperature: 0.85,
@@ -84,5 +88,13 @@ describe('describeTogetherFailure', () => {
     assert.doesNotMatch(failure.providerMessage, /AAAA/);
     assert.match(failure.providerMessage, /\[redacted-image\]/);
     assert.equal(redactSensitive(photo), '[redacted-image]');
+  });
+
+  it('treats Together 403, including third party sharing blocks, as permanent', () => {
+    assert.equal(togetherRequestIsBlocked(403, null), true);
+    assert.equal(togetherRequestIsBlocked(403, 'third_party_data_sharing_blocked'), true);
+    assert.equal(togetherRequestIsBlocked(400, 'third_party_data_sharing_blocked'), true);
+    assert.equal(togetherRequestIsBlocked(500, null), false);
+    assert.equal(PROVIDER_BLOCKED_MESSAGE.includes('—'), false);
   });
 });
