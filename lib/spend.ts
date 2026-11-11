@@ -5,7 +5,7 @@ import { upstashConfigured } from './rate-limit-shared';
 /**
  * Daily Together spend, stored in Upstash Redis.
  *
- * The ledger is integer microdollars (millionths of a dollar) so a $0.0154
+ * The ledger is integer microdollars (millionths of a dollar) so a $0.031457
  * image is not rounded away. Each paid call reserves its estimate with one
  * Redis script, then settles to the measured cost. The script is the critical
  * section: Redis runs it atomically, so two servers cannot both pass a check
@@ -34,7 +34,7 @@ export const CHAT_OUTPUT_USD_PER_MILLION = 0.25;
  */
 export const CHARS_PER_TOKEN_UPPER = 2;
 
-/** Catalog estimate for FLUX.2 [dev] at the card settings, in microdollars. */
+/** Catalog estimate for FLUX.1.1 [pro] at 768×1024, in microdollars. */
 export const IMAGE_PRICE_MICRODOLLARS = Math.round(IMAGE_PRICE_USD * 1_000_000);
 
 /**
