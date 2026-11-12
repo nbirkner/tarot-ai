@@ -1,11 +1,11 @@
 import { Redis } from '@upstash/redis';
-import { IMAGE_PRICE_USD } from './images';
+import { IMAGE_PRICE_MICRODOLLARS } from './images';
 import { upstashConfigured } from './rate-limit-shared';
 
 /**
  * Daily Together spend, stored in Upstash Redis.
  *
- * The ledger is integer microdollars (millionths of a dollar) so a $0.0058
+ * The ledger is integer microdollars (millionths of a dollar) so a card
  * image is not rounded away. Each paid call reserves its estimate with one
  * Redis script, then settles to the measured cost. The script is the critical
  * section: Redis runs it atomically, so two servers cannot both pass a check
@@ -34,8 +34,8 @@ export const CHAT_OUTPUT_USD_PER_MILLION = 0.25;
  */
 export const CHARS_PER_TOKEN_UPPER = 2;
 
-/** Catalog estimate for Qwen-Image at the card settings, in microdollars. */
-export const IMAGE_PRICE_MICRODOLLARS = Math.round(IMAGE_PRICE_USD * 1_000_000);
+/** Catalog estimate for one FLUX.1 Kontext [pro] card at 2:3, in microdollars. */
+export { IMAGE_PRICE_MICRODOLLARS };
 
 /**
  * Together bills reference images from the provider and does not publish the

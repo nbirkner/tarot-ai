@@ -152,8 +152,8 @@ describe('daily spend cap', () => {
     assert.equal(CHAT_INPUT_USD_PER_MILLION, 0.17);
     assert.equal(CHAT_CACHED_INPUT_USD_PER_MILLION, 0.17);
     assert.equal(CHAT_OUTPUT_USD_PER_MILLION, 0.25);
-    assert.equal(IMAGE_PRICE_MICRODOLLARS, 5800);
-    assert.equal(IMAGE_REFERENCE_PRICE_MICRODOLLARS, 11600);
+    assert.equal(IMAGE_PRICE_MICRODOLLARS, 41533);
+    assert.equal(IMAGE_REFERENCE_PRICE_MICRODOLLARS, 83066);
     // 2000 chars at 2 chars/token = 1000 input tokens, plus 1400 output tokens.
     // 1000 * 0.17 + 1400 * 0.25 = 520 microdollars.
     assert.equal(estimateChatMicrodollars(2000, 1400), 520);

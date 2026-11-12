@@ -120,6 +120,63 @@ describe('paid routes', () => {
     assert.equal(fetches, 2);
   });
 
+  it('describes the person when Kontext refuses the reference photo', async () => {
+    setReadingQuotaForTests(createMemoryQuota());
+    setSpendRedisForTests(allowingSpend());
+    process.env.TOGETHER_API_KEY = 'test-key';
+    process.env.TAROT_DAILY_SPEND_CAP_CENTS = '200';
+
+    const bodies: Array<{ url: string; body: Record<string, unknown> }> = [];
+    globalThis.fetch = async (input, init) => {
+      const url = String(input);
+      const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>;
+      bodies.push({ url, body });
+      if (url.includes('/images/')) {
+        if (body.image_url) {
+          return new Response(
+            JSON.stringify({
+              error: { code: 'third_party_data_sharing_blocked', message: 'blocked' },
+            }),
+            { status: 403, headers: { 'content-type': 'application/json' } },
+          );
+        }
+        return new Response(
+          JSON.stringify({ data: [{ url: 'https://api.together.ai/card.png' }] }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      return new Response(
+        JSON.stringify({
+          choices: [{ message: { content: 'A person with short dark hair wearing a black coat.' } }],
+          usage: { prompt_tokens: 120, completion_tokens: 18 },
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    };
+
+    const photo = `data:image/jpeg;base64,${'B'.repeat(120)}`;
+    const response = await generateCard(
+      request('203.0.113.61', 'reading-portrait', {
+        cardName: 'The Lovers',
+        deckStyle: 'classic',
+        userPhotoBase64: photo,
+      }),
+    );
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(payload.imageUrl, 'https://api.together.ai/card.png');
+    assert.equal(bodies.length, 3);
+    assert.equal(bodies[0].body.model, 'black-forest-labs/FLUX.1-kontext-pro');
+    assert.equal(bodies[0].body.image_url, photo);
+    assert.equal(bodies[0].body.aspect_ratio, '2:3');
+    assert.match(String(bodies[1].url), /chat\/completions/);
+    assert.equal(bodies[2].body.image_url, undefined);
+    assert.match(String(bodies[2].body.prompt), /short dark hair/);
+    assert.match(String(bodies[2].body.prompt), /Neo-Grimoire/);
+    assert.match(String(bodies[2].body.prompt), /Two figures stand beneath an angel/);
+    assert.doesNotMatch(JSON.stringify(payload), /data:image/);
+  });
+
   it('stops image generation when the daily cap is already spent', async () => {
     setReadingQuotaForTests(createMemoryQuota());
     setSpendRedisForTests(async () => [0, 2_000_000]);

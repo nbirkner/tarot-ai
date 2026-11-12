@@ -59,9 +59,10 @@ export function TarotCard({
               <Image
                 src={drawn.imageUrl as string}
                 alt={drawn.card.name}
-                width={520}
-                height={780}
+                width={832}
+                height={1248}
                 className="card-photo"
+                unoptimized
                 onError={() => setArtFailed(true)}
               />
             </div>

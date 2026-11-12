@@ -2,11 +2,11 @@ import { AppLink } from '../../components/BasePath';
 
 const models = [
   {
-    name: 'Juggernaut Lightning Flux',
-    provider: 'RunDiffusion',
+    name: 'FLUX.1 Kontext [pro]',
+    provider: 'Black Forest Labs',
     role: 'Card art generation',
     description:
-      'Every tarot card you see is generated fresh for your reading. Juggernaut Lightning Flux, a FLUX model on Together serverless, renders a unique 512×768 illustration for each card, styled to your chosen deck aesthetic.',
+      'Every tarot card you see is generated for your reading. FLUX.1 Kontext [pro] on Together draws it in the Neo-Grimoire palette, using the deck theme you picked and the traditional scene for that card.',
     detail: 'One image per card drawn. If the picture cannot be made, the card keeps its name on a plain art placeholder and the reading continues.',
     docsUrl: 'https://docs.together.ai/docs/serverless-models',
     docsLabel: 'Serverless models',
@@ -15,10 +15,10 @@ const models = [
   },
   {
     name: 'Reference photo',
-    provider: 'RunDiffusion',
+    provider: 'Black Forest Labs',
     role: 'Personalized card faces',
     description:
-      'When you upload a photo, the same image model is asked to use it as a reference for the figures on the card. If that request is refused, the card is drawn without the photo.',
+      'When you upload a photo, Kontext is asked to place that person on the card. If the host refuses the photo, a vision model describes them and the card is drawn from that description.',
     detail: 'Optional. A failed picture never blocks the reading. The card shows a placeholder instead.',
     docsUrl: 'https://docs.together.ai/docs/inference/images/reference-images',
     docsLabel: 'Reference images',
@@ -26,11 +26,11 @@ const models = [
     apiLabel: 'Images API reference',
   },
   {
-    name: 'Muse Glimmer 30B',
-    provider: 'Meta',
-    role: 'Reading & follow-up questions',
+    name: 'Qwen3.5 9B',
+    provider: 'Qwen',
+    role: 'Reading and follow-up questions',
     description:
-      'The heart of the oracle. Muse Glimmer 30B powers the reading engine, interpreting each card in parallel, synthesizing the full spread into a unified narrative, and generating the personalized follow-up questions before the cards are drawn.',
+      'The heart of the oracle. Qwen3.5 9B powers the reading engine, interpreting each card in parallel, synthesizing the full spread into a unified narrative, and generating the personalized follow-up questions before the cards are drawn.',
     detail: 'Structured JSON output for consistent reading format. Parallel card calls for speed. Temperature 0.85 for readings, 0.8 for questions.',
     docsUrl: 'https://docs.together.ai/docs/serverless-models',
     docsLabel: 'Serverless models',

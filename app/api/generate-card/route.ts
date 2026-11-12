@@ -2,15 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { CARD_PROMPTS } from '../../../data/card-prompts';
 import { OSHO_ZEN_PROMPTS } from '../../../data/osho-zen-prompts';
 import { STYLE_MODIFIERS } from '../../../data/style-modifiers';
+import { buildCardImagePrompt } from '../../../lib/card-art';
 import {
-  IMAGE_HEIGHT,
+  cardArtCacheKey,
+  claimCardArt,
+  readCardArt,
+  releaseCardArt,
+  rememberCardArt,
+} from '../../../lib/image-cache';
+import {
   IMAGE_MODEL,
   IMAGE_PRICE_USD,
-  IMAGE_STEPS,
-  IMAGE_WIDTH,
   imageFailureIsTerminal,
+  imageRequestBody,
 } from '../../../lib/images';
+import { describePortrait } from '../../../lib/portrait';
 import { readingLimitResponse, takeSpend } from '../../../lib/reading-quota';
+import { normalizeReadingId } from '../../../lib/rate-limit';
 import { IMAGE_PRICE_MICRODOLLARS, IMAGE_REFERENCE_PRICE_MICRODOLLARS } from '../../../lib/spend';
 import type { GenerateCardRequest } from '../../../lib/types';
 import {
@@ -36,18 +44,9 @@ async function requestImage(
     headers: {
       Authorization: `Bearer ${process.env.TOGETHER_API_KEY}`,
       'Content-Type': 'application/json',
+      'User-Agent': 'tarot-ai',
     },
-    body: JSON.stringify({
-      model: IMAGE_MODEL,
-      prompt,
-      negative_prompt:
-        'nudity, nude, naked, bare skin, exposed chest, breasts, cleavage, topless, shirtless, underwear, lingerie, sexual, suggestive, nsfw, explicit, revealing clothing',
-      width: IMAGE_WIDTH,
-      height: IMAGE_HEIGHT,
-      steps: IMAGE_STEPS,
-      n: 1,
-      ...(referenceImage ? { reference_images: [referenceImage] } : {}),
-    }),
+    body: JSON.stringify(imageRequestBody(prompt, referenceImage)),
   });
 
   if (!response.ok) {
@@ -105,52 +104,98 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Unknown card: ${cardName}` }, { status: 400 });
     }
 
-    const styleModifier = STYLE_MODIFIERS[deckStyle];
-    const safetyPrefix = 'Safe for work, family-friendly tarot illustration. All figures fully clothed in robes, garments, or costumes. No exposed skin below the neck. No nudity, no bare chests, no cleavage, no suggestive poses. ';
-    const borderStyle = deckStyle === 'osho-zen'
-      ? 'Simple elegant border with subtle geometric accents.'
-      : 'Ornate decorative tarot card border with corner flourishes.';
-    const titleStyle = deckStyle === 'osho-zen'
-      ? `Card title "${cardName}" at the bottom in elegant serif lettering.`
-      : `Card title "${cardName.toUpperCase()}" at the bottom in gothic serif lettering.`;
-    let fullPrompt = `${safetyPrefix}${basePrompt} ${styleModifier}. ${borderStyle} ${titleStyle} High detail illustration.`;
-
-    // The face photo is forwarded to Together as a reference image for this
-    // request only. It is not written to Redis, disk, logs, or the saved reading.
-    if (userPhotoBase64) {
-      fullPrompt += ' Use the reference photo for the faces and appearance of the human figures in this card — if the reference shows one person apply them to the card\'s main figure, if multiple people are shown distribute them naturally across the card\'s figures. Keep all symbolic objects, animals, landscapes, and celestial elements unchanged. All figures must be fully clothed and tasteful.';
-      const withReference = await takeSpend(IMAGE_REFERENCE_PRICE_MICRODOLLARS);
-      if (!withReference.ok) return withReference.response;
-      try {
-        const withPhoto = await requestImage(fullPrompt, userPhotoBase64);
-        if (withPhoto.ok) {
-          await withReference.settle(IMAGE_REFERENCE_PRICE_MICRODOLLARS);
-          return NextResponse.json({ imageUrl: withPhoto.imageUrl, estimatedCost: IMAGE_PRICE_USD });
-        }
-        await withReference.settle(0);
-        if (imageFailureIsTerminal(withPhoto.failure.providerCode)) {
-          return imageFailureResponse(withPhoto.failure);
-        }
-        console.error('generate-card: reference photo was rejected, drawing the card without it');
-      } catch (photoErr) {
-        await withReference.settle(0);
-        console.error('generate-card: reference photo request failed, drawing the card without it', photoErr instanceof Error ? photoErr.name : 'Error');
-      }
+    const cacheKey = cardArtCacheKey({
+      readingId: normalizeReadingId(req.headers.get('x-reading-id')),
+      deckStyle,
+      cardName,
+      photo: userPhotoBase64,
+    });
+    const cached = await readCardArt(cacheKey);
+    if (cached) {
+      return NextResponse.json({ imageUrl: cached, estimatedCost: 0 });
     }
 
-    const drawnSpend = await takeSpend(IMAGE_PRICE_MICRODOLLARS);
-    if (!drawnSpend.ok) return drawnSpend.response;
+    const lockKey = `${cacheKey}:lock`;
+    const claimed = await claimCardArt(lockKey);
     try {
-      const drawn = await requestImage(fullPrompt);
-      if (!drawn.ok) {
-        await drawnSpend.settle(0);
-        return imageFailureResponse(drawn.failure);
+      if (!claimed) {
+        for (let attempt = 0; attempt < 80; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          const ready = await readCardArt(cacheKey);
+          if (ready) {
+            return NextResponse.json({ imageUrl: ready, estimatedCost: 0 });
+          }
+        }
       }
-      await drawnSpend.settle(IMAGE_PRICE_MICRODOLLARS);
-      return NextResponse.json({ imageUrl: drawn.imageUrl, estimatedCost: IMAGE_PRICE_USD });
-    } catch (err) {
-      await drawnSpend.settle(0);
-      throw err;
+
+      const styleModifier = STYLE_MODIFIERS[deckStyle];
+      let portrait: string | undefined;
+
+      // The face photo is forwarded to Together for this request only.
+      // It is not written to Redis, disk, logs, or the saved reading.
+      // Kontext accepts it as image_url. This account blocks that handoff,
+      // so a refused photo is described by the vision model and drawn as text.
+      if (userPhotoBase64) {
+        const withReference = await takeSpend(IMAGE_REFERENCE_PRICE_MICRODOLLARS);
+        if (!withReference.ok) return withReference.response;
+        const photoPrompt = buildCardImagePrompt({
+          symbolism: basePrompt,
+          deckTheme: styleModifier,
+          portrait: 'the person in the reference photo',
+        });
+        try {
+          const withPhoto = await requestImage(
+            `${photoPrompt} Use the reference photo for the face and appearance of the human figures. Keep the symbolic objects. All figures stay fully clothed.`,
+            userPhotoBase64,
+          );
+          if (withPhoto.ok) {
+            await withReference.settle(IMAGE_REFERENCE_PRICE_MICRODOLLARS);
+            await rememberCardArt(cacheKey, withPhoto.imageUrl);
+            return NextResponse.json({ imageUrl: withPhoto.imageUrl, estimatedCost: IMAGE_PRICE_USD });
+          }
+          await withReference.settle(0);
+          if (withPhoto.failure.status === 401) return imageFailureResponse(withPhoto.failure);
+          if (imageFailureIsTerminal(withPhoto.failure.providerCode)) {
+            console.error('generate-card: reference photo was refused, describing the person instead');
+          } else {
+            console.error('generate-card: reference photo was rejected, describing the person instead');
+          }
+        } catch (photoErr) {
+          await withReference.settle(0);
+          console.error(
+            'generate-card: reference photo request failed, describing the person instead',
+            photoErr instanceof Error ? photoErr.name : 'Error',
+          );
+        }
+
+        const described = await describePortrait(userPhotoBase64);
+        if (!described.ok) return described.response;
+        if (described.description) portrait = described.description;
+      }
+
+      const fullPrompt = buildCardImagePrompt({
+        symbolism: basePrompt,
+        deckTheme: styleModifier,
+        portrait,
+      });
+
+      const drawnSpend = await takeSpend(IMAGE_PRICE_MICRODOLLARS);
+      if (!drawnSpend.ok) return drawnSpend.response;
+      try {
+        const drawn = await requestImage(fullPrompt);
+        if (!drawn.ok) {
+          await drawnSpend.settle(0);
+          return imageFailureResponse(drawn.failure);
+        }
+        await drawnSpend.settle(IMAGE_PRICE_MICRODOLLARS);
+        await rememberCardArt(cacheKey, drawn.imageUrl);
+        return NextResponse.json({ imageUrl: drawn.imageUrl, estimatedCost: IMAGE_PRICE_USD });
+      } catch (err) {
+        await drawnSpend.settle(0);
+        throw err;
+      }
+    } finally {
+      if (claimed) await releaseCardArt(lockKey);
     }
   } catch (err) {
     console.error('generate-card error:', err instanceof Error ? err.name : 'Error');

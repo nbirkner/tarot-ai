@@ -596,6 +596,15 @@ svg {
   display: block;
 }
 
+.card-photo {
+  animation: art-in 420ms var(--ease);
+}
+
+@keyframes art-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .art-frame.is-reversed {
   transform: rotate(180deg);
 }
