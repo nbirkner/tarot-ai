@@ -338,9 +338,11 @@ export default function ReadingPage() {
     });
 
     // Fire image generation with a concurrency cap of 3.
-    // Retries up to 5 times (1.5s between attempts, 15s timeout per attempt).
+    // One retry. 45s covers Kontext plus a vision description, and stays
+    // inside the route's 60s limit. A finished picture is cached for this
+    // reading, so the retry does not draw it again.
     // On final failure, marks imageUrl as 'failed' so card shows a fallback.
-    const IMAGE_TIMEOUT_MS = 15000;
+    const IMAGE_TIMEOUT_MS = 45000;
     void pooledAllSettled(initialDrawn, 3, async (drawn, i) => {
       try {
         const body = JSON.stringify({
