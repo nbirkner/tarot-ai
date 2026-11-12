@@ -6,13 +6,13 @@
  * leave out as a request for those things.
  */
 const SAFETY =
-  'A printed storybook illustration. Every person wears a long robe, cloak, or costume from neck to ankle.';
-
-const FULL_BLEED =
-  'Full-bleed illustration. The scene runs to every edge. Robed figures, objects, landscapes, and symbols fill the picture.';
+  'Every person wears a long robe, cloak, or costume from neck to ankle.';
 
 const NEO_GRIMOIRE =
-  'Neo-Grimoire illustration. Bold black line art on warm cream paper, flat ember orange and black ink, graphic print.';
+  'Neo-Grimoire palette. Bold black line art on warm cream paper, flat ember orange and black ink, graphic print.';
+
+/** Words that make the model paint a printed card template. */
+const TEMPLATE_WORDS = /\b(?:tarot|cards|card|titles|title|labels|label)\b/gi;
 
 /** Positive scenes kept for a stricter second description. */
 const SAFE_SYMBOLIC_SCENES: Record<string, string> = {
@@ -43,8 +43,22 @@ const SAFE_SYMBOLIC_SCENES: Record<string, string> = {
 const GENERIC_SAFE_SCENE =
   'A simple emblem of geometric shapes, cups, wands, and plain objects.';
 
+const CONCRETE =
+  /\b(?:suns?|sunrise|horses?|walls?|cups?|swords?|wands?|towers?|robes?|figures?|stars?|moon|water|trees?|flowers?|fields?|flags?|banners?|stones?|wings?|lions?|bulls?|eagles?|pools?|jugs?|chains?|pedestals?|trumpets?|coffins?|boats?|gardens?|cottages?|hands?|clouds?|mountains?|thrones?|pillars?|dogs?|roses?|lanterns?|wheels?|scales?|chariots?|sphinxes?|keys?|scrolls?|wheat|forests?|seas?|ships?|castles?|rainbows?|fish|birds?|cats?|lizards?|coins?|pentacles?|vines?|rabbits?|grapes?|arches?|windows?|tombs?|hearts?|rain|beds?|bridges?|paths?|gates?|cloaks?|angels?|wreaths?|dancers?|pentagrams?|people|persons?|adults?)\b/i;
+
 export function sceneWithoutTitle(symbolism: string): string {
-  return symbolism.replace(/^(?:Osho Zen )?tarot card,\s*[^.]*\.\s*/i, '').trim();
+  const stripped = symbolism
+    .replace(/^(?:Osho Zen )?tarot card,\s*[^.]*\.\s*/i, '')
+    .replace(/\brider[-\s]?waite\b/gi, '')
+    .replace(/\btraditional symbolism,?\s*/gi, '')
+    .replace(/\breminiscent of\s*(?:rider[-\s]?waite\s*)?(?:but\s*)?/gi, '')
+    .replace(TEMPLATE_WORDS, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+,/g, ',')
+    .trim();
+  const sentences = stripped.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+  const visual = sentences.filter((sentence) => CONCRETE.test(sentence));
+  return (visual.length > 0 ? visual : sentences.slice(0, 1)).join(' ');
 }
 
 export function safeSymbolicScene(cardName: string): string {
@@ -56,18 +70,20 @@ export function buildCardImagePrompt(input: {
   deckTheme: string;
   portrait?: string;
 }): string {
+  const scene = sceneWithoutTitle(input.symbolism);
+  const theme = sceneWithoutTitle(input.deckTheme);
   const parts = [
+    `A full-bleed illustration of ${scene}, edge to edge, with no frame and no lettering.`,
+    'Open sky fills the top edge. Ground fills the bottom edge. The corners are sky, ground, or the figures themselves.',
     SAFETY,
-    FULL_BLEED,
     NEO_GRIMOIRE,
-    `Deck theme: ${input.deckTheme}`,
-    `Scene: ${sceneWithoutTitle(input.symbolism)}`,
+    `Style: ${theme}.`,
+    'A full-bleed illustration, edge to edge, with no frame and no lettering.',
   ];
   if (input.portrait) {
     parts.push(
-      `The robed figures share the face and coloring of this person: ${input.portrait}`,
+      `The robed figures share the face and coloring of this person: ${sceneWithoutTitle(input.portrait)}.`,
     );
   }
-  parts.push(FULL_BLEED);
-  return parts.join(' ');
+  return parts.join(' ').replace(/\s+/g, ' ').trim();
 }

@@ -27,7 +27,7 @@ export const CARD_PROMPTS: Record<string, string> = {
   'The Hanged Man':
     'tarot card, The Hanged Man. A figure hangs upside down from a living tree by one foot, the other leg crossed behind. Their expression is serene. Sense of surrender, new perspective, sacrifice, and suspension.',
   Death:
-    'tarot card, Death. A white horse carries a black banner with a white rose. A sunrise shows between two towers. An ending that makes room for change.',
+    'tarot card, Death. A white horse carries a black flag with a white rose. A sunrise shows between two towers. An ending that makes room for change.',
   Temperance:
     'tarot card, Temperance. An angel in a long robe that covers the whole body stands with one foot on rock and one foot in a pool, pouring water between two cups. Balance, patience, and moderation.',
   'The Devil':
@@ -39,7 +39,7 @@ export const CARD_PROMPTS: Record<string, string> = {
   'The Moon':
     'tarot card, The Moon. A large luminous moon shines over still dark water. A crayfish emerges from the pool. A wolf and a dog howl. Two towers stand in the distance. Sense of illusion, fear, the subconscious, and the mysteries of the night.',
   'The Sun':
-    'tarot card, The Sun. A blazing sun shines over a field of sunflowers, a white horse, and a red banner on a pole, behind a low stone wall. Joy, vitality, and clarity.',
+    'tarot card, The Sun. A blazing sun shines over a field of sunflowers, a white horse, and a red flag on a pole, behind a low stone wall. Joy, vitality, and clarity.',
   Judgement:
     'tarot card, Judgement. An angel in a long robe blows a trumpet from golden clouds. Three open coffins stand below, with a mountain in the distance. Awakening and a calling.',
   'The World':

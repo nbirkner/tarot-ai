@@ -598,6 +598,8 @@ svg {
 
 .card-photo {
   animation: art-in 420ms var(--ease);
+  transform: scale(1.08);
+  transform-origin: center;
 }
 
 @keyframes art-in {

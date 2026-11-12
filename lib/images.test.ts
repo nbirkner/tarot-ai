@@ -74,13 +74,14 @@ describe('card image model', () => {
     });
     assert.match(prompt, /Neo-Grimoire/);
     assert.match(prompt, /ember orange/);
-    assert.match(prompt, /classic tarot illustration style/);
+    assert.match(prompt, /classic illustration style/);
     assert.match(prompt, /long robes/);
-    assert.match(prompt, /Full-bleed/);
+    assert.match(prompt, /A full-bleed illustration of/);
+    assert.match(prompt, /edge to edge, with no frame and no lettering/);
     assert.match(prompt, /long robe/);
     assert.doesNotMatch(prompt, /\b(nudity|nude|naked|cleavage|children|child|bare|skin|suggestive|unclothed|skeleton)\b/i);
     assert.equal(sceneWithoutTitle(CARD_PROMPTS['The Lovers']).startsWith('tarot card'), false);
-    assert.doesNotMatch(prompt, /tarot card,/);
+    assert.doesNotMatch(prompt, /\b(tarot|card|title|label)\b/i);
     assert.doesNotMatch(prompt, /decorative border/);
     assert.doesNotMatch(prompt, /\u2014/);
   });
