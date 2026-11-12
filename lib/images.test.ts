@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { buildCardImagePrompt } from './card-art.ts';
+import { buildCardImagePrompt, safeSymbolicScene, sceneWithoutTitle } from './card-art.ts';
 import { cardArtCacheKey, photoCacheTag } from './image-cache.ts';
 import {
   IMAGE_ASPECT_RATIO,
@@ -10,6 +10,7 @@ import {
   IMAGE_PRICE_USD,
   IMAGE_WIDTH,
   RETIRED_IMAGE_MODELS,
+  imageFailureIsNsfw,
   imageFailureIsTerminal,
   imageRequestBody,
 } from './images.ts';
@@ -48,6 +49,9 @@ describe('card image model', () => {
     assert.equal(imageFailureIsTerminal('third_party_data_sharing_blocked'), true);
     assert.equal(imageFailureIsTerminal(null), false);
     assert.equal(imageFailureIsTerminal('invalid_request_error'), false);
+    assert.equal(imageFailureIsNsfw(422, 'image may contain NSFW content'), true);
+    assert.equal(imageFailureIsNsfw(500, 'image may contain NSFW content'), false);
+    assert.equal(imageFailureIsNsfw(422, 'width must be a multiple of 8'), false);
   });
 
   it('combines the deck theme, the traditional scene, and the house style', () => {
@@ -58,10 +62,35 @@ describe('card image model', () => {
     assert.match(prompt, /Neo-Grimoire/);
     assert.match(prompt, /ember orange/);
     assert.match(prompt, /classic tarot illustration style/);
-    assert.match(prompt, /Two figures stand beneath an angel/);
-    assert.match(prompt, /No letters/);
-    assert.doesNotMatch(prompt, /Card title/);
+    assert.match(prompt, /long robes/);
+    assert.match(prompt, /Full-bleed/);
+    assert.match(prompt, /Do not draw a card outline/);
+    assert.equal(sceneWithoutTitle(CARD_PROMPTS['The Lovers']).startsWith('tarot card'), false);
+    assert.doesNotMatch(prompt, /tarot card,/);
+    assert.doesNotMatch(prompt, /decorative border/);
     assert.doesNotMatch(prompt, /\u2014/);
+  });
+
+  it('keeps risky scenes clothed or free of people', () => {
+    const names = [
+      'The Sun',
+      'The Star',
+      'The Lovers',
+      'The World',
+      'Death',
+      'The Devil',
+      'Temperance',
+      'Judgement',
+      'Six of Cups',
+      'Ten of Cups',
+      'Six of Swords',
+    ];
+    for (const name of names) {
+      const scene = `${CARD_PROMPTS[name]} ${safeSymbolicScene(name)}`.toLowerCase();
+      assert.doesNotMatch(scene, /nude|naked|unclothed|child/);
+    }
+    assert.match(CARD_PROMPTS['The Sun'], /No person/);
+    assert.match(safeSymbolicScene('The Sun'), /Objects only/);
   });
 
   it('keeps a photo out of the cache key', () => {

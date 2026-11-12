@@ -7,13 +7,13 @@ export const CARD_PROMPTS: Record<string, string> = {
   'The High Priestess':
     'tarot card, The High Priestess. A serene robed figure sits between two pillars (black and white), a crescent moon at her feet, a scroll in her lap. Sense of intuition, mystery, inner knowledge, and the subconscious.',
   'The Empress':
-    'tarot card, The Empress. A crowned figure in flowing robes sits on a throne surrounded by lush wheat fields and a forest. Venus symbol visible. Sense of abundance, fertility, nature, nurturing, and sensual beauty.',
+    'tarot card, The Empress. A crowned figure in flowing robes sits on a throne surrounded by lush wheat fields and a forest. Venus symbol visible. Sense of abundance, nature, nurturing, and warmth.',
   'The Emperor':
     'tarot card, The Emperor. An armored figure sits on a stone throne adorned with rams. Mountains behind them. Sense of authority, structure, stability, and worldly power.',
   'The Hierophant':
     'tarot card, The Hierophant. A robed religious figure sits between two pillars, hand raised in blessing, two followers kneeling. Crossed keys at their feet. Sense of tradition, institutions, spiritual guidance, and conformity.',
   'The Lovers':
-    'tarot card, The Lovers. Two figures stand beneath an angel with outstretched wings. A sun blazes above. Sense of union, choice, alignment of values, and sacred connection.',
+    'tarot card, The Lovers. Two adults in long robes stand beneath a winged angel who is also fully robed. A sun blazes above them. No bare skin. Union, choice, and a sacred bond.',
   'The Chariot':
     'tarot card, The Chariot. A crowned warrior rides a chariot pulled by two sphinxes (one black, one white). Stars on the canopy above. Sense of willpower, victory, control, and forward momentum.',
   Strength:
@@ -27,23 +27,23 @@ export const CARD_PROMPTS: Record<string, string> = {
   'The Hanged Man':
     'tarot card, The Hanged Man. A figure hangs upside down from a living tree by one foot, the other leg crossed behind. Their expression is serene. Sense of surrender, new perspective, sacrifice, and suspension.',
   Death:
-    'tarot card, Death. A skeletal figure in black armor rides a white horse. A sun rises between towers in the distance. Figures of all stations stand before it. Sense of transformation, endings, transition, and inevitable change.',
+    'tarot card, Death. A white horse carries a black banner marked only with a white rose. A sunrise shows between two towers. No person and no skeleton. An ending that makes room for change.',
   Temperance:
-    'tarot card, Temperance. An angelic figure stands with one foot on land, one in water, pouring liquid between two cups in an eternal flow. A sun glows in the background. Sense of balance, patience, moderation, and alchemy.',
+    'tarot card, Temperance. An angel in a long robe that covers the whole body stands with one foot on rock and one foot in a pool, pouring water between two cups. Balance, patience, and moderation.',
   'The Devil':
-    'tarot card, The Devil. A horned figure sits enthroned above two chained human figures. An inverted pentagram above. The chains are loose. Sense of bondage, shadow self, materialism, and the illusion of captivity.',
+    'tarot card, The Devil. A horned figure in a full dark robe sits on a pedestal above loose chains. An inverted pentagram hangs above. No bare skin. Bondage, shadow, and the illusion of captivity.',
   'The Tower':
     'tarot card, The Tower. A tall stone tower is struck by lightning, its crown blown off, two figures falling. Flames pour from windows. Sense of sudden upheaval, revelation, destruction of false structures, and liberation through chaos.',
   'The Star':
-    'tarot card, The Star. A robed figure kneels by a pool, pouring water from two jugs. Seven small stars and one large eight-pointed star glow in a serene night sky. Sense of hope, healing, renewal, and divine guidance.',
+    'tarot card, The Star. A large eight-pointed star shines over a still pool, with seven smaller stars around it. Two jugs pour water, one into the pool and one onto the bank. No person. Hope, healing, and renewal.',
   'The Moon':
     'tarot card, The Moon. A large luminous moon shines over still dark water. A crayfish emerges from the pool. A wolf and a dog howl. Two towers stand in the distance. Sense of illusion, fear, the subconscious, and the mysteries of the night.',
   'The Sun':
-    'tarot card, The Sun. A joyful child rides a white horse beneath a blazing sun, holding a red banner. Sunflowers grow behind a stone wall. Sense of joy, vitality, clarity, success, and childlike wonder.',
+    'tarot card, The Sun. A blazing sun shines over a field of sunflowers, a white horse, and a red banner on a pole, behind a low stone wall. No person. Joy, vitality, and clarity.',
   Judgement:
-    'tarot card, Judgement. An angel blows a trumpet from golden clouds. Figures rise from coffins with arms raised in revelation. Sense of awakening, reckoning, absolution, and a higher calling.',
+    'tarot card, Judgement. An angel in a long robe blows a trumpet from golden clouds. Three open coffins stand empty below, with a mountain in the distance. No person. Awakening and a calling.',
   'The World':
-    'tarot card, The World. A dancing figure wrapped in purple cloth floats within a laurel wreath, holding two wands. Four creatures in the corners of the card. Sense of completion, wholeness, integration, and the end of a great cycle.',
+    'tarot card, The World. A laurel wreath forms a circle. Inside it, an adult dancer wears a long robe and holds two wands. A lion, a bull, an eagle, and a robed winged figure sit at the four corners. No bare skin. Completion and wholeness.',
 
   // WANDS
   'Ace of Wands':
@@ -87,7 +87,7 @@ export const CARD_PROMPTS: Record<string, string> = {
   'Five of Cups':
     'tarot card, Five of Cups. A cloaked figure stands before three spilled cups, head bowed. Two full cups stand upright behind them. A bridge and distant castle. Sense of loss, grief, regret, but also what remains.',
   'Six of Cups':
-    'tarot card, Six of Cups. Two children in a garden exchange flowers in cups. An older figure walks away. Sense of nostalgia, happy memories, innocence, and revisiting the past.',
+    'tarot card, Six of Cups. Two adults in garden tunics exchange a cup of flowers. A third adult walks away. Nostalgia, happy memories, and revisiting the past.',
   'Seven of Cups':
     'tarot card, Seven of Cups. A silhouetted figure gazes at seven cups floating in clouds, each containing a different vision or fantasy. Sense of illusion, wishful thinking, choices, and the imagination running wild.',
   'Eight of Cups':
@@ -95,7 +95,7 @@ export const CARD_PROMPTS: Record<string, string> = {
   'Nine of Cups':
     'tarot card, Nine of Cups. A satisfied figure sits with arms crossed before nine cups arranged on a shelf behind them, smiling. Sense of contentment, satisfaction, wishes fulfilled, and emotional abundance.',
   'Ten of Cups':
-    'tarot card, Ten of Cups. Two figures embrace as children dance nearby, a rainbow of ten cups arching over a beautiful home. Sense of emotional fulfillment, family harmony, lasting happiness, and love.',
+    'tarot card, Ten of Cups. Two adults in cloaks stand before a cottage while a rainbow of ten cups arches overhead. Emotional fulfillment, home, and lasting happiness.',
   'Page of Cups':
     'tarot card, Page of Cups. A young figure in colorful clothes stands by the ocean, holding a cup from which a fish peeks out, surprised. Sense of creative opportunity, intuitive messages, and youthful imagination.',
   'Knight of Cups':
@@ -117,7 +117,7 @@ export const CARD_PROMPTS: Record<string, string> = {
   'Five of Swords':
     'tarot card, Five of Swords. A smirking figure collects three swords while two defeated figures walk away in the distance. Dark skies. Sense of conflict, defeat, hollow victory, and walking away with your losses.',
   'Six of Swords':
-    'tarot card, Six of Swords. A figure poles a boat carrying a woman and child across calm water toward a distant shore. Six swords stand in the boat. Sense of transition, moving away from turmoil, passage, and gradual healing.',
+    'tarot card, Six of Swords. A cloaked adult poles a boat that carries a second cloaked adult across calm water toward a distant shore. Six swords stand in the boat. Transition, passage, and gradual healing.',
   'Seven of Swords':
     'tarot card, Seven of Swords. A figure sneaks away from a camp carrying five swords, two left behind, looking back over their shoulder. Sense of strategy, deception, acting alone, and getting away with something.',
   'Eight of Swords':

@@ -50,3 +50,8 @@ export function imageRequestBody(prompt: string, referenceImage?: string) {
 export function imageFailureIsTerminal(providerCode: string | null): boolean {
   return providerCode === 'model_not_available' || providerCode === 'third_party_data_sharing_blocked';
 }
+
+/** Together's safety checker rejects a picture with HTTP 422 and an NSFW message. */
+export function imageFailureIsNsfw(status: number, providerMessage: string): boolean {
+  return status === 422 && /nsfw/i.test(providerMessage);
+}

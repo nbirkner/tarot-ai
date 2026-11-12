@@ -59,7 +59,7 @@ export const OSHO_ZEN_PROMPTS: Record<string, string> = {
     'Osho Zen Tarot card, Past Lives. Translucent figures from different eras drift through layered luminous mist — ancient robes, medieval armor, forest spirits. One soul seen through many costumes across time. Vibrant airbrush painting, layered violet and indigo mists, luminous ghostly figures, cosmic starfield behind.',
 
   'Innocence':
-    'Osho Zen Tarot card, Innocence. A laughing child stands in a field of golden sunflowers, face lifted to a blazing sun, arms flung open in pure joy and wonder. No past, no future — only now. Vibrant airbrush painting, blazing oranges and golden yellows, luminous sunlight, lush jewel greens, pure radiant joy.',
+    'Osho Zen Tarot card, Innocence. A field of golden sunflowers under a blazing sun, with open sky and no person. No past, no future, only now. Vibrant airbrush painting, blazing oranges and golden yellows, luminous sunlight, lush jewel greens, pure radiant joy.',
 
   'Beyond Illusion':
     'Osho Zen Tarot card, Beyond Illusion. The veil of the world of forms tears open like a painted curtain, revealing pure luminous emptiness behind. A figure stands with wide eyes at the tear, seeing through the dream. Vibrant airbrush painting, the illusion in saturated reds and purples, the beyond in blazing white gold light.',

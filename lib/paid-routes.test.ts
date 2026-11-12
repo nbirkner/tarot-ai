@@ -8,7 +8,7 @@ import { POST as generateFollowUps } from '../app/api/generate-follow-ups/route.
 import { POST as generateReading } from '../app/api/generate-reading/route.ts';
 import { POST as generateSynthesis } from '../app/api/generate-synthesis/route.ts';
 import { setReadingQuotaForTests } from './rate-limit.ts';
-import { createMemoryQuota, SPEND_CAP_MESSAGE } from './rate-limit-shared.ts';
+import { createMemoryQuota, MAX_IMAGE_CALLS_PER_READING, SPEND_CAP_MESSAGE } from './rate-limit-shared.ts';
 import { setSpendRedisForTests, type RedisEval } from './spend.ts';
 
 const PAID_POSTS = [
@@ -173,8 +173,75 @@ describe('paid routes', () => {
     assert.equal(bodies[2].body.image_url, undefined);
     assert.match(String(bodies[2].body.prompt), /short dark hair/);
     assert.match(String(bodies[2].body.prompt), /Neo-Grimoire/);
-    assert.match(String(bodies[2].body.prompt), /Two figures stand beneath an angel/);
+    assert.match(String(bodies[2].body.prompt), /long robes/);
     assert.doesNotMatch(JSON.stringify(payload), /data:image/);
+  });
+
+  it('retries one unsafe picture with a symbolic scene and a second image slot', async () => {
+    const quota = createMemoryQuota();
+    setReadingQuotaForTests(quota);
+    setSpendRedisForTests(allowingSpend());
+    process.env.TOGETHER_API_KEY = 'test-key';
+    process.env.TAROT_DAILY_SPEND_CAP_CENTS = '200';
+
+    const prompts: string[] = [];
+    globalThis.fetch = async (_input, init) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as { prompt?: string };
+      prompts.push(body.prompt ?? '');
+      if (prompts.length === 1) {
+        return new Response(
+          JSON.stringify({ error: { message: 'image may contain NSFW content' } }),
+          { status: 422, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      return new Response(
+        JSON.stringify({ data: [{ url: 'https://api.together.ai/sun.png' }] }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    };
+
+    const response = await generateCard(
+      request('203.0.113.62', 'reading-nsfw', { cardName: 'The Sun', deckStyle: 'classic' }),
+    );
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(payload.imageUrl, 'https://api.together.ai/sun.png');
+    assert.equal(prompts.length, 2);
+    assert.match(prompts[1], /Objects only/);
+    assert.doesNotMatch(prompts[1], /white horse/);
+
+    for (let i = 0; i < MAX_IMAGE_CALLS_PER_READING - 2; i += 1) {
+      assert.equal((await quota.consume('203.0.113.62', 'reading-nsfw', Date.now(), 'image')).ok, true);
+    }
+    const blocked = await quota.consume('203.0.113.62', 'reading-nsfw', Date.now(), 'image');
+    assert.equal(blocked.ok, false);
+  });
+
+  it('does not draw again when the image cap is already spent on the unsafe retry', async () => {
+    const quota = createMemoryQuota();
+    const now = Date.now();
+    for (let i = 0; i < MAX_IMAGE_CALLS_PER_READING - 1; i += 1) {
+      assert.equal((await quota.consume('203.0.113.63', 'reading-last', now, 'image')).ok, true);
+    }
+    setReadingQuotaForTests(quota);
+    setSpendRedisForTests(allowingSpend());
+    process.env.TOGETHER_API_KEY = 'test-key';
+    process.env.TAROT_DAILY_SPEND_CAP_CENTS = '200';
+
+    let images = 0;
+    globalThis.fetch = async () => {
+      images += 1;
+      return new Response(
+        JSON.stringify({ error: { message: 'image may contain NSFW content' } }),
+        { status: 422, headers: { 'content-type': 'application/json' } },
+      );
+    };
+
+    const response = await generateCard(
+      request('203.0.113.63', 'reading-last', { cardName: 'The Sun', deckStyle: 'classic' }),
+    );
+    assert.equal(response.status, 429);
+    assert.equal(images, 1);
   });
 
   it('stops image generation when the daily cap is already spent', async () => {
