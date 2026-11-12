@@ -14,7 +14,7 @@ export const OSHO_ZEN_PROMPTS: Record<string, string> = {
     'Osho Zen Tarot card, Creativity. A figure with open upturned hands has streams of multicolored light pouring from their palms — flowers, birds, music notes, flames all spiraling outward. The earth bursts with color and life around them. Vibrant airbrush painting, blazing oranges and magentas, lush jewel greens, psychedelic abundance of creative energy.',
 
   'The Rebel':
-    'Osho Zen Tarot card, The Rebel. A solitary figure stands on a windswept mountain peak, hair wild in the wind, eyes alive with freedom and defiance. Behind them the conventional world falls away into shadow. No crown, no throne — just sovereign presence. Vibrant airbrush painting, bold saturated reds and deep purples, dramatic sky with cosmic starfield.',
+    'Osho Zen Tarot card, The Rebel. A solitary figure in a traveling cloak stands on a windswept mountain peak, hair wild in the wind, eyes alive with freedom. A sovereign presence under a cosmic sky. Vibrant airbrush painting, bold saturated reds and deep purples, dramatic sky with cosmic starfield.',
 
   'No-Thingness':
     'Osho Zen Tarot card, No-Thingness. A single radiant white lotus floats in absolute black void. The flower is exquisite, luminous, perfectly still. Total emptiness holding total perfection. Vibrant airbrush painting, deep black background, the lotus blazing with soft light, deep cosmic blues at the edges, psychedelic minimalism.',
@@ -26,7 +26,7 @@ export const OSHO_ZEN_PROMPTS: Record<string, string> = {
     'Osho Zen Tarot card, Awareness. A figure sits in perfect stillness at the center of a spinning mandala of light and vivid color. All motion flows around them while they remain utterly still — pure witnessing presence. Vibrant airbrush painting, deep cosmic blues and purples, blazing oranges and reds in the spinning periphery, radiant mandalas.',
 
   'Courage':
-    'Osho Zen Tarot card, Courage. A figure walks barefoot toward a wall of blazing flame, arms open wide, face calm and radiant. No armor, no shield. Just presence meeting the unknown directly. The flames part like a gateway. Vibrant airbrush painting, blazing oranges and reds, deep cosmic blue background, luminous glow effects.',
+    'Osho Zen Tarot card, Courage. A figure in a light robe walks toward a wall of blazing flame, arms open wide, face calm and radiant. Presence meeting the unknown directly. The flames part like a gateway. Vibrant airbrush painting, blazing oranges and reds, deep cosmic blue background, luminous glow effects.',
 
   'Aloneness':
     'Osho Zen Tarot card, Aloneness. A solitary figure walks through an ancient moonlit forest following a soft inner light emanating from their own chest. Complete. Not lonely. Solitude as wholeness, not absence. Vibrant airbrush painting, deep jewel greens and indigo blues, soft golden inner light, cosmic starfield visible through the canopy.',
@@ -59,7 +59,7 @@ export const OSHO_ZEN_PROMPTS: Record<string, string> = {
     'Osho Zen Tarot card, Past Lives. Translucent figures from different eras drift through layered luminous mist — ancient robes, medieval armor, forest spirits. One soul seen through many costumes across time. Vibrant airbrush painting, layered violet and indigo mists, luminous ghostly figures, cosmic starfield behind.',
 
   'Innocence':
-    'Osho Zen Tarot card, Innocence. A field of golden sunflowers under a blazing sun, with open sky and no person. No past, no future, only now. Vibrant airbrush painting, blazing oranges and golden yellows, luminous sunlight, lush jewel greens, pure radiant joy.',
+    'Osho Zen Tarot card, Innocence. A field of golden sunflowers under a blazing sun, with open sky. This moment, only now. Vibrant airbrush painting, blazing oranges and golden yellows, luminous sunlight, lush jewel greens, pure radiant joy.',
 
   'Beyond Illusion':
     'Osho Zen Tarot card, Beyond Illusion. The veil of the world of forms tears open like a painted curtain, revealing pure luminous emptiness behind. A figure stands with wide eyes at the tear, seeing through the dream. Vibrant airbrush painting, the illusion in saturated reds and purples, the beyond in blazing white gold light.',
@@ -103,7 +103,7 @@ export const OSHO_ZEN_PROMPTS: Record<string, string> = {
     'Osho Zen Tarot card, Suppression. A figure presses both hands down on a form of light and fire that strains to rise from below. The body rigid with the effort of containing what wants to live. The energy turning inward. Vibrant airbrush painting, deep reds and shadows, the suppressed energy blazing in warm orange beneath cool blue pressure.',
 
   'Playfulness':
-    'Osho Zen Tarot card, Playfulness. A young figure dances in a ring of playful small flames, wild hair flying, eyes bright with mischief and delight. Pure spontaneous joy. No goal, no destination — just the aliveness of play. Vibrant airbrush painting, blazing oranges and reds, playful spiraling energy, deep night background.',
+    'Osho Zen Tarot card, Playfulness. A figure in a bright tunic dances in a ring of playful small flames, wild hair flying, eyes bright with mischief and delight. Pure spontaneous joy and the aliveness of play. Vibrant airbrush painting, blazing oranges and reds, playful spiraling energy, deep night background.',
 
   'Intensity':
     'Osho Zen Tarot card, Intensity. A figure on a blazing horse charges forward at full speed across a vast desert, torch raised high, leaving a trail of fire in their wake. Total commitment to the direction. Vibrant airbrush painting, blazing oranges and reds, dramatic motion, deep indigo sky, explosive fire energy.',
@@ -120,7 +120,7 @@ export const OSHO_ZEN_PROMPTS: Record<string, string> = {
     'Osho Zen Tarot card, Going With the Flow. A serene figure floats effortlessly on a luminous river that winds through a moonlit landscape. Arms gently outstretched. Not resisting, not pushing — surrendering to what is. Vibrant airbrush painting, deep cosmic blues and teals, luminous moonlight on water, lush jewel greens at the banks.',
 
   'Friendliness':
-    'Osho Zen Tarot card, Friendliness. Two figures sit together in a warm circle of golden light, facing each other with open and welcoming expressions. No agenda, no expectation — pure warm presence. Vibrant airbrush painting, warm golden and rose tones, soft glowing light, gentle psychedelic spiritual warmth.',
+    'Osho Zen Tarot card, Friendliness. Two figures in soft robes sit together in a warm circle of golden light, facing each other with open and welcoming expressions. Pure warm presence. Vibrant airbrush painting, warm golden and rose tones, soft glowing light, gentle psychedelic spiritual warmth.',
 
   'Celebration':
     'Osho Zen Tarot card, Celebration. Three figures dance in warm rain with heads thrown back, arms raised, faces radiant with uninhibited joy. The rain itself is golden light. Life celebrating itself. Vibrant airbrush painting, warm golden yellows, lush greens, blazing oranges, exuberant psychedelic movement.',
