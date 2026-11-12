@@ -1,11 +1,15 @@
 import type { NextConfig } from 'next';
 import { BASE_PATH } from './lib/base-path';
+import { legacyHostRedirects } from './lib/legacy-host';
 
 const nextConfig: NextConfig = {
   // Scripts, CSS, and fonts are requested at /tarot-ai/_next even on the root
   // host. The rewrite below serves that prefix from the real /_next files, so
   // nikibirkner.com/tarot-ai and the root deployment both resolve assets.
   assetPrefix: BASE_PATH,
+  async redirects() {
+    return legacyHostRedirects();
+  },
   async rewrites() {
     return {
       beforeFiles: [
