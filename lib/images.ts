@@ -27,6 +27,15 @@ export const IMAGE_PRICE_MICRODOLLARS = Math.round((IMAGE_WIDTH * IMAGE_HEIGHT *
 
 export const IMAGE_PRICE_USD = IMAGE_PRICE_MICRODOLLARS / 1_000_000;
 
+/**
+ * Kontext sometimes answers 422 or 403 in a few hundred milliseconds.
+ * FLUX.2 [flex] is a serverless FLUX model this key can call. Schnell and
+ * Dev are not on serverless. Catalog price is $0.03 per text-to-image.
+ */
+export const IMAGE_FALLBACK_MODEL = 'black-forest-labs/FLUX.2-flex';
+export const IMAGE_FALLBACK_PRICE_USD = 0.03;
+export const IMAGE_FALLBACK_PRICE_MICRODOLLARS = Math.round(IMAGE_FALLBACK_PRICE_USD * 1_000_000);
+
 export const RETIRED_IMAGE_MODELS = [
   'black-forest-labs/FLUX.1-schnell',
   'black-forest-labs/FLUX.1.1-pro',
@@ -46,6 +55,17 @@ export function imageRequestBody(prompt: string, referenceImage?: string) {
   };
 }
 
+export function fallbackImageRequestBody(prompt: string) {
+  return {
+    model: IMAGE_FALLBACK_MODEL,
+    prompt,
+    width: IMAGE_WIDTH,
+    height: IMAGE_HEIGHT,
+    n: 1,
+    response_format: 'url' as const,
+  };
+}
+
 /** Failures that will not change if the same model is called again without a photo. */
 export function imageFailureIsTerminal(providerCode: string | null): boolean {
   return providerCode === 'model_not_available' || providerCode === 'third_party_data_sharing_blocked';
@@ -54,4 +74,9 @@ export function imageFailureIsTerminal(providerCode: string | null): boolean {
 /** Together's safety checker rejects a picture with HTTP 422 and an NSFW message. */
 export function imageFailureIsNsfw(status: number, providerMessage: string): boolean {
   return status === 422 && /nsfw/i.test(providerMessage);
+}
+
+/** Kontext refusals that should try the serverless FLUX fallback once. */
+export function imageFailureUsesFallback(status: number, providerCode: string | null, providerMessage: string): boolean {
+  return status === 403 || imageFailureIsNsfw(status, providerMessage) || providerCode === 'third_party_data_sharing_blocked';
 }

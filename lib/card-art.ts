@@ -1,49 +1,64 @@
 /**
  * One illustration prompt: the deck the reader picked, the traditional scene
  * for that card, and the Neo-Grimoire house style. The frame and the name
- * stay in the page, so the picture itself is full-bleed art with no title
- * and no border.
+ * stay in the page, so the picture is full-bleed art.
+ * Every sentence is positive. The safety checker treats words for what to
+ * leave out as a request for those things.
  */
 const SAFETY =
-  'Safe for work, family-friendly illustration. All figures fully clothed in robes, garments, or costumes. No exposed skin below the neck. No nudity, no bare chests, no cleavage, no suggestive poses. No children.';
-
-const FULL_BLEED =
-  'Full-bleed artwork that touches all four edges. Do not draw a card outline, rectangle, border, frame, ornament, caption band, banner, roman numeral, or any letter. Do not write a title or a name. The words in this prompt are instructions, not text to paint.';
+  'Every person wears a long robe, cloak, or costume from neck to ankle.';
 
 const NEO_GRIMOIRE =
-  'Neo-Grimoire illustration. Bold black line art on warm cream paper, flat ember orange and black ink, graphic print.';
+  'Neo-Grimoire palette. Bold black line art on warm cream paper, flat ember orange and black ink, graphic print.';
 
-/** Stricter scene used once, after Together refuses a picture as unsafe. */
+/** Words that make the model paint a printed card template. */
+const TEMPLATE_WORDS = /\b(?:tarot|cards|card|titles|title|labels|label)\b/gi;
+
+/** Positive scenes kept for a stricter second description. */
 const SAFE_SYMBOLIC_SCENES: Record<string, string> = {
   'The Lovers':
-    'Two long robes standing under a pair of wings and a round sun. Objects and garments only. No people and no skin.',
+    'Two long robes stand under a pair of wings and a round sun.',
   'The Star':
-    'One large eight-pointed star, seven small stars, a pool, and two jugs pouring water. Objects only. No people and no skin.',
+    'One large eight-pointed star, seven small stars, a pool, and two jugs pouring water.',
   'The World':
-    'A circular laurel wreath, two plain wands, a lion, a bull, and an eagle. Objects and animals only. No people and no skin.',
+    'A circular laurel wreath, two plain wands, a lion, a bull, and an eagle.',
   'The Sun':
-    'A round sun, a row of sunflowers, a red banner on a pole, and a low stone wall. Objects only. No people and no animals.',
+    'A round sun, a row of sunflowers, a red banner on a pole, and a low stone wall.',
   Death:
-    'A white horse, a black banner with a white rose, and a sunrise between two towers. No people and no skeleton.',
+    'A white horse, a black banner with a white rose, and a sunrise between two towers.',
   'The Devil':
-    'A stone pedestal, loose chains, and an inverted pentagram. Objects only. No people and no skin.',
+    'A stone pedestal, loose chains, and an inverted pentagram.',
   Temperance:
-    'Two cups pouring water into each other, one foot of ground and one pool. Objects only. No people and no skin.',
+    'Two cups pour water into each other between a stretch of ground and a pool.',
   Judgement:
-    'A trumpet above three empty coffins and a distant mountain. Objects only. No people and no skin.',
+    'A trumpet above three coffins and a distant mountain.',
   'Six of Cups':
-    'Six cups in a garden, one cup holding flowers. Objects only. No people and no skin.',
+    'Six cups in a garden, one cup holding flowers.',
   'Ten of Cups':
-    'Ten cups arranged in an arc over a cottage. Objects only. No people and no skin.',
+    'Ten cups arranged in an arc over a cottage.',
   'Six of Swords':
-    'A small boat carrying six upright swords on calm water. Objects only. No people and no skin.',
+    'A small boat carrying six upright swords on calm water.',
 };
 
 const GENERIC_SAFE_SCENE =
-  'A simple emblem of geometric shapes and plain objects. No people, no skin, no animals.';
+  'A simple emblem of geometric shapes, cups, wands, and plain objects.';
+
+const CONCRETE =
+  /\b(?:suns?|sunrise|horses?|walls?|cups?|swords?|wands?|towers?|robes?|figures?|stars?|moon|water|trees?|flowers?|fields?|flags?|banners?|stones?|wings?|lions?|bulls?|eagles?|pools?|jugs?|chains?|pedestals?|trumpets?|coffins?|boats?|gardens?|cottages?|hands?|clouds?|mountains?|thrones?|pillars?|dogs?|roses?|lanterns?|wheels?|scales?|chariots?|sphinxes?|keys?|scrolls?|wheat|forests?|seas?|ships?|castles?|rainbows?|fish|birds?|cats?|lizards?|coins?|pentacles?|vines?|rabbits?|grapes?|arches?|windows?|tombs?|hearts?|rain|beds?|bridges?|paths?|gates?|cloaks?|angels?|wreaths?|dancers?|pentagrams?|people|persons?|adults?)\b/i;
 
 export function sceneWithoutTitle(symbolism: string): string {
-  return symbolism.replace(/^(?:Osho Zen )?tarot card,\s*[^.]*\.\s*/i, '').trim();
+  const stripped = symbolism
+    .replace(/^(?:Osho Zen )?tarot card,\s*[^.]*\.\s*/i, '')
+    .replace(/\brider[-\s]?waite\b/gi, '')
+    .replace(/\btraditional symbolism,?\s*/gi, '')
+    .replace(/\breminiscent of\s*(?:rider[-\s]?waite\s*)?(?:but\s*)?/gi, '')
+    .replace(TEMPLATE_WORDS, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+,/g, ',')
+    .trim();
+  const sentences = stripped.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+  const visual = sentences.filter((sentence) => CONCRETE.test(sentence));
+  return (visual.length > 0 ? visual : sentences.slice(0, 1)).join(' ');
 }
 
 export function safeSymbolicScene(cardName: string): string {
@@ -55,18 +70,20 @@ export function buildCardImagePrompt(input: {
   deckTheme: string;
   portrait?: string;
 }): string {
+  const scene = sceneWithoutTitle(input.symbolism);
+  const theme = sceneWithoutTitle(input.deckTheme);
   const parts = [
+    `A full-bleed illustration of ${scene}, edge to edge, with no frame and no lettering.`,
+    'Open sky fills the top edge. Ground fills the bottom edge. The corners are sky, ground, or the figures themselves.',
     SAFETY,
-    FULL_BLEED,
     NEO_GRIMOIRE,
-    `Deck theme: ${input.deckTheme}`,
-    `Scene to illustrate, not to letter: ${sceneWithoutTitle(input.symbolism)}`,
+    `Style: ${theme}.`,
+    'A full-bleed illustration, edge to edge, with no frame and no lettering.',
   ];
   if (input.portrait) {
     parts.push(
-      `The human figures are adults who resemble this person and stay fully clothed: ${input.portrait}`,
+      `The robed figures share the face and coloring of this person: ${sceneWithoutTitle(input.portrait)}.`,
     );
   }
-  parts.push(FULL_BLEED);
-  return parts.join(' ');
+  return parts.join(' ').replace(/\s+/g, ' ').trim();
 }

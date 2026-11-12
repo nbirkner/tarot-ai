@@ -134,10 +134,8 @@ describe('paid routes', () => {
       if (url.includes('/images/')) {
         if (body.image_url) {
           return new Response(
-            JSON.stringify({
-              error: { code: 'third_party_data_sharing_blocked', message: 'blocked' },
-            }),
-            { status: 403, headers: { 'content-type': 'application/json' } },
+            JSON.stringify({ error: { message: 'invalid reference image' } }),
+            { status: 400, headers: { 'content-type': 'application/json' } },
           );
         }
         return new Response(
@@ -184,11 +182,15 @@ describe('paid routes', () => {
     process.env.TOGETHER_API_KEY = 'test-key';
     process.env.TAROT_DAILY_SPEND_CAP_CENTS = '200';
 
-    const prompts: string[] = [];
+    const bodies: Array<{ model?: string; prompt?: string; image_url?: string }> = [];
     globalThis.fetch = async (_input, init) => {
-      const body = JSON.parse(String(init?.body ?? '{}')) as { prompt?: string };
-      prompts.push(body.prompt ?? '');
-      if (prompts.length === 1) {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        model?: string;
+        prompt?: string;
+        image_url?: string;
+      };
+      bodies.push(body);
+      if (bodies.length === 1) {
         return new Response(
           JSON.stringify({ error: { message: 'image may contain NSFW content' } }),
           { status: 422, headers: { 'content-type': 'application/json' } },
@@ -206,15 +208,57 @@ describe('paid routes', () => {
     const payload = await response.json();
     assert.equal(response.status, 200);
     assert.equal(payload.imageUrl, 'https://api.together.ai/sun.png');
-    assert.equal(prompts.length, 2);
-    assert.match(prompts[1], /Objects only/);
-    assert.doesNotMatch(prompts[1], /white horse/);
+    assert.equal(bodies.length, 2);
+    assert.equal(bodies[0].model, 'black-forest-labs/FLUX.1-kontext-pro');
+    assert.equal(bodies[1].model, 'black-forest-labs/FLUX.2-flex');
+    assert.equal(bodies[1].image_url, undefined);
+    assert.match(bodies[1].prompt ?? '', /sunflowers/);
+    assert.doesNotMatch(bodies[1].prompt ?? '', /nudity|cleavage|children/);
 
     for (let i = 0; i < MAX_IMAGE_CALLS_PER_READING - 2; i += 1) {
       assert.equal((await quota.consume('203.0.113.62', 'reading-nsfw', Date.now(), 'image')).ok, true);
     }
     const blocked = await quota.consume('203.0.113.62', 'reading-nsfw', Date.now(), 'image');
     assert.equal(blocked.ok, false);
+  });
+
+  it('falls back to FLUX.2 flex when Kontext is blocked', async () => {
+    setReadingQuotaForTests(createMemoryQuota());
+    setSpendRedisForTests(allowingSpend());
+    process.env.TOGETHER_API_KEY = 'test-key';
+    process.env.TAROT_DAILY_SPEND_CAP_CENTS = '200';
+
+    const models: string[] = [];
+    globalThis.fetch = async (_input, init) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as { model?: string };
+      models.push(body.model ?? '');
+      if (models.length === 1) {
+        return new Response(
+          JSON.stringify({
+            error: { code: 'third_party_data_sharing_blocked', message: 'blocked' },
+          }),
+          { status: 403, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      return new Response(
+        JSON.stringify({ data: [{ url: 'https://api.together.ai/cups.png' }] }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    };
+
+    const response = await generateCard(
+      request('203.0.113.64', 'reading-blocked', {
+        cardName: 'Two of Cups',
+        deckStyle: 'classic',
+      }),
+    );
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(payload.imageUrl, 'https://api.together.ai/cups.png');
+    assert.deepEqual(models, [
+      'black-forest-labs/FLUX.1-kontext-pro',
+      'black-forest-labs/FLUX.2-flex',
+    ]);
   });
 
   it('does not draw again when the image cap is already spent on the unsafe retry', async () => {

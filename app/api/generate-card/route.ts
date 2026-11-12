@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { CARD_PROMPTS } from '../../../data/card-prompts';
 import { OSHO_ZEN_PROMPTS } from '../../../data/osho-zen-prompts';
 import { STYLE_MODIFIERS } from '../../../data/style-modifiers';
-import { buildCardImagePrompt, safeSymbolicScene } from '../../../lib/card-art';
+import { buildCardImagePrompt } from '../../../lib/card-art';
 import {
   cardArtCacheKey,
   claimCardArt,
@@ -11,10 +11,13 @@ import {
   rememberCardArt,
 } from '../../../lib/image-cache';
 import {
+  IMAGE_FALLBACK_MODEL,
+  IMAGE_FALLBACK_PRICE_MICRODOLLARS,
   IMAGE_MODEL,
   IMAGE_PRICE_USD,
-  imageFailureIsNsfw,
+  fallbackImageRequestBody,
   imageFailureIsTerminal,
+  imageFailureUsesFallback,
   imageRequestBody,
 } from '../../../lib/images';
 import { describePortrait } from '../../../lib/portrait';
@@ -38,8 +41,9 @@ type ImageResult =
 
 async function requestImage(
   prompt: string,
-  referenceImage?: string,
+  options?: { referenceImage?: string; fallback?: boolean },
 ): Promise<ImageResult> {
+  const model = options?.fallback ? IMAGE_FALLBACK_MODEL : IMAGE_MODEL;
   const response = await fetch('https://api.together.xyz/v1/images/generations', {
     method: 'POST',
     headers: {
@@ -47,12 +51,16 @@ async function requestImage(
       'Content-Type': 'application/json',
       'User-Agent': 'tarot-ai',
     },
-    body: JSON.stringify(imageRequestBody(prompt, referenceImage)),
+    body: JSON.stringify(
+      options?.fallback
+        ? fallbackImageRequestBody(prompt)
+        : imageRequestBody(prompt, options?.referenceImage),
+    ),
   });
 
   if (!response.ok) {
     const error = await response.text();
-    const failure = describeTogetherFailure('generate-card', IMAGE_MODEL, response.status, error);
+    const failure = describeTogetherFailure('generate-card', model, response.status, error);
     logTogetherFailure(failure);
     return { ok: false, failure };
   }
@@ -64,7 +72,7 @@ async function requestImage(
       ok: false,
       failure: {
         scope: 'generate-card',
-        model: IMAGE_MODEL,
+        model,
         status: 502,
         providerCode: null,
         providerMessage: 'No image returned',
@@ -79,12 +87,19 @@ type PaidImage =
   | { ok: false; response: NextResponse }
   | { ok: false; failure: TogetherFailure };
 
-async function paidImage(prompt: string, referenceImage?: string): Promise<PaidImage> {
-  const price = referenceImage ? IMAGE_REFERENCE_PRICE_MICRODOLLARS : IMAGE_PRICE_MICRODOLLARS;
+async function paidImage(
+  prompt: string,
+  options?: { referenceImage?: string; fallback?: boolean },
+): Promise<PaidImage> {
+  const price = options?.fallback
+    ? IMAGE_FALLBACK_PRICE_MICRODOLLARS
+    : options?.referenceImage
+      ? IMAGE_REFERENCE_PRICE_MICRODOLLARS
+      : IMAGE_PRICE_MICRODOLLARS;
   const spend = await takeSpend(price);
   if (!spend.ok) return { ok: false, response: spend.response };
   try {
-    const drawn = await requestImage(prompt, referenceImage);
+    const drawn = await requestImage(prompt, options);
     if (!drawn.ok) {
       await spend.settle(0);
       return { ok: false, failure: drawn.failure };
@@ -160,17 +175,17 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ imageUrl, estimatedCost: IMAGE_PRICE_USD });
       };
 
-      // One extra image slot and one extra spend reservation. A second 422
-      // is returned as-is so the card falls back to the placeholder.
-      const symbolicRetry = async () => {
+      const plainPrompt = buildCardImagePrompt({
+        symbolism: basePrompt,
+        deckTheme: styleModifier,
+      });
+
+      // One extra image slot and one extra spend reservation, on FLUX.2 flex.
+      // A second refusal is returned as-is so the card keeps the placeholder.
+      const modelFallback = async () => {
         const again = await readingLimitResponse(req, 'image');
         if (again) return again;
-        const retry = await paidImage(
-          buildCardImagePrompt({
-            symbolism: safeSymbolicScene(cardName),
-            deckTheme: styleModifier,
-          }),
-        );
+        const retry = await paidImage(plainPrompt, { fallback: true });
         if (!retry.ok) {
           if ('response' in retry) return retry.response;
           return imageFailureResponse(retry.failure);
@@ -190,15 +205,21 @@ export async function POST(req: NextRequest) {
         });
         try {
           const withPhoto = await paidImage(
-            `${photoPrompt} Use the reference photo for the face and appearance of the adult figures. Keep the symbolic objects. All figures stay fully clothed.`,
-            userPhotoBase64,
+            `${photoPrompt} The robed figures share the face and coloring in the reference photo.`,
+            { referenceImage: userPhotoBase64 },
           );
           if (withPhoto.ok) return saved(withPhoto.imageUrl);
           if ('response' in withPhoto) return withPhoto.response;
           if (withPhoto.failure.status === 401) return imageFailureResponse(withPhoto.failure);
-          if (imageFailureIsNsfw(withPhoto.failure.status, withPhoto.failure.providerMessage)) {
-            console.error('generate-card: picture was refused as unsafe, drawing a symbol instead');
-            return symbolicRetry();
+          if (
+            imageFailureUsesFallback(
+              withPhoto.failure.status,
+              withPhoto.failure.providerCode,
+              withPhoto.failure.providerMessage,
+            )
+          ) {
+            console.error('generate-card: Kontext refused the picture, drawing it on FLUX.2 flex');
+            return modelFallback();
           }
           if (imageFailureIsTerminal(withPhoto.failure.providerCode)) {
             console.error('generate-card: reference photo was refused, describing the person instead');
@@ -218,17 +239,25 @@ export async function POST(req: NextRequest) {
       }
 
       const drawn = await paidImage(
-        buildCardImagePrompt({
-          symbolism: basePrompt,
-          deckTheme: styleModifier,
-          portrait,
-        }),
+        portrait
+          ? buildCardImagePrompt({
+              symbolism: basePrompt,
+              deckTheme: styleModifier,
+              portrait,
+            })
+          : plainPrompt,
       );
       if (!drawn.ok) {
         if ('response' in drawn) return drawn.response;
-        if (imageFailureIsNsfw(drawn.failure.status, drawn.failure.providerMessage)) {
-          console.error('generate-card: picture was refused as unsafe, drawing a symbol instead');
-          return symbolicRetry();
+        if (
+          imageFailureUsesFallback(
+            drawn.failure.status,
+            drawn.failure.providerCode,
+            drawn.failure.providerMessage,
+          )
+        ) {
+          console.error('generate-card: Kontext refused the picture, drawing it on FLUX.2 flex');
+          return modelFallback();
         }
         return imageFailureResponse(drawn.failure);
       }

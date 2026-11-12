@@ -4,14 +4,18 @@ import { buildCardImagePrompt, safeSymbolicScene, sceneWithoutTitle } from './ca
 import { cardArtCacheKey, photoCacheTag } from './image-cache.ts';
 import {
   IMAGE_ASPECT_RATIO,
+  IMAGE_FALLBACK_MODEL,
+  IMAGE_FALLBACK_PRICE_MICRODOLLARS,
   IMAGE_HEIGHT,
   IMAGE_MODEL,
   IMAGE_PRICE_MICRODOLLARS,
   IMAGE_PRICE_USD,
   IMAGE_WIDTH,
   RETIRED_IMAGE_MODELS,
+  fallbackImageRequestBody,
   imageFailureIsNsfw,
   imageFailureIsTerminal,
+  imageFailureUsesFallback,
   imageRequestBody,
 } from './images.ts';
 import { STYLE_MODIFIERS } from '../data/style-modifiers.ts';
@@ -52,6 +56,15 @@ describe('card image model', () => {
     assert.equal(imageFailureIsNsfw(422, 'image may contain NSFW content'), true);
     assert.equal(imageFailureIsNsfw(500, 'image may contain NSFW content'), false);
     assert.equal(imageFailureIsNsfw(422, 'width must be a multiple of 8'), false);
+    assert.equal(imageFailureUsesFallback(403, 'third_party_data_sharing_blocked', ''), true);
+    assert.equal(imageFailureUsesFallback(422, null, 'image may contain NSFW content'), true);
+    assert.equal(imageFailureUsesFallback(500, null, 'upstream'), false);
+    assert.equal(IMAGE_FALLBACK_MODEL, 'black-forest-labs/FLUX.2-flex');
+    assert.equal(IMAGE_FALLBACK_PRICE_MICRODOLLARS, 30_000);
+    const fallback = fallbackImageRequestBody('a sun');
+    assert.equal(fallback.model, IMAGE_FALLBACK_MODEL);
+    assert.equal(fallback.width, IMAGE_WIDTH);
+    assert.equal('aspect_ratio' in fallback, false);
   });
 
   it('combines the deck theme, the traditional scene, and the house style', () => {
@@ -61,12 +74,14 @@ describe('card image model', () => {
     });
     assert.match(prompt, /Neo-Grimoire/);
     assert.match(prompt, /ember orange/);
-    assert.match(prompt, /classic tarot illustration style/);
+    assert.match(prompt, /classic illustration style/);
     assert.match(prompt, /long robes/);
-    assert.match(prompt, /Full-bleed/);
-    assert.match(prompt, /Do not draw a card outline/);
+    assert.match(prompt, /A full-bleed illustration of/);
+    assert.match(prompt, /edge to edge, with no frame and no lettering/);
+    assert.match(prompt, /long robe/);
+    assert.doesNotMatch(prompt, /\b(nudity|nude|naked|cleavage|children|child|bare|skin|suggestive|unclothed|skeleton)\b/i);
     assert.equal(sceneWithoutTitle(CARD_PROMPTS['The Lovers']).startsWith('tarot card'), false);
-    assert.doesNotMatch(prompt, /tarot card,/);
+    assert.doesNotMatch(prompt, /\b(tarot|card|title|label)\b/i);
     assert.doesNotMatch(prompt, /decorative border/);
     assert.doesNotMatch(prompt, /\u2014/);
   });
@@ -89,8 +104,9 @@ describe('card image model', () => {
       const scene = `${CARD_PROMPTS[name]} ${safeSymbolicScene(name)}`.toLowerCase();
       assert.doesNotMatch(scene, /nude|naked|unclothed|child/);
     }
-    assert.match(CARD_PROMPTS['The Sun'], /No person/);
-    assert.match(safeSymbolicScene('The Sun'), /Objects only/);
+    assert.match(CARD_PROMPTS['The Sun'], /sunflowers/);
+    assert.match(safeSymbolicScene('The Sun'), /sunflowers/);
+    assert.doesNotMatch(safeSymbolicScene('The Sun'), /\bno\b/i);
   });
 
   it('keeps a photo out of the cache key', () => {
