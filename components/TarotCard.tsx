@@ -15,6 +15,8 @@ interface TarotCardProps {
   onClick?: () => void;
   size?: 'sm' | 'md' | 'lg' | 'hero';
   showPosition?: boolean;
+  /** Show the art face while a reading is still streaming. */
+  showFace?: boolean;
   tilt?: number;
 }
 
@@ -31,6 +33,7 @@ export function TarotCard({
   onClick,
   size = 'md',
   showPosition = true,
+  showFace = false,
   tilt = 0,
 }: TarotCardProps) {
   const reduce = useReducedMotion();
@@ -38,6 +41,7 @@ export function TarotCard({
   const canFlip = Boolean(isFlippable && !isFlipped && onClick);
   const variant = variantFor(drawn.card.name);
   const hasArt = Boolean(drawn.imageUrl && drawn.imageUrl !== 'failed' && !artFailed);
+  const faceUp = Boolean(isFlipped || showFace);
 
   useEffect(() => {
     setArtFailed(false);
@@ -47,7 +51,8 @@ export function TarotCard({
     <div className="oracle-shell" data-size={size}>
       <motion.div
         className="oracle-3d"
-        animate={{ rotateY: isFlipped ? 180 : 0 }}
+        initial={{ rotateY: faceUp ? 180 : 0 }}
+        animate={{ rotateY: faceUp ? 180 : 0 }}
         transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 260, damping: 18 }}
       >
         <div className="face back">
