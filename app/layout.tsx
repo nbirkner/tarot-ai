@@ -27,10 +27,10 @@ const description =
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.nikibirkner.com'),
-  title: 'tarotai. Your Future Called.',
+  title: 'Tarot AI',
   description,
   openGraph: {
-    title: 'tarotai. Your Future Called.',
+    title: 'Tarot AI',
     description: 'Your future called. It has notes. Not a prediction. A prompt.',
     images: [
       {
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'tarotai. Your Future Called.',
+    title: 'Tarot AI',
     description,
     images: [`${BASE_PATH}/og.png`],
   },
