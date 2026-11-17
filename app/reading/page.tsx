@@ -27,6 +27,7 @@ import {
   messageForLimitResponse,
 } from '../../lib/rate-limit-shared';
 import { PROVIDER_BLOCKED_MESSAGE } from '../../lib/together';
+import { createHangWatch } from '../../lib/reading-hang';
 import { getUserId, saveReading } from '../../lib/storage';
 
 type Step = 'question' | 'context' | 'spread' | 'deck' | 'photo' | 'astrology' | 'generating' | 'reveal' | 'reading';
@@ -69,6 +70,8 @@ const SETUP_STEPS: Array<Exclude<Step, 'generating' | 'reveal' | 'reading'>> = [
   'photo',
   'astrology',
 ];
+
+const READING_RETRY_MESSAGE = 'The oracle could not finish this reading. Please try again.';
 
 function unescapeJson(s: string): string {
   return s.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\');
@@ -144,7 +147,12 @@ async function withRetry<T>(fn: () => Promise<T>, maxAttempts: number, delayMs =
       return await fn();
     } catch (e) {
       lastError = e;
-      if (isRateLimit(e) || (e instanceof Error && e.name === 'PermanentHttpError')) throw e;
+      if (
+        isRateLimit(e) ||
+        (e instanceof Error && (e.name === 'PermanentHttpError' || e.name === 'AbortError'))
+      ) {
+        throw e;
+      }
     }
   }
   throw lastError;
@@ -265,7 +273,23 @@ export default function ReadingPage() {
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const resolvedImagesRef = useRef<(string | undefined)[]>([]);
-  const hangTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hangWatchRef = useRef<ReturnType<typeof createHangWatch> | null>(null);
+  const onHangRef = useRef<() => void>(() => {});
+  const abortRef = useRef<AbortController | null>(null);
+  const readingEpochRef = useRef(0);
+  const hangFiredRef = useRef(false);
+  const terminalErrorRef = useRef(false);
+  if (hangWatchRef.current === null) {
+    hangWatchRef.current = createHangWatch(() => onHangRef.current());
+  }
+
+  useEffect(() => {
+    return () => {
+      readingEpochRef.current += 1;
+      hangWatchRef.current?.reset();
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const allFlipped = drawnCards.length > 0 && flippedCards.size === drawnCards.length;
 
@@ -284,23 +308,26 @@ export default function ReadingPage() {
   }
 
   async function startReading() {
+    stopReading();
+    const epoch = readingEpochRef.current;
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const watch = hangWatchRef.current;
+    onHangRef.current = () => {
+      if (readingEpochRef.current !== epoch || terminalErrorRef.current || hangFiredRef.current) return;
+      hangFiredRef.current = true;
+      watch?.reset();
+      controller.abort();
+      setStreamingState(null);
+      setError('hang');
+    };
+
     setStep('generating');
     setError(null);
     setIsReadingReady(false);
     setFlippedCards(new Set());
     setStreamingState(null);
-
-    // 45s with no bytes from a card-reading stream means the oracle is stuck.
-    // Any SSE bytes restart that clock, including frames with no delta.content.
-    const resetHangTimer = () => {
-      if (hangTimerRef.current) clearTimeout(hangTimerRef.current);
-      hangTimerRef.current = setTimeout(() => {
-        hangTimerRef.current = null;
-        setStreamingState(null);
-        setError('hang');
-      }, 45000);
-    };
-    resetHangTimer();
+    setReading(null);
 
     const readingId = crypto.randomUUID();
     const apiHeaders = {
@@ -313,6 +340,8 @@ export default function ReadingPage() {
     const now = new Date();
     const userId = getUserId();
     const dateStr = now.toISOString().split('T')[0];
+    const context = buildReadingContext(now);
+    const formattedAstrology = formatAstrologyContext(astrology, now);
 
     const initialDrawn: DrawnCard[] = cards.map((card, i) => ({
       card,
@@ -322,7 +351,7 @@ export default function ReadingPage() {
     setDrawnCards(initialDrawn);
     resolvedImagesRef.current = new Array(initialDrawn.length).fill(undefined);
 
-    // Show skeleton layout immediately — don't wait for streaming to start
+    // Skeleton goes up before either network call. Text does not wait on art.
     setStreamingState({
       overallEnergy: '',
       overallEnergyDone: false,
@@ -337,64 +366,88 @@ export default function ReadingPage() {
       notableTiming: '',
     });
 
-    // Fire image generation with a concurrency cap of 3.
-    // One retry. 45s covers Kontext plus a vision description, and stays
-    // inside the route's 60s limit. A finished picture is cached for this
-    // reading, so the retry does not draw it again.
-    // On final failure, marks imageUrl as 'failed' so card shows a fallback.
-    const IMAGE_TIMEOUT_MS = 45000;
-    void pooledAllSettled(initialDrawn, 3, async (drawn, i) => {
-      try {
-        const body = JSON.stringify({
-          cardName: drawn.card.name,
-          deckStyle,
-          userId,
-          date: dateStr,
-          ...(userPhoto ? { userPhotoBase64: userPhoto } : {}),
-        });
+    const alive = () => readingEpochRef.current === epoch && !hangFiredRef.current;
+    const armStream = () => {
+      if (!alive()) return;
+      watch?.headers();
+    };
+    const touchStream = () => {
+      if (!alive()) return;
+      watch?.bytes();
+    };
+    const disarmStream = () => {
+      if (readingEpochRef.current !== epoch) return;
+      watch?.done();
+    };
+    const fail = (message: string) => {
+      if (!alive()) return;
+      terminalErrorRef.current = true;
+      watch?.reset();
+      setStreamingState(null);
+      setError(message);
+    };
+    const aborted = () => {
+      const err = new Error('Aborted');
+      err.name = 'AbortError';
+      return err;
+    };
 
-        const data = await withRetry(async () => {
-          const res = await withTimeout(
-            fetch(apiUrl('/api/generate-card'), {
-              method: 'POST',
-              headers: apiHeaders,
-              body,
-            }),
-            IMAGE_TIMEOUT_MS,
-            `image gen ${i}`,
-          );
-          await throwIfRateLimited(res);
-          if (res.status === 403) throw await permanentProviderError(res);
-          if (!res.ok) {
-            const err = new Error(`HTTP ${res.status}`);
-            if (res.status >= 400 && res.status < 500) err.name = 'PermanentHttpError';
-            throw err;
-          }
-          const json = await res.json();
-          if (!json.imageUrl) throw new Error('No imageUrl in response');
-          return json;
-        }, 2, 1500);
-
-        resolvedImagesRef.current[i] = data.imageUrl;
-        setDrawnCards((prev) =>
-          prev.map((d, j) => (j === i ? { ...d, imageUrl: data.imageUrl } : d))
-        );
-      } catch (err) {
-        console.error(`Image gen failed after retries for ${drawn.card.name}:`, err);
-        if (isRateLimit(err)) setError(err.message);
-        setDrawnCards((prev) =>
-          prev.map((d, j) => (j === i ? { ...d, imageUrl: 'failed' } : d))
-        );
-      }
-    });
-
-    const context = buildReadingContext(now);
-    const formattedAstrology = formatAstrologyContext(astrology, now);
-
+    // Whole draw, not a delay. Card art does not spend this budget.
+    const abortTimer = setTimeout(() => controller.abort(), 120000);
     try {
-      const controller = new AbortController();
-      // Global budget: concurrency=3 means ceil(10/3)=4 rounds × ~20s + synthesis ~15s.
-      setTimeout(() => controller.abort(), 120000);
+      // Pictures and readings leave together. Readings are started first so a
+      // full connection pool cannot queue the text behind the art.
+      async function fetchCardImage(drawn: DrawnCard, i: number) {
+        try {
+          const body = JSON.stringify({
+            cardName: drawn.card.name,
+            deckStyle,
+            userId,
+            date: dateStr,
+            ...(userPhoto ? { userPhotoBase64: userPhoto } : {}),
+          });
+
+          const data = await withRetry(async () => {
+            const res = await withTimeout(
+              fetch(apiUrl('/api/generate-card'), {
+                method: 'POST',
+                headers: apiHeaders,
+                signal: controller.signal,
+                body,
+              }),
+              45000,
+              `image gen ${i}`,
+            );
+            await throwIfRateLimited(res);
+            if (res.status === 403) throw await permanentProviderError(res);
+            if (!res.ok) {
+              const err = new Error(`HTTP ${res.status}`);
+              if (res.status >= 400 && res.status < 500) err.name = 'PermanentHttpError';
+              throw err;
+            }
+            const json = await res.json();
+            if (!json.imageUrl) throw new Error('No imageUrl in response');
+            return json;
+          }, 2, 1500);
+
+          if (readingEpochRef.current !== epoch) return;
+          resolvedImagesRef.current[i] = data.imageUrl;
+          setDrawnCards((prev) =>
+            prev.map((d, j) => (j === i ? { ...d, imageUrl: data.imageUrl } : d))
+          );
+        } catch (err) {
+          if (readingEpochRef.current !== epoch) return;
+          if (err instanceof Error && err.name === 'AbortError') return;
+          console.error(`Image gen failed after retries for ${drawn.card.name}:`, err);
+          if (isRateLimit(err) && !hangFiredRef.current) {
+            terminalErrorRef.current = true;
+            setError(err.message);
+          }
+          setDrawnCards((prev) =>
+            prev.map((d, j) => (j === i ? { ...d, imageUrl: 'failed' } : d))
+          );
+        }
+      }
 
       const sharedBody = {
         question,
@@ -405,12 +458,9 @@ export default function ReadingPage() {
         ...context,
       };
 
-      // Per-card timeout: one Muse call plus stream. Kept under the route's 45s
-      // upstream abort so a stuck card cannot block the whole spread.
+      // One card call plus its stream. The hang clock starts at the headers, not here.
       const PER_CARD_TIMEOUT_MS = 40000;
 
-      // Helper: fetch one card reading with retry on any failure (up to 2 attempts,
-      // 2s back-off between), plus a hard per-card timeout.
       async function fetchCardReading(drawn: DrawnCard, i: number) {
         const body = JSON.stringify({
           ...sharedBody,
@@ -423,63 +473,69 @@ export default function ReadingPage() {
         });
 
         return withRetry(async () => {
-          const res = await withTimeout(
-            fetch(apiUrl('/api/generate-card-reading'), {
-              method: 'POST',
-              headers: apiHeaders,
-              signal: controller.signal,
-              body,
-            }),
-            PER_CARD_TIMEOUT_MS,
-            `card ${i} fetch`,
-          );
+          let streaming = false;
+          try {
+            const res = await withTimeout(
+              fetch(apiUrl('/api/generate-card-reading'), {
+                method: 'POST',
+                headers: apiHeaders,
+                signal: controller.signal,
+                body,
+              }),
+              PER_CARD_TIMEOUT_MS,
+              `card ${i} fetch`,
+            );
 
-          await throwIfRateLimited(res);
-          if (res.status === 403) throw await permanentProviderError(res);
-          if (!res.ok) {
-            const errText = await res.text().catch(() => '');
-            console.error(`Card ${i} API error:`, res.status, errText);
-            throw new Error(`Card reading failed (${res.status})`);
-          }
+            await throwIfRateLimited(res);
+            if (res.status === 403) throw await permanentProviderError(res);
+            if (!res.ok) {
+              const errText = await res.text().catch(() => '');
+              console.error(`Card ${i} API error:`, res.status, errText);
+              throw new Error(`Card reading failed (${res.status})`);
+            }
+            if (!alive()) throw aborted();
+            armStream();
+            streaming = true;
 
-          const json = await withTimeout(
-            readSseStream(
-              res,
-              (partial) => {
-                const fields = extractCardFields(partial);
-                if (Object.keys(fields).length > 0) {
+            const json = await withTimeout(
+              readSseStream(
+                res,
+                (partial) => {
+                  if (!alive()) return;
+                  const fields = extractCardFields(partial);
+                  if (Object.keys(fields).length === 0) return;
                   setStreamingState(prev => {
                     if (!prev) return prev;
                     const cards = [...prev.cards];
                     cards[i] = { ...cards[i], ...fields };
                     return { ...prev, cards };
                   });
-                }
-              },
-              resetHangTimer,
-            ),
-            PER_CARD_TIMEOUT_MS,
-            `card ${i} stream`,
-          );
+                },
+                touchStream,
+              ),
+              PER_CARD_TIMEOUT_MS,
+              `card ${i} stream`,
+            );
 
-          const parsed = JSON.parse(json);
-          return {
-            card: drawn.card.name,
-            position: drawn.position,
-            reversed: drawn.reversed,
-            keywords: parsed.keywords ?? [],
-            interpretation: parsed.interpretation ?? '',
-          };
+            const parsed = JSON.parse(json);
+            return {
+              card: drawn.card.name,
+              position: drawn.position,
+              reversed: drawn.reversed,
+              keywords: parsed.keywords ?? [],
+              interpretation: parsed.interpretation ?? '',
+            };
+          } finally {
+            if (streaming) disarmStream();
+          }
         }, 2, 2000);
       }
 
-        // ── Fire card reading calls with concurrency cap ───────
-      // Max 3 in-flight at once to avoid Together AI rate limits.
-      // Larger spreads (5, 10) queue naturally as slots free up.
-      const cardResults = await pooledAllSettled(initialDrawn, 3, fetchCardReading);
+      const cardTask = pooledAllSettled(initialDrawn, 3, fetchCardReading);
+      void pooledAllSettled(initialDrawn, 3, fetchCardImage);
+      const cardResults = await cardTask;
+      if (!alive()) return;
 
-      // Build the list of successful card readings. For failed cards, show a fallback
-      // in the streaming state and pass a placeholder to synthesis.
       const cardReadings: Array<{
         card: string;
         position: string;
@@ -487,21 +543,18 @@ export default function ReadingPage() {
         keywords: string[];
         interpretation: string;
       }> = cardResults.map((result, i) => {
-        if (result.status === 'fulfilled') {
-          return result.value;
-        }
-        // Failed card — log and set a fallback in the streaming UI
+        if (result.status === 'fulfilled') return result.value;
         console.error(`Card ${i} failed:`, result.reason);
         setStreamingState(prev => {
           if (!prev) return prev;
-          const cards = [...prev.cards];
-          cards[i] = {
-            ...cards[i],
+          const nextCards = [...prev.cards];
+          nextCards[i] = {
+            ...nextCards[i],
             interpretation: '[Reading unavailable for this card]',
             interpretationDone: true,
             keywords: [],
           };
-          return { ...prev, cards };
+          return { ...prev, cards: nextCards };
         });
         return {
           card: initialDrawn[i].card.name,
@@ -512,15 +565,12 @@ export default function ReadingPage() {
         };
       });
 
-      // If every single card failed, abort — there's nothing to synthesize.
       const successCount = cardResults.filter(r => r.status === 'fulfilled').length;
       if (cardResults.some(r => r.status === 'rejected' && isRateLimit(r.reason))) {
-        if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
-        setStreamingState(null);
         const limited = cardResults.find(
           (result): result is PromiseRejectedResult => result.status === 'rejected' && isRateLimit(result.reason),
         );
-        setError(limited && isRateLimit(limited.reason) ? limited.reason.message : RATE_LIMIT_MESSAGE);
+        fail(limited && isRateLimit(limited.reason) ? limited.reason.message : RATE_LIMIT_MESSAGE);
         return;
       }
       const blocked = cardResults.find(
@@ -528,71 +578,87 @@ export default function ReadingPage() {
           result.status === 'rejected' && isPermanentProviderError(result.reason),
       );
       if (blocked && successCount === 0) {
-        if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
-        setStreamingState(null);
-        setError(blocked.reason.message);
+        fail(blocked.reason.message);
         return;
       }
       if (successCount === 0) {
-        setStreamingState(null);
-        setError('The oracle could not read any of your cards. Please try again.');
-        return;
-      }
-
-      // ── Fire synthesis call (with whatever cards succeeded) ────────────────────────────────
-      // Retry once after 2s on any failure (network blip, 5xx, etc.)
-      const SYNTH_TIMEOUT_MS = 45000;
-      let synthJson = '';
-      try {
-        synthJson = await withRetry(async () => {
-          const synthRes = await withTimeout(
-            fetch(apiUrl('/api/generate-synthesis'), {
-              method: 'POST',
-              headers: apiHeaders,
-              signal: controller.signal,
-              body: JSON.stringify({
-                ...sharedBody,
-                spreadType,
-                cardReadings,
-              }),
-            }),
-            SYNTH_TIMEOUT_MS,
-            'synthesis fetch',
-          );
-
-          await throwIfRateLimited(synthRes);
-          if (synthRes.status === 403) throw await permanentProviderError(synthRes);
-          if (!synthRes.ok) {
-            const errText = await synthRes.text().catch(() => '');
-            console.error('Synthesis API error:', synthRes.status, errText);
-            throw new Error(`Synthesis failed (${synthRes.status})`);
-          }
-
-          return withTimeout(
-            readSseStream(synthRes, (partial) => {
-              const fields = extractSynthesisFields(partial);
-              if (Object.keys(fields).length > 0) {
-                setStreamingState(prev => prev ? { ...prev, ...fields } : prev);
-              }
-            }),
-            SYNTH_TIMEOUT_MS,
-            'synthesis stream',
-          );
-        }, 2, 2000);
-      } catch (synthErr) {
-        console.error('Synthesis failed after retries:', synthErr);
-        if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
-        setStreamingState(null);
-        setError(
-          isRateLimit(synthErr) || isPermanentProviderError(synthErr)
-            ? synthErr.message
-            : 'The oracle fell silent during synthesis. Please try again.',
+        const timedOut = cardResults.some(
+          (result) => result.status === 'rejected' && result.reason instanceof Error && result.reason.name === 'AbortError',
+        );
+        fail(
+          timedOut
+            ? 'The oracle is taking too long to respond. Please try again.'
+            : 'The oracle could not read any of your cards. Please try again.',
         );
         return;
       }
 
-      const synthData = JSON.parse(synthJson);
+      // Synthesis follows the readings. It does not wait for card art.
+      const SYNTH_TIMEOUT_MS = 45000;
+      let synthJson = '';
+      try {
+        synthJson = await withRetry(async () => {
+          let streaming = false;
+          try {
+            const synthRes = await withTimeout(
+              fetch(apiUrl('/api/generate-synthesis'), {
+                method: 'POST',
+                headers: apiHeaders,
+                signal: controller.signal,
+                body: JSON.stringify({
+                  ...sharedBody,
+                  spreadType,
+                  cardReadings,
+                }),
+              }),
+              SYNTH_TIMEOUT_MS,
+              'synthesis fetch',
+            );
 
+            await throwIfRateLimited(synthRes);
+            if (synthRes.status === 403) throw await permanentProviderError(synthRes);
+            if (!synthRes.ok) {
+              const errText = await synthRes.text().catch(() => '');
+              console.error('Synthesis API error:', synthRes.status, errText);
+              throw new Error(`Synthesis failed (${synthRes.status})`);
+            }
+            if (!alive()) throw aborted();
+            armStream();
+            streaming = true;
+
+            return await withTimeout(
+              readSseStream(
+                synthRes,
+                (partial) => {
+                  if (!alive()) return;
+                  const fields = extractSynthesisFields(partial);
+                  if (Object.keys(fields).length === 0) return;
+                  setStreamingState(prev => prev ? { ...prev, ...fields } : prev);
+                },
+                touchStream,
+              ),
+              SYNTH_TIMEOUT_MS,
+              'synthesis stream',
+            );
+          } finally {
+            if (streaming) disarmStream();
+          }
+        }, 2, 2000);
+      } catch (synthErr) {
+        console.error('Synthesis failed after retries:', synthErr);
+        if (synthErr instanceof Error && synthErr.name === 'AbortError') {
+          fail('The oracle is taking too long to respond. Please try again.');
+        } else if (isRateLimit(synthErr) || isPermanentProviderError(synthErr)) {
+          fail(synthErr.message);
+        } else {
+          fail('The oracle fell silent during synthesis. Please try again.');
+        }
+        return;
+      }
+
+      if (!alive()) return;
+      watch?.reset();
+      const synthData = JSON.parse(synthJson);
       const result: ReadingResult = {
         id: crypto.randomUUID(),
         date: now.toISOString(),
@@ -613,23 +679,35 @@ export default function ReadingPage() {
       };
 
       saveReading(result);
+      // Faces are already up from the stream, so the reveal does not flip them shut.
+      setFlippedCards(new Set(initialDrawn.map((_, i) => i)));
       setReading(result);
       setIsReadingReady(true);
     } catch (err) {
       console.error('Reading error:', err);
-      if (hangTimerRef.current) { clearTimeout(hangTimerRef.current); hangTimerRef.current = null; }
-      setStreamingState(null);
-      if (isRateLimit(err)) {
-        setError(err.message);
-      } else if (err instanceof Error && err.name === 'AbortError') {
-        setError('The oracle is taking too long to respond. Please try again.');
+      if (isRateLimit(err)) fail(err.message);
+      else if (isPermanentProviderError(err)) fail(err.message);
+      else if (err instanceof Error && err.name === 'AbortError') {
+        fail('The oracle is taking too long to respond. Please try again.');
       } else {
-        setError(`Reading failed: ${err instanceof Error ? err.message : String(err)}`);
+        fail(READING_RETRY_MESSAGE);
       }
+    } finally {
+      clearTimeout(abortTimer);
     }
   }
 
+  function stopReading() {
+    readingEpochRef.current += 1;
+    hangFiredRef.current = false;
+    terminalErrorRef.current = false;
+    hangWatchRef.current?.reset();
+    abortRef.current?.abort();
+    abortRef.current = null;
+  }
+
   function reset() {
+    stopReading();
     setStep('question');
     setQuestion('');
     setUserContext('');
@@ -798,6 +876,7 @@ export default function ReadingPage() {
                     type="button"
                     className="btn-secondary"
                     onClick={() => {
+                      stopReading();
                       setStep('astrology');
                       setDrawnCards([]);
                       setFlippedCards(new Set());
@@ -866,7 +945,13 @@ export default function ReadingPage() {
                   {isReadingReady && (
                     <>
                       <h1 className="seal">
-                        Your fate is sealed. <em>Turn each card over.</em>
+                        {allFlipped ? (
+                          'Your fate is sealed.'
+                        ) : (
+                          <>
+                            Your fate is sealed. <em>Turn each card over.</em>
+                          </>
+                        )}
                       </h1>
                       {!allFlipped && (
                         <button type="button" onClick={flipAll} className="btn-secondary">
@@ -887,6 +972,7 @@ export default function ReadingPage() {
                       onClick={() => flipCard(i)}
                       size={cardSize}
                       showPosition={true}
+                      showFace={!isReadingReady}
                       tilt={(i % 5 - 2) * 2.4}
                     />
                   ))}

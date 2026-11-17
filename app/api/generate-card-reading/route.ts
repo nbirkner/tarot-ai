@@ -61,10 +61,10 @@ RULES:
 - Tone: direct and clear, but spacious. Not psychic prediction — recognition of what is already here.
 - Never use: "journey", "path forward", "exciting times", "trust the process"
 
-Respond with JSON only:
+Respond with JSON only, interpretation first so the page can show it as the tokens arrive:
 {
-  "keywords": ["3-4 specific qualities for THIS card in THIS position — not generic"],
-  "interpretation": "4-6 sentences"
+  "interpretation": "4-6 sentences",
+  "keywords": ["3-4 specific qualities for THIS card in THIS position — not generic"]
 }`
       : `Interpret a single tarot card in its spread position.
 
@@ -90,10 +90,10 @@ RULES:
 - Never use: "journey", "path forward", "exciting times", "trust the process"
 ${reversed ? '- REVERSED: interpret as blocked energy, internal experience, or delayed manifestation' : ''}
 
-Respond with JSON only:
+Respond with JSON only, interpretation first so the page can show it as the tokens arrive:
 {
-  "keywords": ["3-4 specific keywords for THIS card in THIS position — not generic"],
-  "interpretation": "4-6 sentences"
+  "interpretation": "4-6 sentences",
+  "keywords": ["3-4 specific keywords for THIS card in THIS position — not generic"]
 }`;
 
     // Timeout the Together AI fetch itself at 45s so we get a clean error
