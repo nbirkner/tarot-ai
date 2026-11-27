@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import { AppLink } from '../components/BasePath';
 import { GeometricFace } from '../components/GeometricFace';
+import { canonicalUrl } from '../lib/page-meta';
+
+export const metadata: Metadata = {
+  alternates: { canonical: canonicalUrl('/') },
+};
 
 const SAMPLE = [
   { name: 'The Star', position: 'Past', variant: 0 as const },

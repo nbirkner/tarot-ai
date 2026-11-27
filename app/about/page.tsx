@@ -1,4 +1,12 @@
+import type { Metadata } from 'next';
 import { AppLink } from '../../components/BasePath';
+import { pageMetadata } from '../../lib/page-meta';
+
+export const metadata: Metadata = pageMetadata({
+  title: 'About',
+  description: 'How Tarot AI draws, illustrates, and reads your cards, and which models do the work.',
+  path: '/about',
+});
 
 const models = [
   {
