@@ -4,6 +4,7 @@ import { Navigation } from '../components/Navigation';
 import { SiteFooter } from '../components/SiteFooter';
 import { BasePathProvider } from '../components/BasePath';
 import { BASE_PATH } from '../lib/base-path';
+import { OG_IMAGE } from '../lib/page-meta';
 import { headers } from 'next/headers';
 import './globals.css';
 
@@ -27,25 +28,18 @@ const description =
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.nikibirkner.com'),
-  title: 'Tarot AI',
+  title: { default: 'Tarot AI', template: '%s · Tarot AI' },
   description,
   openGraph: {
     title: 'Tarot AI',
     description: 'Your future called. It has notes. Not a prediction. A prompt.',
-    images: [
-      {
-        url: `${BASE_PATH}/og.png`,
-        width: 1200,
-        height: 630,
-        alt: 'tarotai on ember orange. Your future called. It has notes.',
-      },
-    ],
+    images: [OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Tarot AI',
     description,
-    images: [`${BASE_PATH}/og.png`],
+    images: [OG_IMAGE.url],
   },
   icons: {
     icon: [
