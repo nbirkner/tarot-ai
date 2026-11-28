@@ -91,6 +91,7 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
               {followUpQuestions.map((q, i) => (
                 <div key={i}>
                   <label
+                    htmlFor={`follow-up-${i}`}
                     style={{
                       fontSize: 15,
                       color: 'var(--fg)',
@@ -102,6 +103,7 @@ export function ContextInput({ question, value: _value, onChange }: ContextInput
                     {q}
                   </label>
                   <input
+                    id={`follow-up-${i}`}
                     type="text"
                     className="input-field"
                     placeholder="Your answer (optional)"
